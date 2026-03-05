@@ -2,9 +2,12 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import process from 'node:process';
-import { chromium } from 'playwright';
-import pixelmatch from 'pixelmatch';
-import { PNG } from 'pngjs';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { chromium } = require('playwright');
+const pixelmatch = require('pixelmatch');
+const { PNG } = require('pngjs');
 
 const appDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const baselineDir = path.join(appDir, 'tests', 'visual-baseline');

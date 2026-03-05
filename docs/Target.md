@@ -276,6 +276,7 @@
 1. **可持续运行稳定性**
    - 缺口：暂无明确的长稳压测（如 2h/8h soak test）、内存泄漏门槛、崩溃自动归档规范。
    - 目标：建立 nightly soak + 崩溃回溯 + 内存峰值阈值告警。
+   - 当前基线命令（A1 smoke）：`python3 tools/check_runtime_stability.py` / `make check-stability`
 
 2. **世界分区与流式加载实装**
    - 缺口：文档定义了 World Partition/Streaming，但缺少可机检的分区加载、卸载、回放基线。
