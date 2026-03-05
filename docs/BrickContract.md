@@ -2,7 +2,7 @@ Fate Engine Brick Contract v0.1（规范稿）
 1) 版本与兼容性
 1.1 协议版本
 
-brick_contract_version = "0.2"
+brick_contract_version = "0.1"
 
 任何包必须声明其契约版本。
 
@@ -23,7 +23,7 @@ id：稳定唯一（推荐反向域名风格 com.fate.brick.forest.conifer）
 
 version：SemVer
 
-contract_version：固定 "0.2"
+contract_version：固定 "0.1"
 
 engine_compat：支持的引擎版本范围
 

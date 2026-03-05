@@ -1,7 +1,7 @@
 {
   "id": "fate.door.basic",
   "version": "0.1.0",
-  "contract_version": "0.2",
+  "contract_version": "0.1",
   "engine_compat": ">=0.1.0",
   "license": "MIT",
   "dependencies": [

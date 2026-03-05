@@ -43,8 +43,8 @@ def validate_manifest(manifest: dict) -> list[str]:
         if field not in manifest:
             errors.append(f"缺少顶层字段: {field}")
 
-    if manifest.get("contract_version") != "0.2":
-        errors.append('contract_version 必须为 "0.2"')
+    if manifest.get("contract_version") != "0.1":
+        errors.append('contract_version 必须为 "0.1"')
 
     dependencies = manifest.get("dependencies")
     if not isinstance(dependencies, list):
