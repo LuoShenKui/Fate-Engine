@@ -39,6 +39,7 @@ type ValidateOutput = {
 };
 
 class DoorBrick {
+  // Demo mirror: 与 runtime/door_core 的 DoorBrick 行为保持对照（Rust: DoorBrick::interact / DoorBrick::set_state / DoorBrick::validate）。
   private state: DoorState = {
     enabled: true,
     locked: false,
@@ -48,6 +49,7 @@ class DoorBrick {
   };
 
   interact(actorId: string): BrickEvent {
+    // Demo mirror: 对齐 Rust 事件常量 events::ON_DENIED / events::ON_USED。
     if (!this.state.enabled) {
       return { event: "OnDenied", payload: "reason=disabled" };
     }
@@ -59,11 +61,13 @@ class DoorBrick {
   }
 
   setState(key: keyof DoorState, value: boolean): BrickEvent {
+    // Demo mirror: 对齐 Rust 事件常量 events::ON_STATE_CHANGED。
     this.state[key] = value;
     return { event: "OnStateChanged", payload: `key=${key},value=${value}` };
   }
 
   validate(doorName: string): ValidateOutput {
+    // Demo mirror: 对齐 Rust validate 错误码 MISSING_COLLISION / MISSING_TRIGGER。
     const issues: string[] = [];
     if (!this.state.has_collision) {
       issues.push(`Error:${doorName}:MISSING_COLLISION:Door 缺少碰撞体`);
