@@ -91,6 +91,12 @@ make check-perf-scenes
 - `check-visual`：优先执行自动截图基线比对；若环境未安装 `playwright` 则会跳过自动比对，并按 `docs/ScreenshotOperation.md` 执行手工流程。
 - `check-perf-scenes`：遍历 `fixtures/perf/*.json` 做场景级预算检查，`warning` 仅告警不阻断，`error` 或输入缺失阻断。
 - `check-perf`：兼容单场景入口（默认 `fixtures/perf/sample_scene_metrics.json`），规则与多场景一致。
+
+诊断入口：
+- 开发态第一入口：`make check-perf`。
+- 诊断数据统一读取报告中的 `items[*].evidence` 字段（字段定义见 `protocol/perf/perf_diagnostic.schema.json`）。
+- 后续接入真实 Profiler / Frame Debugger 时，仅需按该 schema 落盘，CI 判定逻辑保持不变（先标准化数据面，后替换数据源）。
+
 - `check-partition-streaming`：分区流送回放检查通过，且满足“无明显卡顿尖峰”阈值。
 
 分区流送“无明显卡顿尖峰”量化阈值（最小场景）：

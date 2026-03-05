@@ -41,6 +41,20 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
 
     budget_metrics = budget.get("metrics", {})
     input_metrics = metrics_payload.get("metrics", {})
+    payload_evidence = metrics_payload.get("evidence", {})
+
+    def build_evidence(metric_name: str) -> dict[str, Any]:
+        metric_evidence = payload_evidence.get(metric_name, {}) if isinstance(payload_evidence, dict) else {}
+        return {
+            "frame_id": metric_evidence.get("frame_id"),
+            "render_pass": metric_evidence.get("render_pass"),
+            "brick_type": metric_evidence.get("brick_type"),
+            "brick_id": metric_evidence.get("brick_id"),
+            "cpu_frame_ms": metric_evidence.get("cpu_frame_ms"),
+            "gpu_frame_ms": metric_evidence.get("gpu_frame_ms"),
+            "draw_calls": metric_evidence.get("draw_calls"),
+            "material_count": metric_evidence.get("material_count"),
+        }
 
     items: list[dict[str, Any]] = []
     status_count = {"ok": 0, "warning": 0, "error": 0, "missing": 0}
@@ -62,6 +76,7 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
                     "error": error,
                     "lower_is_better": lower_is_better,
                     "message": "metric missing in input payload",
+                    "evidence": build_evidence(metric_name),
                 }
             )
             continue
@@ -77,6 +92,7 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
                 "warning": warning,
                 "error": error,
                 "lower_is_better": lower_is_better,
+                "evidence": build_evidence(metric_name),
             }
         )
 

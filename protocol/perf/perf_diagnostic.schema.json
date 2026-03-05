@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.perf.diagnostic.schema.json",
+  "title": "Fate Perf Diagnostic Report",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/perf_item"
+      }
+    }
+  },
+  "definitions": {
+    "perf_item": {
+      "type": "object",
+      "required": ["metric", "status"],
+      "properties": {
+        "metric": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["ok", "warning", "error", "missing"]
+        },
+        "value": { "type": "number" },
+        "warning": { "type": "number" },
+        "error": { "type": "number" },
+        "lower_is_better": { "type": "boolean" },
+        "message": { "type": "string" },
+        "evidence": {
+          "$ref": "#/definitions/perf_evidence"
+        }
+      },
+      "additionalProperties": true
+    },
+    "perf_evidence": {
+      "type": "object",
+      "properties": {
+        "frame_id": {
+          "type": ["string", "integer", "null"],
+          "minLength": 1
+        },
+        "render_pass": {
+          "type": ["string", "null"]
+        },
+        "brick_type": {
+          "type": ["string", "null"]
+        },
+        "brick_id": {
+          "type": ["string", "null"]
+        },
+        "cpu_frame_ms": {
+          "type": ["number", "null"]
+        },
+        "gpu_frame_ms": {
+          "type": ["number", "null"]
+        },
+        "draw_calls": {
+          "type": ["integer", "null"]
+        },
+        "material_count": {
+          "type": ["integer", "null"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

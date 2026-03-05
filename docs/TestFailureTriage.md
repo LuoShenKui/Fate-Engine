@@ -18,7 +18,14 @@
 
 ### 关键日志字段
 - request_id: `<value or N/A>`
+- frame_id: `<value or N/A>`
+- render_pass: `<value or N/A>`
+- brick_type: `<value or N/A>`
 - brick_id: `<value or N/A>`
+- cpu_frame_ms: `<value or N/A>`
+- gpu_frame_ms: `<value or N/A>`
+- draw_calls: `<value or N/A>`
+- material_count: `<value or N/A>`
 - seed: `<value or N/A>`
 - lockfile_hash: `<value or N/A>`
 
