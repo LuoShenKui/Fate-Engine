@@ -111,3 +111,27 @@ python3 tools/check_replay_matrix.py --matrix fixtures/replay/matrix_cases.json 
 3. 使用同一份 DCC 资源清单、同一份策略配置，通过 `tools/build_asset_pipeline_plan.py` 重新生成 plan；
 4. 对比新 plan 的 `plan_id` 与发布记录是否一致，一致则可认定输入与策略可复现；
 5. 若要回滚，优先选择 lockfile 中历史版本 + 对应 `plan_id` 完整匹配的发布条目。
+
+## 8) 依赖合规违规处理流程
+
+执行命令：
+
+```bash
+python3 tools/check_dependency_compliance.py
+```
+
+默认读取：
+- `runtime/door_core/Cargo.lock`
+- `editor/app/pnpm-lock.yaml`
+- `protocol/compliance/dependency_policy.json`
+
+若报告中出现 `violation_code`，按以下顺序处理：
+1. **替代依赖优先**：优先改为同能力、许可证/来源可接受的依赖；
+2. **锁版本回滚**：若问题由升级引入（如超出 patch 自动升级策略），回滚 lockfile 到最近合规版本；
+3. **申请豁免**：确需保留时，提交豁免申请并在策略文件中记录临时 exemption（需标注范围与截止时间）。
+
+建议在豁免单中最少包含：
+- 包名与版本；
+- 触发的 `violation_code`；
+- 风险评估与替代方案对比；
+- 生效时长（到期后必须复审）。

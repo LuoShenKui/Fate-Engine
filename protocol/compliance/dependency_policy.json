@@ -1,0 +1,58 @@
+{
+  "license": {
+    "allowlist": [
+      "MIT",
+      "Apache-2.0",
+      "Unlicense"
+    ],
+    "denylist": [
+      "GPL-2.0",
+      "GPL-3.0",
+      "AGPL-3.0"
+    ],
+    "metadata": {
+      "cargo": {
+        "door_core": "MIT",
+        "itoa": "MIT OR Apache-2.0",
+        "memchr": "Unlicense OR MIT",
+        "proc-macro2": "MIT OR Apache-2.0",
+        "quote": "MIT OR Apache-2.0",
+        "serde": "MIT OR Apache-2.0",
+        "serde_core": "MIT OR Apache-2.0",
+        "serde_derive": "MIT OR Apache-2.0",
+        "serde_json": "MIT OR Apache-2.0",
+        "syn": "MIT OR Apache-2.0",
+        "unicode-ident": "MIT OR Apache-2.0",
+        "zmij": "MIT"
+      },
+      "pnpm": {
+        "@types/prop-types": "MIT",
+        "@types/react": "MIT",
+        "@types/react-dom": "MIT",
+        "csstype": "MIT",
+        "js-tokens": "MIT",
+        "loose-envify": "MIT",
+        "react": "MIT",
+        "react-dom": "MIT",
+        "scheduler": "MIT",
+        "typescript": "Apache-2.0"
+      }
+    }
+  },
+  "source": {
+    "cargo": [
+      "registry+https://github.com/rust-lang/crates.io-index",
+      "path"
+    ],
+    "pnpm": [
+      "registry:npmjs",
+      "https://registry.npmjs.org"
+    ]
+  },
+  "upgrade": {
+    "mode": "patch_only",
+    "exemptions": [
+      "typescript"
+    ]
+  }
+}
