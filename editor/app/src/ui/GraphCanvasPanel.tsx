@@ -40,6 +40,15 @@ type CameraState = { yaw: number; pitch: number; distance: number };
 type Mat4 = Float32Array;
 type Vec3 = [number, number, number];
 
+const TREE_POSITIONS: Vec3[] = [
+  [-4.4, 0, -4.8],
+  [-3.2, 0, -3.7],
+  [3.9, 0, -4.6],
+  [4.5, 0, -3.2],
+  [-4.1, 0, 3.7],
+  [4.2, 0, 3.9],
+];
+
 const defaultTransform: Required<CanvasTransform> = {
   position: [0, 0, 0],
   rotation: [0, 0, 0],
@@ -276,7 +285,13 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
         { center: [0, 0.8, 6], half: [6.2, 0.8, 0.18] },
         { center: [-6, 0.8, 0], half: [0.18, 0.8, 6.2] },
         { center: [6, 0.8, 0], half: [0.18, 0.8, 6.2] },
+        { center: [0, 0.8, -3.4], half: [2.8, 0.8, 0.14] },
+        { center: [0, 0.8, 0.4], half: [2.8, 0.8, 0.14] },
+        { center: [-2.8, 0.8, -1.5], half: [0.14, 0.8, 2.05] },
+        { center: [2.8, 0.8, -1.5], half: [0.14, 0.8, 2.05] },
       ];
+
+      const treeBlocks = TREE_POSITIONS.map((pos) => ({ center: [pos[0], 0.6, pos[2]] as Vec3, half: [0.45, 0.6, 0.45] as Vec3 }));
 
       const dynamicDoorBlocks = doorEntities
         .map((door) => {
@@ -291,7 +306,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
         })
         .filter((value): value is { center: Vec3; half: Vec3 } => value !== null);
 
-      const blocked = [...wallBlocks, ...dynamicDoorBlocks].some((obstacle) => collidesWithAabb(candidate, obstacle.center, obstacle.half));
+      const blocked = [...wallBlocks, ...treeBlocks, ...dynamicDoorBlocks].some((obstacle) => collidesWithAabb(candidate, obstacle.center, obstacle.half));
       if (!blocked) {
         actorRef.current = [Math.max(-5.5, Math.min(5.5, candidate[0])), 0, Math.max(-5.5, Math.min(5.5, candidate[2]))];
         onActorPositionChange?.(actorRef.current);
@@ -330,6 +345,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
       const viewProj = mat4Multiply(projection, view);
 
       drawBox(viewProj, mat4Multiply(mat4Translate(0, -0.03, 0), mat4Scale(30, 0.02, 30)), [0.87, 0.91, 0.94, 1]);
+      drawBox(viewProj, mat4Multiply(mat4Translate(0, -0.02, -1.5), mat4Scale(6.6, 0.01, 4.8)), [0.55, 0.47, 0.38, 1]);
 
       const staticWalls: Array<{ center: Vec3; size: Vec3 }> = [
         { center: [0, 0.8, -6], size: [12, 1.6, 0.2] },
@@ -340,6 +356,26 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
       staticWalls.forEach((wall) => {
         drawBox(viewProj, mat4Multiply(mat4Translate(...wall.center), mat4Scale(...wall.size)), [0.71, 0.75, 0.8, 1]);
       });
+
+      const cabinWalls: Array<{ center: Vec3; size: Vec3 }> = [
+        { center: [0, 0.8, -3.4], size: [5.6, 1.6, 0.16] },
+        { center: [-2.8, 0.8, -1.5], size: [0.16, 1.6, 4.1] },
+        { center: [2.8, 0.8, -1.5], size: [0.16, 1.6, 4.1] },
+        { center: [-1.9, 0.8, 0.4], size: [1.8, 1.6, 0.16] },
+        { center: [1.9, 0.8, 0.4], size: [1.8, 1.6, 0.16] },
+      ];
+      cabinWalls.forEach((wall) => {
+        drawBox(viewProj, mat4Multiply(mat4Translate(...wall.center), mat4Scale(...wall.size)), [0.72, 0.64, 0.56, 1]);
+      });
+      drawBox(viewProj, mat4Multiply(mat4Translate(0, 1.86, -1.5), mat4Scale(6.0, 0.14, 4.4)), [0.54, 0.22, 0.19, 1]);
+
+      TREE_POSITIONS.forEach((pos) => {
+        drawBox(viewProj, mat4Multiply(mat4Translate(pos[0], 0.45, pos[2]), mat4Scale(0.18, 0.9, 0.18)), [0.45, 0.3, 0.2, 1]);
+        drawBox(viewProj, mat4Multiply(mat4Translate(pos[0], 1.2, pos[2]), mat4Scale(0.95, 1.2, 0.95)), [0.21, 0.5, 0.29, 1]);
+      });
+
+      const inTrigger = Math.abs(actorRef.current[0]) <= 1.2 && actorRef.current[2] > 0.1 && actorRef.current[2] < 1.8;
+      drawBox(viewProj, mat4Multiply(mat4Translate(0, 0.03, 0.95), mat4Scale(2.4, 0.02, 1.8)), inTrigger ? [0.25, 0.76, 0.43, 0.35] : [0.96, 0.6, 0.24, 0.18]);
 
       drawBox(viewProj, mat4Multiply(mat4Translate(actorRef.current[0], 0.45, actorRef.current[2]), mat4Scale(0.35, 0.9, 0.35)), [0.16, 0.71, 0.35, 1]);
 
@@ -543,7 +579,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
           onWheel={onWheel}
           onClick={onCanvasClick}
         />
-        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放，点击门体触发开关。</div>
+        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放；穿过门前触发区后点击门体，可在小屋场景测试开关门和阻挡。</div>
 
         <details>
           <summary style={{ cursor: "pointer", marginBottom: "8px" }}>调试列表（节点/连线）</summary>
