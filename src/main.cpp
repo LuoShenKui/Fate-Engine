@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <sstream>
 #include <string>
-#include <stdexcept>
 #include <vector>
 
 struct DoorState {
@@ -102,14 +101,25 @@ std::vector<ValidationIssue> ValidateDoorConfig(const std::string& door_name,
 
 
 void ValidateManifestRequiredFields(const std::string& content) {
-  const std::vector<std::string> required_fields = {"\"id\"",      "\"version\"", "\"deps\"",
-                                                    "\"params\"",  "\"defaults\"", "\"license\"",
-                                                    "\"compat\""};
+  const std::vector<std::string> required_fields = {
+      "\"id\"", "\"version\"", "\"params\"", "\"defaults\"", "\"license\""};
   std::vector<std::string> missing;
   for (const auto& field : required_fields) {
     if (content.find(field) == std::string::npos) {
       missing.push_back(field);
     }
+  }
+
+  const bool has_dependencies = content.find("\"dependencies\"") != std::string::npos;
+  const bool has_legacy_deps = content.find("\"deps\"") != std::string::npos;
+  if (!has_dependencies && !has_legacy_deps) {
+    missing.push_back("\"dependencies\"|\"deps\"");
+  }
+
+  const bool has_engine_compat = content.find("\"engine_compat\"") != std::string::npos;
+  const bool has_legacy_compat = content.find("\"compat\"") != std::string::npos;
+  if (!has_engine_compat && !has_legacy_compat) {
+    missing.push_back("\"engine_compat\"|\"compat\"");
   }
 
   if (!missing.empty()) {
