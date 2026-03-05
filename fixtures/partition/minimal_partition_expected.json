@@ -1,0 +1,23 @@
+{
+  "fixture": "minimal-partition-door-roundtrip",
+  "metrics": {
+    "p50_ms": 13.0,
+    "p95_ms": 13.0,
+    "max_ms": 15.4
+  },
+  "thresholds": {
+    "p95_ms": 35.0,
+    "max_ms": 50.0
+  },
+  "smooth_no_spike": true,
+  "state_consistent": true,
+  "final_mounted_state": {
+    "door_a_1": {
+      "enabled": true,
+      "locked": true,
+      "open": true,
+      "has_collision": true,
+      "has_trigger": true
+    }
+  }
+}

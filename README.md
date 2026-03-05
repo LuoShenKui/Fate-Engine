@@ -77,6 +77,13 @@ make check-perf
 - `check-replay`：只读执行 replay 一致性校验（recipe/seed/lockfile），不写发布产物。
 - `check-visual`：优先执行自动截图基线比对；若环境未安装 `playwright` 则会跳过自动比对，并按 `docs/ScreenshotOperation.md` 执行手工流程。
 - `check-perf`：C++ 构建成功，作为当前阶段性能预算基础门禁。
+- `check-partition-streaming`：分区流送回放检查通过，且满足“无明显卡顿尖峰”阈值。
+
+分区流送“无明显卡顿尖峰”量化阈值（最小场景）：
+- 切换耗时 `p50 <= 20ms`
+- 切换耗时 `p95 <= 35ms`
+- 切换耗时 `max <= 50ms`
+- 分区往返后状态一致性 `state_consistent = true`
 
 里程碑命令与分层门禁映射：
 - `check-m1` = `check-visual` + `check-perf` + `fate_demo` 日志断言。
