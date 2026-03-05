@@ -2,7 +2,7 @@
  * 协议模块：定义 Envelope/错误结构与 Door 协议适配器。
  * 后续可在此扩展事件连线与多协议编解码。
  */
-import { DoorBrick, type DoorBrickEvent, type DoorState, type ValidateOutput } from "../domain/door";
+import { DoorRuntimeAdapter, type DoorBrickEvent, type DoorState, type ValidateOutput } from "../domain/door";
 
 export type ProtocolError = {
   code: string;
@@ -28,7 +28,7 @@ type DoorInteractResponsePayload = {
 };
 
 export class DoorProtocolAdapter {
-  constructor(private readonly door: DoorBrick) {}
+  constructor(private readonly door: DoorRuntimeAdapter) {}
 
   private buildErrorEnvelope(requestId: string, code: string, message: string, details: unknown): Envelope<Record<string, never>> {
     return {
