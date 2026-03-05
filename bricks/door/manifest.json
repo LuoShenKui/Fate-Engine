@@ -1,0 +1,30 @@
+{
+  "id": "fate.door.basic",
+  "version": "0.1.0",
+  "deps": [],
+  "params": {
+    "locked": {
+      "type": "bool",
+      "required": true,
+      "default": false
+    },
+    "open": {
+      "type": "bool",
+      "required": true,
+      "default": false
+    },
+    "has_collision": {
+      "type": "bool",
+      "required": true,
+      "default": true
+    },
+    "has_trigger": {
+      "type": "bool",
+      "required": true,
+      "default": true
+    }
+  },
+  "defaults": {
+    "enabled": true
+  }
+}
