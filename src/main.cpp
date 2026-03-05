@@ -360,7 +360,7 @@ DoorState LoadDoorDefaults(const std::string& path) {
 int main(int argc, char* argv[]) {
   try {
     const std::string manifest_path =
-        (argc > 1) ? std::string(argv[1]) : "bricks/door/manifest.json";
+        (argc > 1) ? std::string(argv[1]) : "packages/door/manifest.json";
     std::cout << "实际使用的 manifest 路径: " << manifest_path << "\n";
 
     auto state = LoadDoorDefaults(manifest_path);
