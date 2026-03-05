@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "pnpm run build && pnpm run preview",
     "typecheck": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "preview": "python3 -m http.server 5173",
+    "start": "pnpm run preview"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
