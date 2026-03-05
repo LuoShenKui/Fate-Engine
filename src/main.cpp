@@ -16,6 +16,24 @@ struct DoorState {
   bool has_trigger = true;
 };
 
+struct ValidationLocation {
+  std::string brick_id;
+  std::string slot_id;
+};
+
+struct SuggestedFix {
+  std::string type;
+  std::string payload;
+};
+
+struct ValidationIssue {
+  std::string severity;
+  std::string code;
+  std::string message;
+  ValidationLocation location;
+  std::vector<SuggestedFix> suggested_fix;
+};
+
 class DoorBrick {
  public:
   explicit DoorBrick(std::string brick_id, DoorState state = {})
@@ -58,14 +76,26 @@ class DoorBrick {
   DoorState state_;
 };
 
-std::vector<std::string> ValidateDoorConfig(const std::string& door_name,
-                                            const DoorState& state) {
-  std::vector<std::string> issues;
+std::vector<ValidationIssue> ValidateDoorConfig(const std::string& door_name,
+                                                const DoorState& state) {
+  std::vector<ValidationIssue> issues;
   if (!state.has_collision) {
-    issues.push_back("Error:" + door_name + ":MISSING_COLLISION:Door 缺少碰撞体");
+    issues.push_back(ValidationIssue{
+        "Error",
+        "MISSING_COLLISION",
+        door_name + " 缺少碰撞体",
+        ValidationLocation{"fate.door.basic", "collision"},
+        {SuggestedFix{"set_slot", "slot_id=collision,asset_ref=default_collision"}},
+    });
   }
   if (!state.has_trigger) {
-    issues.push_back("Error:" + door_name + ":MISSING_TRIGGER:Door 缺少触发体");
+    issues.push_back(ValidationIssue{
+        "Error",
+        "MISSING_TRIGGER",
+        door_name + " 缺少触发体",
+        ValidationLocation{"fate.door.basic", "trigger"},
+        {SuggestedFix{"set_slot", "slot_id=trigger,asset_ref=default_trigger"}},
+    });
   }
   return issues;
 }
@@ -414,7 +444,15 @@ int main(int argc, char* argv[]) {
     } else {
       std::cout << "校验报告:\n";
       for (const auto& issue : report) {
-        std::cout << "  - " << issue << "\n";
+        std::cout << "  - severity=" << issue.severity << ",code=" << issue.code
+                  << ",message=" << issue.message
+                  << ",location.brick_id=" << issue.location.brick_id
+                  << ",location.slot_id=" << issue.location.slot_id;
+        if (!issue.suggested_fix.empty()) {
+          std::cout << ",suggested_fix[0].type=" << issue.suggested_fix[0].type
+                    << ",suggested_fix[0].payload=" << issue.suggested_fix[0].payload;
+        }
+        std::cout << "\n";
       }
     }
   } catch (const std::exception& ex) {
