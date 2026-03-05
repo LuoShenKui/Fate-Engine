@@ -357,8 +357,62 @@ pub fn handle_interact_envelope_json(
     brick: &mut DoorBrick,
     request_json: &str,
 ) -> Result<String, serde_json::Error> {
+    fn error_envelope(request: &Envelope, code: &str, message: &str, details: Value) -> Envelope {
+        Envelope {
+            protocol_version: PROTOCOL_VERSION.to_string(),
+            r#type: "door.interact.response".to_string(),
+            request_id: request.request_id.clone(),
+            payload: serde_json::json!({}),
+            error: Some(ProtocolError {
+                code: code.to_string(),
+                message: message.to_string(),
+                details,
+            }),
+        }
+    }
+
     let request: Envelope = serde_json::from_str(request_json)?;
-    let payload: DoorInteractRequestPayload = serde_json::from_value(request.payload)?;
+
+    if request.protocol_version != PROTOCOL_VERSION {
+        let response = error_envelope(
+            &request,
+            "INVALID_PROTOCOL_VERSION",
+            "protocol_version 不匹配",
+            serde_json::json!({
+                "expected": PROTOCOL_VERSION,
+                "actual": request.protocol_version,
+            }),
+        );
+        return serde_json::to_string(&response);
+    }
+
+    if request.r#type != "door.interact.request" {
+        let response = error_envelope(
+            &request,
+            "INVALID_REQUEST_TYPE",
+            "type 不匹配",
+            serde_json::json!({
+                "expected": "door.interact.request",
+                "actual": request.r#type,
+            }),
+        );
+        return serde_json::to_string(&response);
+    }
+
+    let payload: DoorInteractRequestPayload = match serde_json::from_value(request.payload.clone()) {
+        Ok(payload) => payload,
+        Err(_) => {
+            let response = error_envelope(
+                &request,
+                "INVALID_REQUEST_PAYLOAD",
+                "payload 缺失或格式错误",
+                serde_json::json!({
+                    "required": ["actor_id"]
+                }),
+            );
+            return serde_json::to_string(&response);
+        }
+    };
     let event = brick.interact(InteractInput {
         actor_id: payload.actor_id,
     });
@@ -552,5 +606,69 @@ mod tests {
         assert_eq!(response.protocol_version, PROTOCOL_VERSION);
         assert_eq!(response.r#type, "door.interact.response");
         assert_eq!(response.request_id, "req-1");
+        assert!(response.error.is_none());
+    }
+
+    #[test]
+    fn interact_envelope_adapter_rejects_invalid_protocol_version() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let request = Envelope {
+            protocol_version: "9.9".to_string(),
+            r#type: "door.interact.request".to_string(),
+            request_id: "req-err-version".to_string(),
+            payload: serde_json::json!({"actor_id": "player_1"}),
+            error: None,
+        };
+
+        let response_json =
+            handle_interact_envelope_json(&mut brick, &serde_json::to_string(&request).unwrap())
+                .unwrap();
+        let response: Envelope = serde_json::from_str(&response_json).unwrap();
+
+        assert_eq!(response.r#type, "door.interact.response");
+        assert_eq!(response.request_id, "req-err-version");
+        assert_eq!(response.error.unwrap().code, "INVALID_PROTOCOL_VERSION");
+    }
+
+    #[test]
+    fn interact_envelope_adapter_rejects_invalid_type() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let request = Envelope {
+            protocol_version: PROTOCOL_VERSION.to_string(),
+            r#type: "door.foo.request".to_string(),
+            request_id: "req-err-type".to_string(),
+            payload: serde_json::json!({"actor_id": "player_1"}),
+            error: None,
+        };
+
+        let response_json =
+            handle_interact_envelope_json(&mut brick, &serde_json::to_string(&request).unwrap())
+                .unwrap();
+        let response: Envelope = serde_json::from_str(&response_json).unwrap();
+
+        assert_eq!(response.r#type, "door.interact.response");
+        assert_eq!(response.request_id, "req-err-type");
+        assert_eq!(response.error.unwrap().code, "INVALID_REQUEST_TYPE");
+    }
+
+    #[test]
+    fn interact_envelope_adapter_rejects_missing_actor_id() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let request = Envelope {
+            protocol_version: PROTOCOL_VERSION.to_string(),
+            r#type: "door.interact.request".to_string(),
+            request_id: "req-err-payload".to_string(),
+            payload: serde_json::json!({}),
+            error: None,
+        };
+
+        let response_json =
+            handle_interact_envelope_json(&mut brick, &serde_json::to_string(&request).unwrap())
+                .unwrap();
+        let response: Envelope = serde_json::from_str(&response_json).unwrap();
+
+        assert_eq!(response.r#type, "door.interact.response");
+        assert_eq!(response.request_id, "req-err-payload");
+        assert_eq!(response.error.unwrap().code, "INVALID_REQUEST_PAYLOAD");
     }
 }
