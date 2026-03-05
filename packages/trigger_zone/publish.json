@@ -1,0 +1,24 @@
+{
+  "package": "fate.trigger_zone.basic",
+  "version": "0.1.0",
+  "hash": "sha256:e3ce70cdca3c7f69ab3fa64d005c75b67da1c31379694652065bc5781fc9fc83",
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1"
+  },
+  "source": {
+    "type": "file",
+    "uri": "file://dist/fate.trigger_zone.basic-0.1.0.tar.gz"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.trigger_zone.basic-0.1.0.tar.gz",
+    "checksum": "sha256:f88757936f3c3ab936864433b94e9d6bd66ef2c2e6957ff308577dc5b43a6baf"
+  }
+}

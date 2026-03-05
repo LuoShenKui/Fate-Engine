@@ -1,0 +1,24 @@
+{
+  "package": "fate.door.basic",
+  "version": "0.1.1",
+  "hash": "sha256:3e3a668e79e7e1cdf9801c43703441ebf6492171c715349723377754cebf5a81",
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1"
+  },
+  "source": {
+    "type": "file",
+    "uri": "file://dist/fate.door.basic-0.1.1.tar.gz"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.door.basic-0.1.1.tar.gz",
+    "checksum": "sha256:27429f1b164350b024b6b292b667c3d741dc6c5fddfd633a5ad3df8b62e4a099"
+  }
+}

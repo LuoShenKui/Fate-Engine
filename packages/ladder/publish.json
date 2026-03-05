@@ -1,0 +1,24 @@
+{
+  "package": "fate.ladder.basic",
+  "version": "0.1.0",
+  "hash": "sha256:d29e13d697209d1cc8a1cd3dbf750c8081446273964c94fed5dc587f6d959678",
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1"
+  },
+  "source": {
+    "type": "file",
+    "uri": "file://dist/fate.ladder.basic-0.1.0.tar.gz"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.ladder.basic-0.1.0.tar.gz",
+    "checksum": "sha256:3f356b73bc679fdf5b36d0e29f5efaaa02d7ff3ec2f67ad710a8f70ce43dbba2"
+  }
+}
