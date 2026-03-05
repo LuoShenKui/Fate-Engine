@@ -15,6 +15,12 @@
 - `tools/`：工程工具脚本与辅助程序预留目录。
 - `render/`：渲染模块预留目录（可选启用）。
 
+
+## 协议开发流程（重要）
+1. **先修改 `protocol/schemas/*.json`**，明确协议契约。
+2. 运行 `python3 tools/validate_schemas.py`，确保 schema 基础校验通过。
+3. 再修改 Runtime 与 Editor 的编解码适配层实现。
+
 ## C++ Demo 构建与运行
 ```bash
 cmake -S . -B build

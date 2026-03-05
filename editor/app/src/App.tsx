@@ -11,6 +11,29 @@ type BrickEvent = {
   payload: string;
 };
 
+type ProtocolError = {
+  code: string;
+  message: string;
+  details: unknown;
+};
+
+type Envelope<TPayload> = {
+  protocol_version: string;
+  type: string;
+  request_id: string;
+  payload: TPayload;
+  error?: ProtocolError;
+};
+
+type DoorInteractRequestPayload = {
+  actor_id: string;
+};
+
+type DoorInteractResponsePayload = {
+  event: string;
+  payload: string;
+};
+
 type ValidateOutput = {
   issues: string[];
 };
@@ -52,16 +75,43 @@ class DoorBrick {
   }
 }
 
+class DoorProtocolAdapter {
+  constructor(private readonly door: DoorBrick) {}
+
+  handleInteract(rawRequest: string): string {
+    const request = JSON.parse(rawRequest) as Envelope<DoorInteractRequestPayload>;
+    const event = this.door.interact(request.payload.actor_id);
+    const response: Envelope<DoorInteractResponsePayload> = {
+      protocol_version: "1.0",
+      type: "door.interact.response",
+      request_id: request.request_id,
+      payload: {
+        event: event.event,
+        payload: event.payload,
+      },
+    };
+    return JSON.stringify(response);
+  }
+
+  setState(key: keyof DoorState, value: boolean): BrickEvent {
+    return this.door.setState(key, value);
+  }
+
+  validate(doorName: string): ValidateOutput {
+    return this.door.validate(doorName);
+  }
+}
+
 import { useMemo, useState } from "react";
 
 export default function App(): JSX.Element {
-  const door = useMemo(() => new DoorBrick(), []);
+  const adapter = useMemo(() => new DoorProtocolAdapter(new DoorBrick()), []);
   const [events, setEvents] = useState<string[]>([]);
   const [locked, setLocked] = useState(false);
   const [validateText, setValidateText] = useState("OK");
 
   const renderValidate = (): void => {
-    const report = door.validate("demo_door");
+    const report = adapter.validate("demo_door");
     setValidateText(report.issues.length === 0 ? "OK" : report.issues.join("\n"));
   };
 
@@ -71,14 +121,22 @@ export default function App(): JSX.Element {
   };
 
   const onInteract = (): void => {
-    appendEvent(door.interact("player_1"));
+    const request: Envelope<DoorInteractRequestPayload> = {
+      protocol_version: "1.0",
+      type: "door.interact.request",
+      request_id: `req-${events.length + 1}`,
+      payload: { actor_id: "player_1" },
+    };
+    const responseText = adapter.handleInteract(JSON.stringify(request));
+    const response = JSON.parse(responseText) as Envelope<DoorInteractResponsePayload>;
+    appendEvent(response.payload);
     renderValidate();
   };
 
   const onToggleLock = (): void => {
     const nextLocked = !locked;
     setLocked(nextLocked);
-    appendEvent(door.setState("locked", nextLocked));
+    appendEvent(adapter.setState("locked", nextLocked));
     renderValidate();
   };
 
