@@ -17,6 +17,23 @@ declare module "react" {
   export function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
   export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
   export function useState<T>(initial: T): [T, (value: T | ((prev: T) => T)) => void];
+  export function useRef<T>(initial: T): MutableRefObject<T>;
+
+  export interface MutableRefObject<T> {
+    current: T;
+  }
+
+  export interface SyntheticEvent<T = Element> {
+    currentTarget: T;
+    clientX: number;
+    clientY: number;
+    deltaY: number;
+    preventDefault(): void;
+  }
+
+  export type PointerEvent<T = Element> = SyntheticEvent<T>;
+  export type MouseEvent<T = Element> = SyntheticEvent<T>;
+  export type WheelEvent<T = Element> = SyntheticEvent<T>;
 }
 
 declare module "react-dom/client" {
