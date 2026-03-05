@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "generated_by": "tools/release_local.py",
+  "packages": [
+    {
+      "package": "fate.door.basic",
+      "version": "0.1.1",
+      "source": {
+        "type": "file",
+        "uri": "file://dist/fate.door.basic-0.1.1.tar.gz"
+      },
+      "checksum": "sha256:27429f1b164350b024b6b292b667c3d741dc6c5fddfd633a5ad3df8b62e4a099",
+      "license": "MIT",
+      "compat": {
+        "engine": ">=0.1.0",
+        "contract": "0.1"
+      },
+      "registry": {
+        "provider": "local",
+        "namespace": "fate",
+        "channel": "stable",
+        "endpoint": ""
+      }
+    },
+    {
+      "package": "fate.ladder.basic",
+      "version": "0.1.0",
+      "source": {
+        "type": "file",
+        "uri": "file://dist/fate.ladder.basic-0.1.0.tar.gz"
+      },
+      "checksum": "sha256:3f356b73bc679fdf5b36d0e29f5efaaa02d7ff3ec2f67ad710a8f70ce43dbba2",
+      "license": "MIT",
+      "compat": {
+        "engine": ">=0.1.0",
+        "contract": "0.1"
+      },
+      "registry": {
+        "provider": "local",
+        "namespace": "fate",
+        "channel": "stable",
+        "endpoint": ""
+      }
+    },
+    {
+      "package": "fate.trigger_zone.basic",
+      "version": "0.1.0",
+      "source": {
+        "type": "file",
+        "uri": "file://dist/fate.trigger_zone.basic-0.1.0.tar.gz"
+      },
+      "checksum": "sha256:f88757936f3c3ab936864433b94e9d6bd66ef2c2e6957ff308577dc5b43a6baf",
+      "license": "MIT",
+      "compat": {
+        "engine": ">=0.1.0",
+        "contract": "0.1"
+      },
+      "registry": {
+        "provider": "local",
+        "namespace": "fate",
+        "channel": "stable",
+        "endpoint": ""
+      }
+    }
+  ]
+}

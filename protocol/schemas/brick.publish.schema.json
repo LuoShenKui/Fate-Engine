@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.brick.publish.schema.json",
+  "title": "Fate Brick Publish Metadata",
+  "type": "object",
+  "required": [
+    "package",
+    "version",
+    "hash",
+    "license",
+    "compat",
+    "source",
+    "registry"
+  ],
+  "properties": {
+    "package": { "type": "string", "minLength": 1 },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "license": { "type": "string", "minLength": 1 },
+    "compat": {
+      "type": "object",
+      "required": ["engine"],
+      "properties": {
+        "engine": { "type": "string", "minLength": 1 },
+        "contract": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "required": ["type", "uri"],
+      "properties": {
+        "type": { "type": "string", "enum": ["file", "dir"] },
+        "uri": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "registry": {
+      "type": "object",
+      "required": ["provider", "namespace", "channel"],
+      "properties": {
+        "provider": { "type": "string", "enum": ["local", "go"] },
+        "namespace": { "type": "string" },
+        "channel": { "type": "string" },
+        "endpoint": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "checksum"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "checksum": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -90,3 +90,15 @@ pnpm run build
 - 第二人称位于用户正前方 1 米（`offset_cm = [100, 0, 0]`）。
 - 第三人称位于角色后上方（`offset_cm = [-200, 0, 120]`）。
 - 三种摄像头均启用碰撞约束，防止穿模卡视野，并可在测试期间随时切换。
+
+
+## 本地发布与消费（最小流程）
+```bash
+# 1) 校验 schema + manifest + publish 元数据
+python3 tools/validate_schemas.py
+
+# 2) 产出本地可分发包、sha256 摘要、lockfile
+python3 tools/release_local.py
+```
+
+消费流程说明见：`docs/PackageConsumeFlow.md`。
