@@ -27,6 +27,14 @@ pub mod events {
     ];
 }
 
+pub mod validation_codes {
+    pub const MISSING_COLLISION: &str = "MISSING_COLLISION";
+    pub const MISSING_TRIGGER: &str = "MISSING_TRIGGER";
+    pub const LOCKED_DEFAULT: &str = "LOCKED_DEFAULT";
+
+    pub const REQUIRED_CODES: [&str; 3] = [MISSING_COLLISION, MISSING_TRIGGER, LOCKED_DEFAULT];
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProtocolError {
     pub code: String,
@@ -63,7 +71,6 @@ pub struct DoorState {
     pub has_collision: bool,
     pub has_trigger: bool,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LadderState {
@@ -139,7 +146,6 @@ impl EngineDefaults {
         }
     }
 }
-
 
 impl Default for LadderState {
     fn default() -> Self {
@@ -236,7 +242,6 @@ pub enum ValidationSeverity {
     Info,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LadderBrick {
     pub brick_id: String,
@@ -262,7 +267,10 @@ impl LadderBrick {
         self.state.occupied = !self.state.occupied;
         BrickEvent {
             event: events::ON_USED.to_string(),
-            payload: format!("actor_id={},occupied={}", input.actor_id, self.state.occupied),
+            payload: format!(
+                "actor_id={},occupied={}",
+                input.actor_id, self.state.occupied
+            ),
         }
     }
 
@@ -312,7 +320,10 @@ impl TriggerZoneBrick {
         self.state.occupied = !self.state.occupied;
         BrickEvent {
             event: events::ON_USED.to_string(),
-            payload: format!("actor_id={},occupied={}", input.actor_id, self.state.occupied),
+            payload: format!(
+                "actor_id={},occupied={}",
+                input.actor_id, self.state.occupied
+            ),
         }
     }
 
@@ -450,7 +461,7 @@ impl DoorBrick {
         if !self.state.has_collision {
             issues.push(ValidationIssue {
                 severity: ValidationSeverity::Error,
-                code: "MISSING_COLLISION".to_string(),
+                code: validation_codes::MISSING_COLLISION.to_string(),
                 message: format!("{} 缺少碰撞体", input.door_name),
                 location: ValidationLocation {
                     brick_id: self.brick_id.clone(),
@@ -471,7 +482,7 @@ impl DoorBrick {
         if !self.state.has_trigger {
             issues.push(ValidationIssue {
                 severity: ValidationSeverity::Error,
-                code: "MISSING_TRIGGER".to_string(),
+                code: validation_codes::MISSING_TRIGGER.to_string(),
                 message: format!("{} 缺少触发体", input.door_name),
                 location: ValidationLocation {
                     brick_id: self.brick_id.clone(),
@@ -492,7 +503,7 @@ impl DoorBrick {
         if self.state.locked {
             issues.push(ValidationIssue {
                 severity: ValidationSeverity::Warning,
-                code: "LOCKED_DEFAULT".to_string(),
+                code: validation_codes::LOCKED_DEFAULT.to_string(),
                 message: format!("{} 默认上锁，需确认玩法预期", input.door_name),
                 location: ValidationLocation {
                     brick_id: self.brick_id.clone(),
@@ -884,7 +895,10 @@ mod tests {
         assert_eq!(event.payload, "actor_id=player_2,occupied=true");
 
         let report = brick.validate();
-        assert!(report.issues.iter().any(|issue| issue.code == "MISSING_TOP_ANCHOR"));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.code == "MISSING_TOP_ANCHOR"));
     }
 
     #[test]
@@ -900,7 +914,10 @@ mod tests {
         assert_eq!(event.payload, "actor_id=player_3,occupied=true");
 
         let report = brick.validate();
-        assert!(report.issues.iter().any(|issue| issue.code == "MISSING_BOUNDS"));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.code == "MISSING_BOUNDS"));
     }
 
     #[test]

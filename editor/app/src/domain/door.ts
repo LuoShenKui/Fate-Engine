@@ -29,6 +29,24 @@ export type DoorBrickEvent = {
   payload: string;
 };
 
+export const DOOR_EVENTS = {
+  ON_SPAWN: "OnSpawn",
+  ON_ENABLE: "OnEnable",
+  ON_DISABLE: "OnDisable",
+  ON_DESTROY: "OnDestroy",
+  ON_USED: "OnUsed",
+  ON_DENIED: "OnDenied",
+  ON_STATE_CHANGED: "OnStateChanged",
+  ON_VALIDATE: "OnValidate",
+  ON_TICK_LOW_FREQ: "OnTickLowFreq",
+} as const;
+
+export const DOOR_VALIDATION_CODES = {
+  MISSING_COLLISION: "MISSING_COLLISION",
+  MISSING_TRIGGER: "MISSING_TRIGGER",
+  LOCKED_DEFAULT: "LOCKED_DEFAULT",
+} as const;
+
 export type ValidateOutput = {
   issues: string[];
 };
@@ -163,27 +181,30 @@ export class DoorRuntimeAdapter {
 
   interact(actorId: string): DoorBrickEvent {
     if (!this.state.enabled) {
-      return { event: "OnDenied", payload: "reason=disabled" };
+      return { event: DOOR_EVENTS.ON_DENIED, payload: "reason=disabled" };
     }
     if (this.state.locked) {
-      return { event: "OnDenied", payload: "reason=locked" };
+      return { event: DOOR_EVENTS.ON_DENIED, payload: "reason=locked" };
     }
     this.state.open = !this.state.open;
-    return { event: "OnUsed", payload: `actor_id=${actorId},open=${this.state.open}` };
+    return { event: DOOR_EVENTS.ON_USED, payload: `actor_id=${actorId},open=${this.state.open}` };
   }
 
   setState(key: keyof DoorState, value: boolean): DoorBrickEvent {
     this.state[key] = value;
-    return { event: "OnStateChanged", payload: `key=${key},value=${value}` };
+    return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `key=${key},value=${value}` };
   }
 
   validate(doorName: string): ValidateOutput {
     const issues: string[] = [];
     if (!this.state.has_collision) {
-      issues.push(`Error:${doorName}:MISSING_COLLISION:Door 缺少碰撞体`);
+      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_COLLISION}:Door 缺少碰撞体`);
     }
     if (!this.state.has_trigger) {
-      issues.push(`Error:${doorName}:MISSING_TRIGGER:Door 缺少触发体`);
+      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_TRIGGER}:Door 缺少触发体`);
+    }
+    if (this.state.locked) {
+      issues.push(`Warning:${doorName}:${DOOR_VALIDATION_CODES.LOCKED_DEFAULT}:Door 默认上锁，需确认玩法预期`);
     }
     return { issues };
   }
