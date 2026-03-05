@@ -96,3 +96,18 @@ python3 tools/check_replay_matrix.py --matrix fixtures/replay/matrix_cases.json 
 2. 执行 `python3 tools/check_replay_determinism.py ...`，确认 `summary_hash` 稳定。
 3. 执行 `python3 tools/check_replay_matrix.py ...`，确认 `failed_cases` 为空（或与预期失败用例一致）。
 4. 归档 `--report-out` 产物与命令行输出，作为跨机器复现证据。
+
+## 7) 回滚与追溯（plan_id + lockfile）
+
+第一阶段仅做“计划与元数据贯通”，不涉及真实网格处理算法；发布与复现依赖以下两类信息：
+
+- `packages/*/publish.json.pipeline.plan_id`：标识本次资产流水线计划；
+- `packages/*/publish.json.pipeline.config_hash` 与 `source_hashes`：标识策略配置与输入资源集合；
+- `packages/brick.lock.json`：锁定最终分发包版本、来源与 checksum。
+
+回滚/追溯建议流程：
+1. 通过 lockfile 定位目标包版本与归档（`source.uri` + `checksum`）；
+2. 从对应包 `publish.json` 读取 `pipeline.plan_id`，并匹配 `config_hash/source_hashes/tool_version`；
+3. 使用同一份 DCC 资源清单、同一份策略配置，通过 `tools/build_asset_pipeline_plan.py` 重新生成 plan；
+4. 对比新 plan 的 `plan_id` 与发布记录是否一致，一致则可认定输入与策略可复现；
+5. 若要回滚，优先选择 lockfile 中历史版本 + 对应 `plan_id` 完整匹配的发布条目。

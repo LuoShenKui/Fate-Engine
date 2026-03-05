@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,7 @@ REQUIRED_FILES = [
     "ladder.interact.response.schema.json",
     "trigger_zone.interact.request.schema.json",
     "trigger_zone.interact.response.schema.json",
+    "asset.pipeline.schema.json",
 ]
 REQUIRED_TOP_LEVEL_FIELDS = [
     "id",
@@ -51,6 +53,8 @@ PACKAGE_CASES = [
 ]
 
 REQUIRED_PUBLISH_FIELDS = ["package", "version", "hash", "license", "compat", "source", "registry"]
+SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
 
 
 def load_json(path: Path) -> dict:
@@ -122,6 +126,46 @@ def validate_manifest(manifest: dict) -> list[str]:
     return errors
 
 
+
+
+def validate_pipeline_summary(pipeline: object) -> list[str]:
+    errors: list[str] = []
+
+    if pipeline is None:
+        return errors
+
+    if not isinstance(pipeline, dict):
+        return ["INVALID_PUBLISH_PIPELINE_TYPE: expected object"]
+
+    for key in ("plan_id", "config_hash", "source_hashes", "tool_version"):
+        if key not in pipeline:
+            errors.append(f"MISSING_PUBLISH_PIPELINE_FIELD: {key}")
+
+    for key in ("plan_id", "config_hash"):
+        value = pipeline.get(key)
+        if not isinstance(value, str) or not SHA256_PATTERN.match(value):
+            errors.append(f"INVALID_PUBLISH_PIPELINE_HASH_FORMAT: {key} expected sha256:<hex>")
+
+    source_hashes = pipeline.get("source_hashes")
+    if not isinstance(source_hashes, list) or len(source_hashes) == 0:
+        errors.append("INVALID_PUBLISH_PIPELINE_SOURCE_HASHES_TYPE: expected non-empty array")
+    else:
+        for index, item in enumerate(source_hashes):
+            if not isinstance(item, dict):
+                errors.append(f"INVALID_PUBLISH_PIPELINE_SOURCE_HASH_ITEM_TYPE[{index}]: expected object")
+                continue
+            if not isinstance(item.get("path"), str) or not item["path"]:
+                errors.append(f"INVALID_PUBLISH_PIPELINE_SOURCE_HASH_PATH[{index}]: expected non-empty string")
+            source_hash = item.get("sha256")
+            if not isinstance(source_hash, str) or not SHA256_PATTERN.match(f"sha256:{source_hash}"):
+                errors.append(f"INVALID_PUBLISH_PIPELINE_SOURCE_HASH_VALUE[{index}]: expected 64-lower-hex")
+
+    tool_version = pipeline.get("tool_version")
+    if not isinstance(tool_version, str) or not SEMVER_PATTERN.match(tool_version):
+        errors.append("INVALID_PUBLISH_PIPELINE_TOOL_VERSION: expected x.y or x.y.z")
+
+    return errors
+
 def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
     errors: list[str] = []
 
@@ -139,7 +183,7 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
         errors.append("PUBLISH_LICENSE_MISMATCH_MANIFEST_LICENSE")
 
     hash_value = publish.get("hash")
-    if not isinstance(hash_value, str) or not hash_value.startswith("sha256:"):
+    if not isinstance(hash_value, str) or not SHA256_PATTERN.match(hash_value):
         errors.append("INVALID_PUBLISH_HASH_FORMAT: expected sha256:<hex>")
 
     compat = publish.get("compat")
@@ -164,6 +208,9 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
         for key in ("provider", "namespace", "channel"):
             if not isinstance(registry.get(key), str):
                 errors.append(f"INVALID_PUBLISH_REGISTRY_FIELD_TYPE: {key} expected string")
+
+    pipeline_errors = validate_pipeline_summary(publish.get("pipeline"))
+    errors.extend(pipeline_errors)
 
     return errors
 
