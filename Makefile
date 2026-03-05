@@ -1,6 +1,6 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
 	check-unit check-integration check-replay check-visual check-perf \
-	check-m1 check-m2 check-m3
+	check-m1 check-m2 check-m3 release-local
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts"
@@ -44,8 +44,13 @@ check-integration:
 
 check-replay:
 	@echo "[分层检查] Replay：seed/recipe/lockfile 回放一致性"
-	@python3 tools/release_local.py
+	@python3 tools/check_replay_determinism.py
 	@echo "[分层检查] Replay 通过"
+
+release-local:
+	@echo "[发布] 本地发布（会写入 dist/publish/lockfile）"
+	@python3 tools/release_local.py
+	@echo "[发布] 本地发布完成"
 
 check-visual:
 	@echo "[分层检查] Visual：截图基线比对"
