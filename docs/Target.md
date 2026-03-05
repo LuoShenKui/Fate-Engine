@@ -40,9 +40,10 @@
 ### 回归策略（按周统计）
 
 1. 每周固定抽取主干代表场景（至少含 Door/TriggerZone 交互流）。
-2. 运行 `make check-perf` 生成结构化报告（`artifacts/perf_budget_report.json`）。
-3. 当周 `error` 指标必须归零，`warning` 指标进入周报并分配责任人。
+2. 运行 `make check-perf-scenes` 批量生成结构化报告（`artifacts/perf/*.json`）。
+3. `error` 指标（含必填元数据缺失）阻断合入，必须归零；`warning` 指标不阻断，但要进入周报并分配责任人。
 4. 连续两周 warning 上升的指标，必须给出预算调整或优化方案并在下周复测。
+5. 例外流程：确需临时放行时，必须在 PR 记录原因、影响范围、修复截止时间与责任人，并在后续 PR 回收例外。
 
 ## 最终愿景
 * 开发世界3D引擎；

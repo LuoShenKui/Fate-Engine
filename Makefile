@@ -1,5 +1,5 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
-	check-unit check-integration check-replay check-visual check-perf check-stability \
+	check-unit check-integration check-replay check-visual check-perf check-perf-scenes check-stability \
 	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
 	check-render-matrix release-local
 
@@ -9,7 +9,7 @@ check:
 	@$(MAKE) check-rust
 	@$(MAKE) check-cpp
 	@$(MAKE) check-ts
-	@$(MAKE) check-perf
+	@$(MAKE) check-perf-scenes
 	@echo "[检查] 全量检查完成"
 
 check-schema:
@@ -88,14 +88,24 @@ check-visual:
 	@echo "[分层检查] Visual 检查结束"
 
 check-perf:
-	@echo "[分层检查] Perf：性能预算门禁"
-	@python3 tools/check_perf_budget.py
+	@echo "[分层检查] Perf：单场景性能预算门禁（兼容目标）"
+	@python3 tools/check_perf_budget.py --metrics fixtures/perf/sample_scene_metrics.json
 	@echo "[分层检查] Perf 通过"
+
+check-perf-scenes:
+	@echo "[分层检查] Perf：多场景性能预算门禁"
+	@mkdir -p artifacts/perf
+	@set -e; \
+	for file in fixtures/perf/*.json; do \
+		name=$$(basename "$$file" .json); \
+		python3 tools/check_perf_budget.py --metrics "$$file" --report-json "artifacts/perf/$${name}_report.json"; \
+	done
+	@echo "[分层检查] Perf 多场景检查通过"
 
 check-m1:
 	@echo "[里程碑 M1] 聚合检查：visual + perf..."
 	@$(MAKE) check-visual
-	@$(MAKE) check-perf
+	@$(MAKE) check-perf-scenes
 	@./build/fate_demo | tee /tmp/fate_m1.log
 	@grep -q "OnUsed" /tmp/fate_m1.log
 	@grep -q "OnDenied" /tmp/fate_m1.log

@@ -34,6 +34,11 @@ def calc_status(value: float, warning: float, error: float, lower_is_better: boo
 
 
 def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dict[str, Any]:
+    required_metadata_fields = ("scene", "build", "source", "captured_at")
+    missing_metadata_fields = [
+        field for field in required_metadata_fields if not metrics_payload.get(field)
+    ]
+
     budget_metrics = budget.get("metrics", {})
     input_metrics = metrics_payload.get("metrics", {})
 
@@ -76,7 +81,7 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
         )
 
     summary_status = "ok"
-    if status_count["error"] > 0 or status_count["missing"] > 0:
+    if status_count["error"] > 0 or status_count["missing"] > 0 or missing_metadata_fields:
         summary_status = "error"
     elif status_count["warning"] > 0:
         summary_status = "warning"
@@ -84,8 +89,11 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
     return {
         "scene": metrics_payload.get("scene", "<unknown-scene>"),
         "build": metrics_payload.get("build", "<unknown-build>"),
+        "source": metrics_payload.get("source", "<unknown-source>"),
+        "captured_at": metrics_payload.get("captured_at", "<unknown-captured-at>"),
         "budget_profile": budget.get("target_profile", "default"),
         "status": summary_status,
+        "metadata_missing": missing_metadata_fields,
         "status_count": status_count,
         "items": items,
     }
@@ -94,8 +102,14 @@ def build_report(budget: dict[str, Any], metrics_payload: dict[str, Any]) -> dic
 def print_human_summary(report: dict[str, Any]) -> None:
     print(
         f"[PerfBudget] scene={report['scene']} build={report['build']} "
+        f"source={report['source']} captured_at={report['captured_at']} "
         f"profile={report['budget_profile']} status={report['status']}"
     )
+    if report["metadata_missing"]:
+        print(
+            "[PerfBudget][ERROR] metadata missing in input payload: "
+            + ", ".join(report["metadata_missing"])
+        )
     for item in report["items"]:
         metric = item["metric"]
         status = item["status"].upper()
