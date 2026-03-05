@@ -52,6 +52,8 @@ jobs:
           cd editor/app
           pnpm run typecheck
           pnpm run build
+          cd ../..
+          make check-perf
 
       - name: Run checks on Windows
         if: runner.os == 'Windows'
@@ -64,6 +66,7 @@ jobs:
           cmake --build build --config Release
           pnpm --dir editor/app run typecheck
           pnpm --dir editor/app run build
+          python tools/check_perf_budget.py
 
   visual-regression:
     name: visual-regression
@@ -108,3 +111,30 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/replay_determinism_check.py --output-dir /tmp/replay-determinism
+
+  lockfile-check:
+    name: lockfile-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check lockfiles exist
+        run: |
+          test -f runtime/door_core/Cargo.lock
+          test -f editor/app/pnpm-lock.yaml
+      - name: Verify Cargo.lock is up to date
+        run: |
+          cargo generate-lockfile --manifest-path runtime/door_core/Cargo.toml
+          git diff --exit-code runtime/door_core/Cargo.lock
+      - name: Verify pnpm-lock.yaml is up to date
+        run: |
+          pnpm install --dir editor/app --lockfile-only
+          git diff --exit-code editor/app/pnpm-lock.yaml

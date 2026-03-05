@@ -15,10 +15,34 @@
 
 | Job | ubuntu-latest | windows-latest | macos-latest | 覆盖等级 |
 | --- | --- | --- | --- | --- |
-| `check` | schema + rust + cmake build + ts build | schema + rust + cmake build + ts build | schema + rust + cmake build + ts build | smoke |
+| `check` | schema + rust + cmake build + ts build + perf budget | schema + rust + cmake build + ts build + perf budget | schema + rust + cmake build + ts build + perf budget | smoke |
 | `replay-determinism` | 固定 seed/recipe/lockfile 的摘要 hash 一致性 | - | - | full |
 
 > PR 必过项：`replay-determinism`（请在仓库 Branch protection / Rulesets 中将该 check 标记为 required）。
+
+## 目标机型 + 预算基线 + 回归策略（按周统计）
+
+### 目标机型（当前 Perf Budget profile）
+
+- profile：`mid_tier_pc_1080p`
+- 参考机型：6C/12T 桌面 CPU + 主流独显（1080p，默认画质）
+
+### 预算基线（warning/error）
+
+- `frame_time_cpu_ms`：12.0 / 16.0
+- `frame_time_gpu_ms`：13.0 / 18.0
+- `draw_calls`：2500 / 3200
+- `material_count`：180 / 240
+- `shadow_distance`：100 / 130
+
+> 基线配置存放在 `protocol/perf/perf_budget.json`，并通过 `tools/check_perf_budget.py` 统一校验。
+
+### 回归策略（按周统计）
+
+1. 每周固定抽取主干代表场景（至少含 Door/TriggerZone 交互流）。
+2. 运行 `make check-perf` 生成结构化报告（`artifacts/perf_budget_report.json`）。
+3. 当周 `error` 指标必须归零，`warning` 指标进入周报并分配责任人。
+4. 连续两周 warning 上升的指标，必须给出预算调整或优化方案并在下周复测。
 
 ## 最终愿景
 * 开发世界3D引擎；
