@@ -121,3 +121,45 @@ Season: Fixed Spring
 一套能对外讲清楚的“为什么更快”的证据
 
 以后每新增积木都能用这套 demo 做回归测试（防止生态崩）
+
+7) Demo 最小验收
+
+A. 命令执行成功证据（schema/rust/cpp/ts）
+
+- 验收项：Schema 校验脚本通过。
+  - 命令：`python3 tools/validate_schemas.py`
+  - 预期输出关键词：`Schema validation passed` / `manifest` / `ok`
+- 验收项：Rust 运行时测试通过（门交互 + 校验分级）。
+  - 命令：`cargo test --manifest-path runtime/door_core/Cargo.toml`
+  - 预期输出关键词：`test result: ok`、`OnUsed`、`OnDenied`
+- 验收项：C++ Demo 可编译并可运行。
+  - 命令：`cmake -S . -B build && cmake --build build && ./build/fate_demo`
+  - 预期输出关键词：`Door used`、`Door denied`、`Validation`
+- 验收项：TS 编辑器可完成类型检查与构建。
+  - 命令：`cd editor/app && pnpm run typecheck && pnpm run build`
+  - 预期输出关键词：`Found 0 errors`、`build completed`、`dist/main.js`
+
+B. 编辑器交互结果证据（门开关、校验输出）
+
+- 验收项：门交互状态正确，开关动作能触发事件。
+  - 操作：Play 模式下连续点击门（或触发 Interact），观察状态切换。
+  - 预期输出关键词：`Open` / `Closed`、`OnUsed`、`OnDenied`（上锁场景）
+- 验收项：校验面板能输出分级结果并定位对象。
+  - 操作：执行 Validate，分别制造缺 slot、超预算、禁用冲突等案例。
+  - 预期输出关键词：`Info`、`Warning`、`Error`（并包含对应 brick/参数定位）
+
+C. 导出配方/lockfile 的可复现证据
+
+- 验收项：同 recipe + seed + lockfile 在不同机器结果一致。
+  - 操作：导出配方与 lockfile，记录 seed（如 `123`）；在另一环境导入后重建场景。
+  - 预期输出关键词：`recipe`、`lockfile`、`seed=123`、`reproducible` / `一致`
+- 验收项：变更 seed 后布局变化但流程可复现。
+  - 操作：将 seed 改为 `456`，导出新的结果并与 `123` 对照。
+  - 预期输出关键词：`seed=456`、`layout changed`、`deterministic`
+
+8) 失败排查（优先级顺序）
+
+- 页面空白时，先确认是否已完成前端构建：`cd editor/app && pnpm run build`。
+- 再确认是否已启动静态服务：`cd editor/app && pnpm run preview`，并访问 `http://localhost:5173`。
+- 再确认 `dist` 路径与产物是否存在：`editor/app/dist/index.html`、`editor/app/dist/main.js`。
+- 若仍异常，回到“命令执行成功证据”逐项重跑，先排除 schema/runtime 构建失败导致的数据或协议不一致。
