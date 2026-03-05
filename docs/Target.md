@@ -10,6 +10,16 @@
 | M2 | 碰撞/触发闭环 | 2026-04-15 | Rust 验收测试覆盖“触发区内交互、上锁拒绝、开关门碰撞切换”；命令通过即视为闭环通过。 | `make check-m2` |
 | M3 | 可复现场景回放与自动化冒烟 | 2026-04-30 | 产出 lockfile 与本地包元数据，并完成 schema/rust/ts 自动化冒烟检查，保证 recipe/seed/lockfile 可复现链路可机检。 | `make check-m3` |
 
+
+## CI 跨平台覆盖矩阵（当前）
+
+| Job | ubuntu-latest | windows-latest | macos-latest | 覆盖等级 |
+| --- | --- | --- | --- | --- |
+| `check` | schema + rust + cmake build + ts build | schema + rust + cmake build + ts build | schema + rust + cmake build + ts build | smoke |
+| `replay-determinism` | 固定 seed/recipe/lockfile 的摘要 hash 一致性 | - | - | full |
+
+> PR 必过项：`replay-determinism`（请在仓库 Branch protection / Rulesets 中将该 check 标记为 required）。
+
 ## 最终愿景
 * 开发世界3D引擎；
 * **内容装配引擎**：把重复劳动（门/梯子/水域/容器/机关…）做成可安装、可组合、可升级的“互动积木库”。
