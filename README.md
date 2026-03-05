@@ -57,13 +57,26 @@ cargo test --manifest-path runtime/door_core/Cargo.toml
 cargo test --manifest-path runtime/door_core/Cargo.toml
 ```
 
-## TS 最小 UI 类型检查
+## TS UI 本地预览（固定步骤）
 ```bash
+# 1) 安装依赖
 cd editor/app
 pnpm install
+
+# 2) 基础语法与类型检查
 pnpm run typecheck
+
+# 3) 构建产物（index.html 对应 ./dist/main.js）
 pnpm run build
+
+# 4) 启动本地预览服务（轻量静态服务）
+pnpm run preview
+
+# 可选：一条命令完成构建 + 启动
+pnpm run dev
 ```
+
+浏览器访问：`http://localhost:5173`
 
 ## 当前是否可以开始做编辑器测试？
 可以开始做第一轮编辑器联调测试，当前仓库已具备：
@@ -75,7 +88,7 @@ pnpm run build
 1. `python3 tools/validate_schemas.py`
 2. `cargo test --manifest-path runtime/door_core/Cargo.toml`
 3. `cmake -S . -B build && cmake --build build && ./build/fate_demo`
-4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build`
+4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build && pnpm run preview`（浏览器访问 `http://localhost:5173`）
 
 ## 如何开始做“门积木”契约（最简）
 1. 在 `protocol/schemas` 先定义 request/response schema。
