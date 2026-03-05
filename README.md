@@ -51,3 +51,29 @@ pnpm install
 pnpm run typecheck
 pnpm run build
 ```
+
+## 当前是否可以开始做编辑器测试？
+可以开始做第一轮编辑器联调测试，当前仓库已具备：
+- Door 积木最小契约 + Manifest + Demo + 测试样例。
+- Runtime（Rust）与 Editor（TS）的最小链路。
+- schema-first 协议流程与基础校验脚本。
+
+建议按以下顺序执行冒烟测试：
+1. `python3 tools/validate_schemas.py`
+2. `cargo test --manifest-path runtime/door_core/Cargo.toml`
+3. `cmake -S . -B build && cmake --build build && ./build/fate_demo`
+4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build`
+
+## 如何开始做“门积木”契约（最简）
+1. 在 `protocol/schemas` 先定义 request/response schema。
+2. 在 `packages/door/manifest.json` 定义 `id/version/deps/params/defaults/license/compat`。
+3. 在 Runtime 实现最小状态机（enabled/locked/open）和事件（`OnUsed/OnDenied/OnStateChanged`）。
+4. 在 tests 中覆盖交互、校验分级、协议适配（Envelope）场景。
+
+## 引擎默认全局配置（新增约定）
+- 默认重力方向：`[0, 0, -1]`，并支持全局禁用。
+- 默认三种摄像头：第一人称、第二人称、第三人称。
+- 默认激活第一人称。
+- 第二人称位于用户正前方 1 米（`offset_cm = [100, 0, 0]`）。
+- 第三人称位于角色后上方（`offset_cm = [-200, 0, 120]`）。
+- 三种摄像头均启用碰撞约束，防止穿模卡视野，并可在测试期间随时切换。

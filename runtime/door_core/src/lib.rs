@@ -64,6 +64,67 @@ pub struct DoorState {
     pub has_trigger: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum CameraMode {
+    FirstPerson,
+    SecondPerson,
+    ThirdPerson,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CameraPreset {
+    pub mode: CameraMode,
+    pub offset_cm: [i32; 3],
+    pub collision_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct EngineDefaults {
+    pub gravity_enabled: bool,
+    pub gravity_direction: [i32; 3],
+    pub active_camera: CameraMode,
+}
+
+impl Default for EngineDefaults {
+    fn default() -> Self {
+        Self {
+            gravity_enabled: true,
+            gravity_direction: [0, 0, -1],
+            active_camera: CameraMode::FirstPerson,
+        }
+    }
+}
+
+impl EngineDefaults {
+    pub fn disable_gravity_globally(&mut self) {
+        self.gravity_enabled = false;
+    }
+
+    pub fn switch_camera(&mut self, mode: CameraMode) {
+        self.active_camera = mode;
+    }
+
+    pub fn active_camera_preset(&self) -> CameraPreset {
+        match self.active_camera {
+            CameraMode::FirstPerson => CameraPreset {
+                mode: CameraMode::FirstPerson,
+                offset_cm: [0, 0, 0],
+                collision_enabled: true,
+            },
+            CameraMode::SecondPerson => CameraPreset {
+                mode: CameraMode::SecondPerson,
+                offset_cm: [100, 0, 0],
+                collision_enabled: true,
+            },
+            CameraMode::ThirdPerson => CameraPreset {
+                mode: CameraMode::ThirdPerson,
+                offset_cm: [-200, 0, 120],
+                collision_enabled: true,
+            },
+        }
+    }
+}
+
 impl Default for DoorState {
     fn default() -> Self {
         Self {
@@ -399,7 +460,8 @@ pub fn handle_interact_envelope_json(
         return serde_json::to_string(&response);
     }
 
-    let payload: DoorInteractRequestPayload = match serde_json::from_value(request.payload.clone()) {
+    let payload: DoorInteractRequestPayload = match serde_json::from_value(request.payload.clone())
+    {
         Ok(payload) => payload,
         Err(_) => {
             let response = error_envelope(
@@ -670,5 +732,28 @@ mod tests {
         assert_eq!(response.r#type, "door.interact.response");
         assert_eq!(response.request_id, "req-err-payload");
         assert_eq!(response.error.unwrap().code, "INVALID_REQUEST_PAYLOAD");
+    }
+
+    #[test]
+    fn engine_defaults_cover_gravity_and_three_cameras() {
+        let mut defaults = EngineDefaults::default();
+        assert!(defaults.gravity_enabled);
+        assert_eq!(defaults.gravity_direction, [0, 0, -1]);
+        assert_eq!(defaults.active_camera, CameraMode::FirstPerson);
+
+        defaults.disable_gravity_globally();
+        assert!(!defaults.gravity_enabled);
+
+        defaults.switch_camera(CameraMode::SecondPerson);
+        let second = defaults.active_camera_preset();
+        assert_eq!(second.mode, CameraMode::SecondPerson);
+        assert_eq!(second.offset_cm, [100, 0, 0]);
+        assert!(second.collision_enabled);
+
+        defaults.switch_camera(CameraMode::ThirdPerson);
+        let third = defaults.active_camera_preset();
+        assert_eq!(third.mode, CameraMode::ThirdPerson);
+        assert_eq!(third.offset_cm, [-200, 0, 120]);
+        assert!(third.collision_enabled);
     }
 }
