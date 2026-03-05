@@ -1,0 +1,22 @@
+{
+  "save_id": "matrix-v1_0_0",
+  "state_version": "1.0.0",
+  "runtime_state": {
+    "fate.door.basic": {
+      "locked": true,
+      "open": false,
+      "has_collision": true,
+      "has_trigger": false
+    },
+    "fate.ladder.basic": {
+      "enabled": true,
+      "occupied": false,
+      "has_top_anchor": true
+    },
+    "fate.trigger_zone.basic": {
+      "enabled": false,
+      "occupied": false,
+      "has_bounds": true
+    }
+  }
+}

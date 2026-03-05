@@ -1,0 +1,27 @@
+{
+  "replay": {
+    "seed": 123,
+    "recipe": "fixtures/replay/fixed_recipe.json",
+    "lockfile": "packages/brick.lock.json"
+  },
+  "cases": [
+    {
+      "id": "vN-1",
+      "save": "fixtures/replay/saves/save_v0_9_0.json",
+      "expected_snapshot": "fixtures/replay/expected/migrated_v0_9_0.json",
+      "expected_failures": 0
+    },
+    {
+      "id": "vN",
+      "save": "fixtures/replay/saves/save_v1_0_0.json",
+      "expected_snapshot": "fixtures/replay/expected/migrated_v1_0_0.json",
+      "expected_failures": 0
+    },
+    {
+      "id": "vN+1",
+      "save": "fixtures/replay/saves/save_v1_1_0.json",
+      "expected_snapshot": "fixtures/replay/expected/migrated_v1_1_0.json",
+      "expected_failures": 3
+    }
+  ]
+}
