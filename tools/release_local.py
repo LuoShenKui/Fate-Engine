@@ -33,7 +33,58 @@ def load_json(path: Path) -> dict:
         return json.load(f)
 
 
-def build_package(package_dir: Path, dry_run: bool = False) -> dict:
+def normalize_sha256(value: str) -> str | None:
+    if not isinstance(value, str):
+        return None
+    if value.startswith("sha256:"):
+        hex_part = value.split(":", 1)[1]
+    else:
+        hex_part = value
+    if len(hex_part) != 64 or any(ch not in "0123456789abcdef" for ch in hex_part):
+        return None
+    return f"sha256:{hex_part}"
+
+
+def build_pipeline_summary(plan: dict | None) -> dict | None:
+    if not isinstance(plan, dict):
+        return None
+
+    required = ("plan_id", "config_hash", "source_hashes", "tool_version")
+    if not all(key in plan for key in required):
+        return None
+
+    plan_id = normalize_sha256(plan.get("plan_id"))
+    config_hash = normalize_sha256(plan.get("config_hash"))
+    tool_version = plan.get("tool_version")
+    if plan_id is None or config_hash is None or not isinstance(tool_version, str):
+        return None
+
+    source_hashes = plan.get("source_hashes")
+    if not isinstance(source_hashes, list):
+        return None
+
+    normalized_sources: list[dict] = []
+    for item in source_hashes:
+        if not isinstance(item, dict):
+            return None
+        path_value = item.get("path")
+        sha_value = item.get("sha256")
+        if not isinstance(path_value, str) or not isinstance(sha_value, str):
+            return None
+        normalized_sha = normalize_sha256(sha_value)
+        if normalized_sha is None:
+            return None
+        normalized_sources.append({"path": path_value, "sha256": normalized_sha.split(":", 1)[1]})
+
+    return {
+        "plan_id": plan_id,
+        "config_hash": config_hash,
+        "source_hashes": normalized_sources,
+        "tool_version": tool_version,
+    }
+
+
+def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: dict | None = None) -> dict:
     publish = load_json(package_dir / "publish.json")
     package_name = publish["package"]
     version = publish["version"]
@@ -58,6 +109,8 @@ def build_package(package_dir: Path, dry_run: bool = False) -> dict:
         "path": str(archive_path.relative_to(ROOT)),
         "checksum": f"sha256:{checksum}",
     }
+    if pipeline_summary is not None:
+        publish["pipeline"] = pipeline_summary
     if not dry_run:
         (package_dir / "publish.json").write_text(json.dumps(publish, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -86,6 +139,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("packages", nargs="*", help="要发布的包目录名，例如 door")
     parser.add_argument("--dry-run", action="store_true", help="仅做校验与流程检查，不写文件")
+    parser.add_argument("--pipeline-plan", type=Path, help="可选：附带写入 publish.json.pipeline 的 plan 文件")
     args = parser.parse_args()
 
     run_validation()
@@ -94,10 +148,17 @@ def main() -> int:
         item.name for item in PACKAGES_DIR.iterdir() if item.is_dir() and (item / "publish.json").exists()
     )
 
+    pipeline_summary = None
+    if args.pipeline_plan is not None:
+        pipeline_summary = build_pipeline_summary(load_json(args.pipeline_plan.resolve()))
+        if pipeline_summary is None:
+            print("[ERROR] --pipeline-plan 内容缺少必要字段: plan_id/config_hash/source_hashes/tool_version")
+            return 1
+
     entries: list[dict] = []
     for name in package_names:
         package_dir = PACKAGES_DIR / name
-        entries.append(build_package(package_dir, dry_run=args.dry_run))
+        entries.append(build_package(package_dir, dry_run=args.dry_run, pipeline_summary=pipeline_summary))
         action = "已校验(干跑)" if args.dry_run else "已发布"
         print(f"[OK] {action}: {name}")
 

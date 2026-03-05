@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fate-engine.local/schemas/asset.pipeline.schema.json",
+  "title": "Asset Pipeline Config",
+  "type": "object",
+  "required": [
+    "import_sources",
+    "collision_policy",
+    "lod_hlod_policy",
+    "compression_policy",
+    "processing_version",
+    "tool_version"
+  ],
+  "properties": {
+    "import_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "type"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "enum": ["fbx", "gltf", "obj", "usd", "other"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "collision_policy": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["auto", "manual", "none"] },
+        "preset": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "lod_hlod_policy": {
+      "type": "object",
+      "required": ["lod_mode", "hlod_mode"],
+      "properties": {
+        "lod_mode": { "type": "string", "enum": ["off", "fixed", "adaptive"] },
+        "hlod_mode": { "type": "string", "enum": ["off", "cluster", "streaming"] },
+        "max_lod": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "compression_policy": {
+      "type": "object",
+      "required": ["mesh", "texture"],
+      "properties": {
+        "mesh": { "type": "string", "enum": ["none", "draco", "meshopt"] },
+        "texture": { "type": "string", "enum": ["none", "astc", "bc7", "etc2"] },
+        "level": { "type": "string", "enum": ["fast", "balanced", "max"] }
+      },
+      "additionalProperties": false
+    },
+    "processing_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    },
+    "tool_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    }
+  },
+  "additionalProperties": false
+}
