@@ -52,6 +52,16 @@ cmake --build build
 make check
 ```
 
+如果你本地打开后是空白、不清楚先执行什么，可直接使用一键启动脚本：
+
+```bash
+# 全链路：schema + rust + cpp + editor preview
+bash tools/start_test.sh all
+
+# 仅编辑器链路（自动 install/typecheck/build/preview）
+bash tools/start_test.sh editor
+```
+
 <details>
 <summary>展开查看各子检查与原始命令</summary>
 
