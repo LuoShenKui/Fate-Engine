@@ -1,0 +1,23 @@
+{
+  "id": "fate.container.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:container.mesh.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_migration": {
+    "entry": "packages/container/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}

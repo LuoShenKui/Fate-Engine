@@ -1,0 +1,47 @@
+{
+  "id": "fate.checkpoint.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.checkpoint",
+      "level": 1,
+      "exposed_params": ["enabled", "activated"]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "activated": {
+      "key": "activated",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "vfx.mark",
+      "slot_type": "vfx",
+      "fallback": "builtin:checkpoint.vfx.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/checkpoint/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}

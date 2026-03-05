@@ -1,0 +1,47 @@
+{
+  "id": "fate.switch.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.switch",
+      "level": 1,
+      "exposed_params": ["enabled", "active"]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "active": {
+      "key": "active",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:switch.mesh.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/switch/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}

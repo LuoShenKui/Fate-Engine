@@ -50,6 +50,26 @@ PACKAGE_CASES = [
         "manifest": ROOT / "packages" / "trigger_zone" / "manifest.json",
         "invalid": ROOT / "packages" / "trigger_zone" / "tests" / "manifest.invalid.missing_state_version.json",
     },
+    {
+        "name": "switch",
+        "manifest": ROOT / "packages" / "switch" / "manifest.json",
+        "invalid": ROOT / "packages" / "switch" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
+    {
+        "name": "container",
+        "manifest": ROOT / "packages" / "container" / "manifest.json",
+        "invalid": ROOT / "packages" / "container" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
+    {
+        "name": "checkpoint",
+        "manifest": ROOT / "packages" / "checkpoint" / "manifest.json",
+        "invalid": ROOT / "packages" / "checkpoint" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
+    {
+        "name": "teleport",
+        "manifest": ROOT / "packages" / "teleport" / "manifest.json",
+        "invalid": ROOT / "packages" / "teleport" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
 ]
 
 REQUIRED_PUBLISH_FIELDS = ["package", "version", "hash", "license", "compat", "source", "registry"]

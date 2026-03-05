@@ -1,0 +1,24 @@
+{
+  "package": "fate.teleport.basic",
+  "version": "0.1.0",
+  "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1"
+  },
+  "source": {
+    "type": "file",
+    "uri": "file://dist/fate.teleport.basic-0.1.0.tar.gz"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.teleport.basic-0.1.0.tar.gz",
+    "checksum": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  }
+}
