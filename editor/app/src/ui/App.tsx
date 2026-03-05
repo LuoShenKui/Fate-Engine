@@ -280,6 +280,7 @@ export default function App(): JSX.Element {
           onLoad={onLoad}
           onApplyTemplate={onApplyTemplate}
           lockStatusText={lockStatusText}
+          appTitle={t("app.title")}
         />
       }
       left={<BrickPalettePanel items={paletteItems} onSelect={(id) => setSelectedBrick(id)} />}

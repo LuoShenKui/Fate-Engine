@@ -10,6 +10,7 @@ type DebugToolbarProps = {
   onLoad: () => void;
   onApplyTemplate: () => void;
   lockStatusText: string;
+  appTitle: string;
 };
 
 export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
@@ -18,7 +19,7 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
 
   return (
     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-      <strong>{t("toolbar.title")}</strong>
+      <strong data-testid="editor-page-ready">{props.appTitle}</strong>
       <button type="button" onClick={props.onInteract}>
         {t("toolbar.interact")}
       </button>
