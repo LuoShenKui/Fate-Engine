@@ -63,61 +63,61 @@ def validate_manifest(manifest: dict) -> list[str]:
 
     for field in REQUIRED_TOP_LEVEL_FIELDS:
         if field not in manifest:
-            errors.append(f"缺少顶层字段: {field}")
+            errors.append(f"MISSING_TOP_LEVEL_FIELD: {field}")
 
     if manifest.get("contract_version") != "0.1":
-        errors.append('contract_version 必须为 "0.1"')
+        errors.append('INVALID_CONTRACT_VERSION: expected 0.1')
 
     dependencies = manifest.get("dependencies")
     if not isinstance(dependencies, list):
-        errors.append("dependencies 必须为数组")
+        errors.append("INVALID_DEPENDENCIES_TYPE: expected array")
     else:
         for index, dep in enumerate(dependencies):
             if not isinstance(dep, dict):
-                errors.append(f"dependencies[{index}] 必须为对象")
+                errors.append(f"INVALID_DEPENDENCY_ITEM_TYPE[{index}]: expected object")
                 continue
             for key in ("id", "version", "optional"):
                 if key not in dep:
-                    errors.append(f"dependencies[{index}] 缺少字段: {key}")
+                    errors.append(f"MISSING_DEPENDENCY_FIELD[{index}]: {key}")
 
     params = manifest.get("params")
     if not isinstance(params, dict):
-        errors.append("params 必须为对象")
+        errors.append("INVALID_PARAMS_TYPE: expected object")
     else:
         for param_name, param in params.items():
             if not isinstance(param, dict):
-                errors.append(f"params.{param_name} 必须为对象")
+                errors.append(f"INVALID_PARAM_ITEM_TYPE[{param_name}]: expected object")
                 continue
             for key in ("key", "type", "default", "mutability", "visibility", "impact"):
                 if key not in param:
-                    errors.append(f"params.{param_name} 缺少字段: {key}")
+                    errors.append(f"MISSING_PARAM_FIELD[{param_name}]: {key}")
             if "impact" in param and not isinstance(param["impact"], list):
-                errors.append(f"params.{param_name}.impact 必须为数组")
+                errors.append(f"INVALID_PARAM_IMPACT_TYPE[{param_name}]: expected array")
             if "range" in param and not isinstance(param["range"], dict):
-                errors.append(f"params.{param_name}.range 必须为对象")
+                errors.append(f"INVALID_PARAM_RANGE_TYPE[{param_name}]: expected object")
 
     slots = manifest.get("slots")
     if not isinstance(slots, list) or len(slots) == 0:
-        errors.append("slots 必须为非空数组")
+        errors.append("INVALID_SLOTS_TYPE: expected non-empty array")
     else:
         for index, slot in enumerate(slots):
             if not isinstance(slot, dict):
-                errors.append(f"slots[{index}] 必须为对象")
+                errors.append(f"INVALID_SLOT_ITEM_TYPE[{index}]: expected object")
                 continue
             for key in ("slot_id", "slot_type", "fallback", "optional", "requires"):
                 if key not in slot:
-                    errors.append(f"slots[{index}] 缺少字段: {key}")
+                    errors.append(f"MISSING_SLOT_FIELD[{index}]: {key}")
 
     if not isinstance(manifest.get("state_version"), str):
-        errors.append("state_version 必须为字符串")
+        errors.append("INVALID_STATE_VERSION_TYPE: expected string")
 
     state_migration = manifest.get("state_migration")
     if not isinstance(state_migration, dict):
-        errors.append("state_migration 必须为对象")
+        errors.append("INVALID_STATE_MIGRATION_TYPE: expected object")
     else:
         for key in ("entry", "from_previous"):
             if key not in state_migration:
-                errors.append(f"state_migration 缺少字段: {key}")
+                errors.append(f"MISSING_STATE_MIGRATION_FIELD: {key}")
 
     return errors
 
@@ -127,43 +127,43 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
 
     for field in REQUIRED_PUBLISH_FIELDS:
         if field not in publish:
-            errors.append(f"publish 缺少字段: {field}")
+            errors.append(f"MISSING_PUBLISH_FIELD: {field}")
 
     if publish.get("package") != manifest.get("id"):
-        errors.append("publish.package 必须与 manifest.id 一致")
+        errors.append("PUBLISH_PACKAGE_MISMATCH_MANIFEST_ID")
 
     if publish.get("version") != manifest.get("version"):
-        errors.append("publish.version 必须与 manifest.version 一致")
+        errors.append("PUBLISH_VERSION_MISMATCH_MANIFEST_VERSION")
 
     if publish.get("license") != manifest.get("license"):
-        errors.append("publish.license 必须与 manifest.license 一致")
+        errors.append("PUBLISH_LICENSE_MISMATCH_MANIFEST_LICENSE")
 
     hash_value = publish.get("hash")
     if not isinstance(hash_value, str) or not hash_value.startswith("sha256:"):
-        errors.append("publish.hash 必须为 sha256:<hex> 格式")
+        errors.append("INVALID_PUBLISH_HASH_FORMAT: expected sha256:<hex>")
 
     compat = publish.get("compat")
     if not isinstance(compat, dict) or not isinstance(compat.get("engine"), str):
-        errors.append("publish.compat.engine 必须为字符串")
+        errors.append("INVALID_PUBLISH_COMPAT_ENGINE_TYPE: expected string")
 
     source = publish.get("source")
     if not isinstance(source, dict):
-        errors.append("publish.source 必须为对象")
+        errors.append("INVALID_PUBLISH_SOURCE_TYPE: expected object")
     else:
         source_type = source.get("type")
         source_uri = source.get("uri")
         if source_type not in ("file", "dir"):
-            errors.append("publish.source.type 仅支持 file/dir")
+            errors.append("INVALID_PUBLISH_SOURCE_TYPE_VALUE: expected file|dir")
         if not isinstance(source_uri, str) or not source_uri.startswith("file://"):
-            errors.append("publish.source.uri 必须为 file:// 开头")
+            errors.append("INVALID_PUBLISH_SOURCE_URI: expected file:// prefix")
 
     registry = publish.get("registry")
     if not isinstance(registry, dict):
-        errors.append("publish.registry 必须为对象")
+        errors.append("INVALID_PUBLISH_REGISTRY_TYPE: expected object")
     else:
         for key in ("provider", "namespace", "channel"):
             if not isinstance(registry.get(key), str):
-                errors.append(f"publish.registry.{key} 必须为字符串")
+                errors.append(f"INVALID_PUBLISH_REGISTRY_FIELD_TYPE: {key} expected string")
 
     return errors
 
@@ -172,39 +172,39 @@ def main() -> int:
     for file_name in REQUIRED_FILES:
         file_path = SCHEMA_DIR / file_name
         if not file_path.exists():
-            print(f"[ERROR] 缺少 schema 文件: {file_path}")
+            print(f"[ERROR][SCHEMA_FILE_MISSING] path={file_path}")
             return 1
         try:
             schema = load_json(file_path)
         except json.JSONDecodeError as exc:
-            print(f"[ERROR] 非法 JSON: {file_path} ({exc})")
+            print(f"[ERROR][INVALID_JSON] path={file_path} detail={exc}")
             return 1
 
         if schema.get("$schema") != "http://json-schema.org/draft-07/schema#":
-            print(f"[ERROR] $schema 版本不符合预期: {file_path}")
+            print(f"[ERROR][INVALID_SCHEMA_VERSION] path={file_path}")
             return 1
 
     envelope = load_json(SCHEMA_DIR / "envelope.schema.json")
     expected_required = ["protocol_version", "type", "request_id", "payload"]
     if envelope.get("required") != expected_required:
-        print("[ERROR] envelope.required 字段不符合约定")
+        print("[ERROR][INVALID_ENVELOPE_REQUIRED_FIELDS]")
         return 1
 
     error_required = envelope.get("properties", {}).get("error", {}).get("required")
     if error_required != ["code", "message", "details"]:
-        print("[ERROR] envelope.error.required 字段不符合约定")
+        print("[ERROR][INVALID_ENVELOPE_ERROR_REQUIRED_FIELDS]")
         return 1
 
     for package_case in PACKAGE_CASES:
         try:
             manifest = load_json(package_case["manifest"])
         except json.JSONDecodeError as exc:
-            print(f"[ERROR] 非法 JSON: {package_case['manifest']} ({exc})")
+            print(f"[ERROR][INVALID_JSON] path={package_case['manifest']} detail={exc}")
             return 1
 
         manifest_errors = validate_manifest(manifest)
         if manifest_errors:
-            print(f"[ERROR] {package_case['name']} manifest 校验失败: {package_case['manifest']}")
+            print(f"[ERROR][MANIFEST_VALIDATION_FAILED] package={package_case['name']} path={package_case['manifest']}")
             for item in manifest_errors:
                 print(f"  - {item}")
             return 1
@@ -213,32 +213,32 @@ def main() -> int:
         try:
             publish_metadata = load_json(publish_path)
         except json.JSONDecodeError as exc:
-            print(f"[ERROR] 非法 JSON: {publish_path} ({exc})")
+            print(f"[ERROR][INVALID_JSON] path={publish_path} detail={exc}")
             return 1
         except FileNotFoundError:
-            print(f"[ERROR] 缺少发布元数据: {publish_path}")
+            print(f"[ERROR][PUBLISH_METADATA_MISSING] path={publish_path}")
             return 1
 
         publish_errors = validate_publish_metadata(publish_metadata, manifest)
         if publish_errors:
-            print(f"[ERROR] {package_case['name']} publish 元数据校验失败: {publish_path}")
+            print(f"[ERROR][PUBLISH_METADATA_VALIDATION_FAILED] package={package_case['name']} path={publish_path}")
             for item in publish_errors:
                 print(f"  - {item}")
             return 1
 
         invalid_case = load_json(package_case["invalid"])
         if not any("state_version" in msg for msg in validate_manifest(invalid_case)):
-            print(f"[ERROR] {package_case['name']} manifest 负例未触发 state_version 校验")
+            print(f"[ERROR][INVALID_CASE_NOT_TRIGGERED] package={package_case['name']} field=state_version")
             return 1
 
     invalid_dep_case = load_json(
         ROOT / "packages" / "door" / "tests" / "manifest.invalid.dependency_missing_version.json"
     )
-    if not any("dependencies[0] 缺少字段: version" in msg for msg in validate_manifest(invalid_dep_case)):
-        print("[ERROR] manifest 负例未触发 dependencies.version 校验")
+    if not any("MISSING_DEPENDENCY_FIELD[0]: version" in msg for msg in validate_manifest(invalid_dep_case)):
+        print("[ERROR][INVALID_CASE_NOT_TRIGGERED] package=door field=dependencies.version")
         return 1
 
-    print("[OK] protocol schemas + package manifests 校验通过")
+    print("[OK] protocol schemas + package manifests validation passed")
     return 0
 
 
