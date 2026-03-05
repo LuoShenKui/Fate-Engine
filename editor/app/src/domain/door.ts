@@ -29,6 +29,19 @@ export type DoorBrickEvent = {
   payload: string;
 };
 
+export type AdapterMode = "demo" | "runtime";
+
+export type RuntimeEventLog = {
+  requestId: string;
+  mode: AdapterMode;
+  event: string;
+  payload: string;
+};
+
+export function formatRuntimeEventLog(log: RuntimeEventLog): string {
+  return `[door_event] mode=${log.mode} request_id=${log.requestId} event=${log.event} payload=${log.payload}`;
+}
+
 export const DOOR_EVENTS = {
   ON_SPAWN: "OnSpawn",
   ON_ENABLE: "OnEnable",

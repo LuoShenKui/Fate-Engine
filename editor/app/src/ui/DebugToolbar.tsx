@@ -2,6 +2,8 @@ import { useI18n, type Locale } from "./i18n/I18nProvider";
 
 type DebugToolbarProps = {
   locked: boolean;
+  adapterMode: "demo" | "runtime";
+  onToggleAdapterMode: () => void;
   onInteract: () => void;
   onToggleLock: () => void;
   onImport: () => void;
@@ -40,6 +42,9 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
       </button>
       <button type="button" onClick={props.onApplyTemplate}>
         {t("toolbar.applyTemplate")}
+      </button>
+      <button type="button" onClick={props.onToggleAdapterMode}>
+        {t("toolbar.adapterMode", { mode: props.adapterMode })}
       </button>
       <span>{props.lockStatusText}</span>
       <button type="button" onClick={() => switchLocale(nextLocale)}>

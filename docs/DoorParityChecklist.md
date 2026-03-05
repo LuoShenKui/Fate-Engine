@@ -75,3 +75,28 @@
   }
 }
 ```
+
+## 5) 门逻辑验收脚本（Demo 彩排 / 回归）
+
+### 准备
+
+1. 打开编辑器，确认工具栏出现 `适配器模式` 按钮。
+2. 初始模式切到 `demo`，并确认默认节点为 `door-1`。
+
+### 操作步骤与预期
+
+1. **点击 `交互`**
+   - 预期：业务校验区出现 `OnUsed` 事件信息，日志包含统一格式：`[door_event] mode=demo request_id=req-* event=OnUsed`。
+2. **点击 `切换锁定` 后再点击 `交互`**
+   - 预期：业务校验区出现 `OnDenied` 事件，`payload` 含 `reason=locked`。
+   - 预期：业务校验项可看到定位信息：`[brick=door node=door-1 slot=mesh]`。
+3. **切换适配器模式到 `runtime` 后再次点击 `交互`**
+   - 预期：业务事件日志中的 `mode` 变为 `runtime`，`request_id` 递增且可追踪。
+4. **构造协议错误（如传非法 JSON 或缺失 actor_id）**
+   - 预期：协议校验区显示错误，包含 `request_id` 与定位信息：`[brick=door node=door-1 slot=mesh]`。
+
+### 通过标准
+
+- `OnUsed` / `OnDenied` / `OnStateChanged` 均输出统一日志格式。
+- 协议错误与业务校验结果在面板中分区显示。
+- 关键日志均可按 `request_id` 串联排查。

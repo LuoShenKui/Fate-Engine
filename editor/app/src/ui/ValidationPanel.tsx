@@ -9,23 +9,34 @@ export type ValidationItem = {
 
 type ValidationPanelProps = {
   items: ValidationItem[];
+  protocolItems?: ValidationItem[];
+  businessItems?: ValidationItem[];
   batchEntries?: Array<{ recipeId: string; items: ValidationItem[] }>;
   batchStatsDiff?: { totalErrors: number; totalWarnings: number };
 };
 
 export default function ValidationPanel(props: ValidationPanelProps): JSX.Element {
   const { t } = useI18n();
+  const protocolItems = props.protocolItems ?? [];
+  const businessItems = props.businessItems ?? props.items;
+
+  const renderList = (items: ValidationItem[]): JSX.Element => (
+    <ul style={{ margin: 0, paddingLeft: "18px" }}>
+      {items.map((item, index) => (
+        <li key={`${item.level}-${index}`}>
+          <strong>[{item.level === "Error" ? t("validation.level.Error") : item.level === "Warning" ? t("validation.level.Warning") : t("validation.level.Info")}]</strong> {item.message}
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <div>
       <h2>{t("panel.validation.title")}</h2>
-      <ul style={{ margin: 0, paddingLeft: "18px" }}>
-        {props.items.map((item, index) => (
-          <li key={`${item.level}-${index}`}>
-            <strong>[{item.level === "Error" ? t("validation.level.Error") : item.level === "Warning" ? t("validation.level.Warning") : t("validation.level.Info")}]</strong> {item.message}
-          </li>
-        ))}
-      </ul>
+      <h3 style={{ marginBottom: "6px" }}>{t("panel.validation.business")}</h3>
+      {renderList(businessItems)}
+      <h3 style={{ marginTop: "8px", marginBottom: "6px" }}>{t("panel.validation.protocol")}</h3>
+      {renderList(protocolItems.length > 0 ? protocolItems : [{ level: "Info", message: t("validation.ok") }])}
       {props.batchStatsDiff !== undefined && (
         <p style={{ marginTop: "8px", marginBottom: "4px" }}>
           {t("validation.compareDiff", {

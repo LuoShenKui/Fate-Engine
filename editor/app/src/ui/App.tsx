@@ -3,7 +3,7 @@
  * 后续可在此接入积木列表/属性面板，并与协议事件连线联动。
  */
 import { useEffect, useMemo, useState } from "react";
-import { DoorRuntimeAdapter, type DoorBrickEvent, DoorBrickDefinition } from "../domain/door";
+import { DoorRuntimeAdapter, type AdapterMode, type DoorBrickEvent, DoorBrickDefinition, formatRuntimeEventLog } from "../domain/door";
 import { DoorProtocolAdapter, type Envelope } from "../protocol/envelope";
 import { getBrickDefinition, listBrickDefinitions } from "../domain/registry";
 import {
@@ -50,10 +50,11 @@ const defaultNodes: CanvasNode[] = [{ id: "door-1", type: "door" }];
 const defaultEdges: CanvasEdge[] = [];
 
 export default function App(): JSX.Element {
+  const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
   const { t } = useI18n();
   const [events, setEvents] = useState<string[]>([]);
-  const [protocolErrors, setProtocolErrors] = useState<string[]>([]);
+  const [protocolErrors, setProtocolErrors] = useState<ValidationItem[]>([]);
   const [requestSeq, setRequestSeq] = useState(1);
   const [locked, setLocked] = useState(false);
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: t("validation.waiting") }]);
@@ -84,7 +85,7 @@ export default function App(): JSX.Element {
 
   const renderValidate = (): void => {
     const report = adapter.validate("demo_door");
-    const issues = report.issues.map<ValidationItem>((issue) => ({ level: "Error", message: issue }));
+    const issues = report.issues.map<ValidationItem>((issue) => ({ level: "Error", message: `${issue} [brick=door node=door-1 slot=mesh]` }));
     setValidationItems(issues.length > 0 ? issues : [{ level: "Info", message: t("validation.ok") }]);
   };
 
@@ -104,8 +105,8 @@ export default function App(): JSX.Element {
     );
   };
 
-  const appendEvent = (e: DoorBrickEvent): void => {
-    const line = `${e.event} {${e.payload}}`;
+  const appendEvent = (requestId: string, e: DoorBrickEvent): void => {
+    const line = formatRuntimeEventLog({ requestId, mode: adapterMode, event: e.event, payload: e.payload });
     setEvents((prev) => [...prev, line]);
   };
 
@@ -170,10 +171,11 @@ export default function App(): JSX.Element {
   };
 
   const onInteract = (): void => {
+    const requestId = `req-${requestSeq}`;
     const request: Envelope<DoorInteractRequestPayload> = {
       protocol_version: "1.0",
       type: "door.interact.request",
-      request_id: `req-${requestSeq}`,
+      request_id: requestId,
       payload: { actor_id: "player_1" },
     };
     setRequestSeq((prev) => prev + 1);
@@ -183,10 +185,13 @@ export default function App(): JSX.Element {
       const protocolError = response.error;
       setProtocolErrors((prev) => [
         ...prev,
-        `${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)})`,
+        {
+          level: "Error",
+          message: `[request_id=${requestId}] ${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)}) [brick=door node=door-1 slot=mesh]`,
+        },
       ]);
     } else {
-      appendEvent(response.payload);
+      appendEvent(requestId, response.payload);
     }
     renderValidate();
     renderBatchValidate(getRecipe());
@@ -194,11 +199,21 @@ export default function App(): JSX.Element {
 
   const onToggleLock = (): void => {
     const nextLocked = !locked;
+    const requestId = `req-${requestSeq}`;
+    setRequestSeq((prev) => prev + 1);
     setLocked(nextLocked);
-    appendEvent(adapter.setState("locked", nextLocked));
+    appendEvent(requestId, adapter.setState("locked", nextLocked));
     setFields((prev) => prev.map((field) => (field.key === "locked" ? { ...field, value: nextLocked } : field)));
     renderValidate();
     renderBatchValidate({ ...getRecipe(), params: { ...getRecipe().params, locked: nextLocked }, lockfile: { packages: [{ id: "fate-door-ui", version: "0.1.0", hash: nextLocked ? "sha256-placeholder" : "" }] } });
+  };
+
+  const onToggleAdapterMode = (): void => {
+    setAdapterMode((prev) => {
+      const nextMode: AdapterMode = prev === "demo" ? "runtime" : "demo";
+      setEvents((eventsPrev) => [...eventsPrev, `[adapter_mode] switched_to=${nextMode}`]);
+      return nextMode;
+    });
   };
 
   const onPropertyChange = (key: string, value: PropertyValue): void => {
@@ -259,13 +274,11 @@ export default function App(): JSX.Element {
   const selectedBrickDefinition = getBrickDefinition(selectedBrick);
   const lockStatusText = isRecipeLockfileLocked(getRecipe()) ? t("lockfile.locked") : t("lockfile.unlocked");
 
-  const validationWithEvents: ValidationItem[] = [
+  const businessValidationItems: ValidationItem[] = [
     ...validationItems,
-    ...protocolErrors
-      .slice(-3)
-      .map((errorText) => ({ level: "Error" as const, message: t("validation.protocolErrorPrefix", { errorText }) })),
     ...events.slice(-3).map((eventText) => ({ level: "Info" as const, message: t("validation.eventPrefix", { eventText }) })),
   ];
+  const protocolValidationItems: ValidationItem[] = protocolErrors.slice(-3);
 
   return (
     <EditorLayout
@@ -279,6 +292,8 @@ export default function App(): JSX.Element {
           onSave={onSave}
           onLoad={onLoad}
           onApplyTemplate={onApplyTemplate}
+          adapterMode={adapterMode}
+          onToggleAdapterMode={onToggleAdapterMode}
           lockStatusText={lockStatusText}
           appTitle={t("app.title")}
         />
@@ -304,7 +319,7 @@ export default function App(): JSX.Element {
           onSlotBindingChange={onSlotBindingChange}
         />
       }
-      bottom={<ValidationPanel items={validationWithEvents} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
+      bottom={<ValidationPanel items={businessValidationItems} businessItems={businessValidationItems} protocolItems={protocolValidationItems} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
     />
   );
 }
