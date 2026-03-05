@@ -8,25 +8,51 @@
     },
     {
       "type": "object",
+      "required": ["payload"],
       "properties": {
         "type": {
           "const": "door.interact.response"
         },
         "payload": {
-          "type": "object",
-          "required": ["event", "payload"],
-          "properties": {
-            "event": {
-              "type": "string",
-              "minLength": 1
-            },
-            "payload": {
-              "type": "string"
+          "type": "object"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["error"],
+            "properties": {
+              "error": {
+                "type": "object"
+              }
             }
           },
-          "additionalProperties": false
+          "then": {
+            "properties": {
+              "payload": {
+                "maxProperties": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "payload": {
+                "required": ["event", "payload"],
+                "properties": {
+                  "event": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "payload": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
         }
-      }
+      ]
     }
   ]
 }
