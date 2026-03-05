@@ -2,6 +2,7 @@ const enUSMessages = {
   "app.title": "Fate Engine Editor",
   "toolbar.title": "Toolbar",
   "toolbar.interact": "Interact",
+  "toolbar.playMode": "Play Mode (enabled={enabled})",
   "toolbar.toggleLock": "Toggle Lock (locked={locked})",
   "toolbar.import": "Import",
   "toolbar.export": "Export",

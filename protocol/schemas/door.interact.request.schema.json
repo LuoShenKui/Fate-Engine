@@ -14,9 +14,16 @@
         },
         "payload": {
           "type": "object",
-          "required": ["actor_id"],
+          "required": [
+            "actor_id",
+            "entity_id"
+          ],
           "properties": {
             "actor_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "entity_id": {
               "type": "string",
               "minLength": 1
             }

@@ -2,6 +2,7 @@ const zhCNMessages = {
   "app.title": "Fate 引擎编辑器",
   "toolbar.title": "工具栏",
   "toolbar.interact": "交互",
+  "toolbar.playMode": "Play 模式(enabled={enabled})",
   "toolbar.toggleLock": "切换锁定(locked={locked})",
   "toolbar.import": "导入",
   "toolbar.export": "导出",
