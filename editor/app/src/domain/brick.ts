@@ -21,5 +21,13 @@ export type BrickDefinition = {
   name: string;
   summary: string;
   properties: BrickPropertySchema[];
+  slots: BrickSlotSchema[];
   ports: BrickPort[];
+};
+
+export type BrickSlotSchema = {
+  slotId: string;
+  label: string;
+  optional: boolean;
+  fallbackAssetRef?: string;
 };

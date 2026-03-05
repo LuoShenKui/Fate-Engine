@@ -3,6 +3,7 @@ export type EditorRecipeV0 = {
   nodes: unknown[];
   edges: unknown[];
   params: Record<string, unknown>;
+  slot_bindings: Record<string, string>;
   seed: number;
   lockfile: {
     packages: Array<{
@@ -58,6 +59,7 @@ export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
     nodes: Array.isArray(obj.nodes) ? obj.nodes : [],
     edges: Array.isArray(obj.edges) ? obj.edges : [],
     params: ensureObject(obj.params),
+    slot_bindings: ensureStringMap(obj.slot_bindings),
     seed: typeof obj.seed === "number" ? obj.seed : Date.now(),
     lockfile: {
       packages: lockfilePackages,

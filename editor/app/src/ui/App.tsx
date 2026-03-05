@@ -59,6 +59,7 @@ export default function App(): JSX.Element {
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: t("validation.waiting") }]);
   const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.id ?? "none");
   const [fields, setFields] = useState<PropertyField[]>(initialFields);
+  const [slotBindings, setSlotBindings] = useState<Record<string, string>>({ mesh: "asset://mesh/default-door" });
   const [nodes, setNodes] = useState<CanvasNode[]>(defaultNodes);
   const [edges, setEdges] = useState<CanvasEdge[]>(defaultEdges);
   const [seed, setSeed] = useState<number>(Date.now());
@@ -117,6 +118,7 @@ export default function App(): JSX.Element {
       fields,
       locked,
     },
+    slot_bindings: slotBindings,
     seed,
     lockfile: {
       packages: [
@@ -145,6 +147,8 @@ export default function App(): JSX.Element {
     if (typeof recipe.params.locked === "boolean") {
       setLocked(recipe.params.locked);
     }
+
+    setSlotBindings(recipe.slot_bindings);
 
     if (Array.isArray(recipe.params.fields)) {
       const validFields = recipe.params.fields.filter(
@@ -199,6 +203,10 @@ export default function App(): JSX.Element {
 
   const onPropertyChange = (key: string, value: PropertyValue): void => {
     setFields((prev) => prev.map((field) => (field.key === key ? { ...field, value } : field)));
+  };
+
+  const onSlotBindingChange = (slotId: string, assetRef: string): void => {
+    setSlotBindings((prev) => ({ ...prev, [slotId]: assetRef }));
   };
 
   const onExport = (): void => {
@@ -285,7 +293,16 @@ export default function App(): JSX.Element {
           }}
         />
       }
-      right={<PropertyInspectorPanel nodeName={selectedBrickDefinition?.name ?? selectedBrick} fields={fields} onChange={onPropertyChange} />}
+      right={
+        <PropertyInspectorPanel
+          nodeName={selectedBrickDefinition?.name ?? selectedBrick}
+          fields={fields}
+          slots={selectedBrickDefinition?.slots ?? []}
+          slotBindings={slotBindings}
+          onChange={onPropertyChange}
+          onSlotBindingChange={onSlotBindingChange}
+        />
+      }
       bottom={<ValidationPanel items={validationWithEvents} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
     />
   );
