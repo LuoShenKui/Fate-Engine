@@ -7,6 +7,7 @@ const enUSMessages = {
   "toolbar.export": "Export",
   "toolbar.save": "Save",
   "toolbar.load": "Load",
+  "toolbar.applyTemplate": "Apply Template",
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
@@ -24,6 +25,12 @@ const enUSMessages = {
   "validation.level.Error": "Error",
   "validation.level.Warning": "Warning",
   "validation.level.Info": "Info",
+  "validation.compareDiff": "Compared to last run: errors {errorDelta}, warnings {warningDelta}",
+
+  "lockfile.locked": "lockfile: locked",
+  "lockfile.unlocked": "lockfile: unlocked",
+
+  "template.applied": "Template applied",
 
   "import.prompt": "Paste recipe JSON",
   "import.failed": "Import failed: JSON parsing error",
