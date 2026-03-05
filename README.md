@@ -20,6 +20,19 @@
 1. **先修改 `protocol/schemas/*.json`**，明确协议契约。
 2. 运行 `python3 tools/validate_schemas.py`，确保 schema 基础校验通过。
 3. 再修改 Runtime 与 Editor 的编解码适配层实现。
+4. 提交前检查新增错误文案是否为英文。
+
+## 语言策略（Language Policy）
+- 支持中文与英文文档/讨论。
+- 默认开发流程、协议字段、日志与错误信息使用英文。
+- 对外接口（schema/event/error code）优先使用英文稳定标识。
+
+具体约束：
+1. 新增 error message 默认使用英文；中文说明可放在文档或注释层。
+2. 新增 schema 字段名、event 名、error code 必须使用英文且保持向后兼容。
+3. 新增运行时日志默认英文，面向中文读者的解释写入 README/docs，不直接替换协议或错误文本。
+
+说明：仓库中已有 C++/TS demo 的中文错误字符串等历史示例，可逐步迁移，不要求一次性全改。
 
 ## C++ Demo 构建与运行
 ```bash
