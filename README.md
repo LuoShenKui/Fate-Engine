@@ -75,7 +75,7 @@ make check-perf
 - `check-unit`：Schema 校验与 Rust 单元测试均返回 0。
 - `check-integration`：TS 类型检查与构建返回 0。
 - `check-replay`：只读执行 replay 一致性校验（recipe/seed/lockfile），不写发布产物。
-- `check-visual`：按 `docs/ScreenshotOperation.md` 完成截图流程与基线比对。
+- `check-visual`：优先执行自动截图基线比对；若环境未安装 `playwright` 则会跳过自动比对，并按 `docs/ScreenshotOperation.md` 执行手工流程。
 - `check-perf`：C++ 构建成功，作为当前阶段性能预算基础门禁。
 
 里程碑命令与分层门禁映射：
