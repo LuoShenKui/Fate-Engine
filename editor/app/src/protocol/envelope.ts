@@ -57,7 +57,7 @@ export class DoorProtocolAdapter {
       parsedRequest = JSON.parse(rawRequest);
     } catch {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_JSON", "请求不是合法 JSON", {
+        this.buildErrorEnvelope("", "INVALID_JSON", "INVALID_JSON_PAYLOAD", {
           raw: rawRequest,
         }),
       );
@@ -65,7 +65,7 @@ export class DoorProtocolAdapter {
 
     if (typeof parsedRequest !== "object" || parsedRequest === null) {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_REQUEST", "请求必须是对象", {
+        this.buildErrorEnvelope("", "INVALID_REQUEST", "REQUEST_MUST_BE_OBJECT", {
           field: "root",
         }),
       );
@@ -76,7 +76,7 @@ export class DoorProtocolAdapter {
 
     if (request.type !== "door.interact.request") {
       return JSON.stringify(
-        this.buildErrorEnvelope(requestId, "INVALID_TYPE", "type 不合法", {
+        this.buildErrorEnvelope(requestId, "INVALID_TYPE", "INVALID_REQUEST_TYPE", {
           expected: "door.interact.request",
           actual: request.type,
         }),
@@ -85,7 +85,7 @@ export class DoorProtocolAdapter {
 
     if (typeof request.request_id !== "string" || request.request_id.trim() === "") {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_REQUEST_ID", "request_id 必须是非空字符串", {
+        this.buildErrorEnvelope("", "INVALID_REQUEST_ID", "REQUEST_ID_MUST_BE_NON_EMPTY_STRING", {
           field: "request_id",
         }),
       );
@@ -98,7 +98,7 @@ export class DoorProtocolAdapter {
       request.payload.actor_id.trim() === ""
     ) {
       return JSON.stringify(
-        this.buildErrorEnvelope(request.request_id, "INVALID_ACTOR_ID", "payload.actor_id 必须是非空字符串", {
+        this.buildErrorEnvelope(request.request_id, "INVALID_ACTOR_ID", "ACTOR_ID_MUST_BE_NON_EMPTY_STRING", {
           field: "payload.actor_id",
         }),
       );

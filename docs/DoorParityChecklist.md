@@ -31,6 +31,12 @@
 - `MISSING_TRIGGER`（Error）
 - `LOCKED_DEFAULT`（Warning）
 
+### 错误文本一致性范围（新增）
+
+- **必须一致**：错误级别（`Error/Warning`）、实体名（如 `door-1`）、错误码（如 `MISSING_COLLISION`）。
+- **建议稳定英文**：协议层 `error.message` 与校验文本尾部说明，优先使用英文稳定标识，避免中英混用。
+- **不做强一致要求**：README/docs 中面向人的中文解释，可按文档语境调整。
+
 ## 4) 期望 payload 格式
 
 ### `door.interact.request`

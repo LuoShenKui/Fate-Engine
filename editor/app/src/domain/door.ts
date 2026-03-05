@@ -211,13 +211,13 @@ export class DoorRuntimeAdapter {
   validate(doorName: string): ValidateOutput {
     const issues: string[] = [];
     if (!this.state.has_collision) {
-      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_COLLISION}:Door 缺少碰撞体`);
+      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_COLLISION}:DOOR_MISSING_COLLISION`);
     }
     if (!this.state.has_trigger) {
-      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_TRIGGER}:Door 缺少触发体`);
+      issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_TRIGGER}:DOOR_MISSING_TRIGGER`);
     }
     if (this.state.locked) {
-      issues.push(`Warning:${doorName}:${DOOR_VALIDATION_CODES.LOCKED_DEFAULT}:Door 默认上锁，需确认玩法预期`);
+      issues.push(`Warning:${doorName}:${DOOR_VALIDATION_CODES.LOCKED_DEFAULT}:DOOR_LOCKED_BY_DEFAULT`);
     }
     return { issues };
   }
