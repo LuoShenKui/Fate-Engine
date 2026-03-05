@@ -2,7 +2,7 @@
  * UI 模块：页面渲染与交互绑定。
  * 后续可在此接入积木列表/属性面板，并与协议事件连线联动。
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DoorRuntimeAdapter, type DoorBrickEvent, DoorBrickDefinition } from "../domain/door";
 import { DoorProtocolAdapter, type Envelope } from "../protocol/envelope";
 import { getBrickDefinition, listBrickDefinitions } from "../domain/registry";
@@ -18,6 +18,7 @@ import BrickPalettePanel, { type BrickPaletteItem } from "./BrickPalettePanel";
 import DebugToolbar from "./DebugToolbar";
 import EditorLayout from "./EditorLayout";
 import GraphCanvasPanel from "./GraphCanvasPanel";
+import { useI18n } from "./i18n/I18nProvider";
 import PropertyInspectorPanel, { type PropertyField, type PropertyValue } from "./PropertyInspectorPanel";
 import ValidationPanel, { type ValidationItem } from "./ValidationPanel";
 
@@ -47,21 +48,37 @@ const defaultEdges: unknown[] = [];
 
 export default function App(): JSX.Element {
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
+  const { t } = useI18n();
   const [events, setEvents] = useState<string[]>([]);
   const [protocolErrors, setProtocolErrors] = useState<string[]>([]);
   const [requestSeq, setRequestSeq] = useState(1);
   const [locked, setLocked] = useState(false);
-  const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: "等待校验" }]);
+  const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: t("validation.waiting") }]);
   const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.id ?? "none");
   const [fields, setFields] = useState<PropertyField[]>(initialFields);
   const [nodes, setNodes] = useState<unknown[]>(defaultNodes);
   const [edges, setEdges] = useState<unknown[]>(defaultEdges);
   const [seed, setSeed] = useState<number>(Date.now());
 
+  useEffect(() => {
+    document.title = t("app.title");
+  }, [t]);
+
+  useEffect(() => {
+    setValidationItems((prev) => {
+      if (prev.length === 1 && prev[0]?.level === "Info") {
+        if (prev[0].message === "等待校验" || prev[0].message === "Waiting for validation") {
+          return [{ level: "Info", message: t("validation.waiting") }];
+        }
+      }
+      return prev;
+    });
+  }, [t]);
+
   const renderValidate = (): void => {
     const report = adapter.validate("demo_door");
     const issues = report.issues.map<ValidationItem>((issue) => ({ level: "Error", message: issue }));
-    setValidationItems(issues.length > 0 ? issues : [{ level: "Info", message: "OK" }]);
+    setValidationItems(issues.length > 0 ? issues : [{ level: "Info", message: t("validation.ok") }]);
   };
 
   const appendEvent = (e: DoorBrickEvent): void => {
@@ -153,43 +170,46 @@ export default function App(): JSX.Element {
     const recipe = getRecipe();
     const json = exportRecipe(recipe);
     downloadRecipe(json);
+    window.alert(t("export.started"));
   };
 
   const onImport = (): void => {
-    const json = window.prompt("请粘贴配方 JSON");
+    const json = window.prompt(t("import.prompt"));
     if (json === null) {
       return;
     }
     const recipe = importRecipe(json);
     if (recipe === null) {
-      window.alert("导入失败：JSON 无法解析");
+      window.alert(t("import.failed"));
       return;
     }
     applyRecipe(recipe);
-    window.alert("导入成功");
+    window.alert(t("import.success"));
   };
 
   const onSave = (): void => {
     const ok = saveToLocalStorage(getRecipe());
-    window.alert(ok ? "已保存到本地" : "保存失败");
+    window.alert(ok ? t("save.success") : t("save.failed"));
   };
 
   const onLoad = (): void => {
     const recipe = loadFromLocalStorage();
     if (recipe === null) {
-      window.alert("未找到可加载的本地数据");
+      window.alert(t("load.notFound"));
       return;
     }
     applyRecipe(recipe);
-    window.alert("加载成功");
+    window.alert(t("load.success"));
   };
 
   const selectedBrickDefinition = getBrickDefinition(selectedBrick);
 
   const validationWithEvents: ValidationItem[] = [
     ...validationItems,
-    ...protocolErrors.slice(-3).map((errorText) => ({ level: "Error" as const, message: `协议错误: ${errorText}` })),
-    ...events.slice(-3).map((eventText) => ({ level: "Info" as const, message: `事件: ${eventText}` })),
+    ...protocolErrors
+      .slice(-3)
+      .map((errorText) => ({ level: "Error" as const, message: t("validation.protocolErrorPrefix", { errorText }) })),
+    ...events.slice(-3).map((eventText) => ({ level: "Info" as const, message: t("validation.eventPrefix", { eventText }) })),
   ];
 
   return (

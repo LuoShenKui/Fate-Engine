@@ -1,7 +1,11 @@
+import { useI18n } from "./i18n/I18nProvider";
+
 export default function GraphCanvasPanel(): JSX.Element {
+  const { t } = useI18n();
+
   return (
     <div>
-      <h2>GraphCanvasPanel</h2>
+      <h2>{t("panel.graphCanvas.title")}</h2>
       <div
         style={{
           height: "100%",
@@ -13,7 +17,7 @@ export default function GraphCanvasPanel(): JSX.Element {
           color: "#57606a",
         }}
       >
-        节点/连线画布预留区域
+        {t("panel.graphCanvas.placeholder")}
       </div>
     </div>
   );
