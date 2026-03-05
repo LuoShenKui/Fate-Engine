@@ -1,7 +1,7 @@
 {
   "id": "fate.door.basic",
-  "version": "0.1.0",
-  "contract_version": "0.2",
+  "version": "0.1.1",
+  "contract_version": "0.3",
   "engine_compat": ">=0.1.0",
   "license": "MIT",
   "dependencies": [],
@@ -91,5 +91,46 @@
   "state_migration": {
     "entry": "packages/door/manifest/README.md#migration",
     "from_previous": "0.0.x -> 1.0.0: 新增 state_version 并使用默认值补齐 runtime_state 字段。"
+  },
+  "events": {
+    "required": [
+      {
+        "name": "OnSpawn",
+        "payload_schema": "status=<noop|ready>"
+      },
+      {
+        "name": "OnEnable",
+        "payload_schema": "status=<noop|ready>"
+      },
+      {
+        "name": "OnDisable",
+        "payload_schema": "status=<noop|disabled>"
+      },
+      {
+        "name": "OnDestroy",
+        "payload_schema": "status=<noop|destroyed>"
+      },
+      {
+        "name": "OnUsed",
+        "payload_schema": "actor_id=<string>,open=<bool>"
+      },
+      {
+        "name": "OnDenied",
+        "payload_schema": "reason=<disabled|locked|unknown_state:*>"
+      },
+      {
+        "name": "OnStateChanged",
+        "payload_schema": "key=<string>,value=<bool>"
+      },
+      {
+        "name": "OnValidate",
+        "payload_schema": "json(ValidateOutput)"
+      },
+      {
+        "name": "OnTickLowFreq",
+        "payload_schema": "tick=<u64>,check=<skipped|state_snapshot>,..."
+      }
+    ],
+    "notes": "事件声明与 runtime/door_core/src/lib.rs::events 保持一致。OnValidate payload 为 ValidateOutput JSON 字符串。"
   }
 }
