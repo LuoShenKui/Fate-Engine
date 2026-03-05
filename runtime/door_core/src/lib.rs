@@ -76,7 +76,43 @@ pub struct ValidateInput {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ValidateOutput {
-    pub issues: Vec<String>,
+    pub issues: Vec<ValidationIssue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ValidationIssue {
+    pub severity: ValidationSeverity,
+    pub code: String,
+    pub message: String,
+    pub location: ValidationLocation,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub suggested_fix: Option<Vec<SuggestedFix>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ValidationLocation {
+    pub brick_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entity_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub param_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slot_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SuggestedFix {
+    pub r#type: String,
+    pub payload: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ValidationSeverity {
+    Error,
+    Warning,
+    Info,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -138,22 +174,67 @@ impl DoorBrick {
     pub fn validate(&self, input: ValidateInput) -> ValidateOutput {
         let mut issues = Vec::new();
         if !self.state.has_collision {
-            issues.push(format!(
-                "Error:{}:MISSING_COLLISION:Door 缺少碰撞体",
-                input.door_name
-            ));
+            issues.push(ValidationIssue {
+                severity: ValidationSeverity::Error,
+                code: "MISSING_COLLISION".to_string(),
+                message: format!("{} 缺少碰撞体", input.door_name),
+                location: ValidationLocation {
+                    brick_id: self.brick_id.clone(),
+                    entity_id: None,
+                    param_key: None,
+                    slot_id: Some("collision".to_string()),
+                    node_id: None,
+                },
+                suggested_fix: Some(vec![SuggestedFix {
+                    r#type: "set_slot".to_string(),
+                    payload: serde_json::json!({
+                        "slot_id": "collision",
+                        "asset_ref": "default_collision"
+                    }),
+                }]),
+            });
         }
         if !self.state.has_trigger {
-            issues.push(format!(
-                "Error:{}:MISSING_TRIGGER:Door 缺少触发体",
-                input.door_name
-            ));
+            issues.push(ValidationIssue {
+                severity: ValidationSeverity::Error,
+                code: "MISSING_TRIGGER".to_string(),
+                message: format!("{} 缺少触发体", input.door_name),
+                location: ValidationLocation {
+                    brick_id: self.brick_id.clone(),
+                    entity_id: None,
+                    param_key: None,
+                    slot_id: Some("trigger".to_string()),
+                    node_id: None,
+                },
+                suggested_fix: Some(vec![SuggestedFix {
+                    r#type: "set_slot".to_string(),
+                    payload: serde_json::json!({
+                        "slot_id": "trigger",
+                        "asset_ref": "default_trigger"
+                    }),
+                }]),
+            });
         }
         if self.state.locked {
-            issues.push(format!(
-                "Warning:{}:LOCKED_DEFAULT:Door 默认上锁，需确认玩法预期",
-                input.door_name
-            ));
+            issues.push(ValidationIssue {
+                severity: ValidationSeverity::Warning,
+                code: "LOCKED_DEFAULT".to_string(),
+                message: format!("{} 默认上锁，需确认玩法预期", input.door_name),
+                location: ValidationLocation {
+                    brick_id: self.brick_id.clone(),
+                    entity_id: None,
+                    param_key: Some("locked".to_string()),
+                    slot_id: None,
+                    node_id: None,
+                },
+                suggested_fix: Some(vec![SuggestedFix {
+                    r#type: "set_param".to_string(),
+                    payload: serde_json::json!({
+                        "key": "locked",
+                        "value": false
+                    }),
+                }]),
+            });
         }
 
         ValidateOutput { issues }
@@ -233,11 +314,11 @@ mod tests {
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.starts_with("Error:demo_door:MISSING_COLLISION")));
+            .any(|issue| issue.code == "MISSING_COLLISION" && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.starts_with("Warning:demo_door:LOCKED_DEFAULT")));
+            .any(|issue| issue.code == "LOCKED_DEFAULT" && issue.severity == ValidationSeverity::Warning));
     }
 
     #[test]
@@ -279,15 +360,30 @@ mod tests {
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.starts_with("Error:demo_door:MISSING_COLLISION")));
+            .any(|issue| issue.code == "MISSING_COLLISION" && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.starts_with("Error:demo_door:MISSING_TRIGGER")));
+            .any(|issue| issue.code == "MISSING_TRIGGER" && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.starts_with("Warning:demo_door:LOCKED_DEFAULT")));
+            .any(|issue| issue.code == "LOCKED_DEFAULT" && issue.severity == ValidationSeverity::Warning));
+    }
+
+    #[test]
+    fn validate_json_returns_structured_issues() {
+        let mut state = DoorState::default();
+        state.has_collision = false;
+        let brick = DoorBrick::new("fate.door.basic", state);
+
+        let output_json = validate_json(&brick, r#"{"door_name":"demo_door"}"#).unwrap();
+        let output: ValidateOutput = serde_json::from_str(&output_json).unwrap();
+
+        assert_eq!(output.issues.len(), 1);
+        assert_eq!(output.issues[0].code, "MISSING_COLLISION");
+        assert_eq!(output.issues[0].location.brick_id, "fate.door.basic");
+        assert_eq!(output.issues[0].location.slot_id.as_deref(), Some("collision"));
     }
 
     #[test]
