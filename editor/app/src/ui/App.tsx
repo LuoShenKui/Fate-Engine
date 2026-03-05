@@ -3,8 +3,9 @@
  * 后续可在此接入积木列表/属性面板，并与协议事件连线联动。
  */
 import { useMemo, useState } from "react";
-import { DoorBrick, type DoorBrickEvent } from "../domain/door";
+import { DoorRuntimeAdapter, type DoorBrickEvent, DoorBrickDefinition } from "../domain/door";
 import { DoorProtocolAdapter, type Envelope } from "../protocol/envelope";
+import { getBrickDefinition, listBrickDefinitions } from "../domain/registry";
 import {
   downloadRecipe,
   exportRecipe,
@@ -29,29 +30,29 @@ type DoorInteractResponsePayload = {
   payload: string;
 };
 
-const paletteItems: BrickPaletteItem[] = [
-  { id: "door", name: "Door", summary: "可交互开关门" },
-  { id: "ladder", name: "Ladder", summary: "可上下攀爬" },
-  { id: "trigger-zone", name: "TriggerZone", summary: "区域触发器" },
-];
+const paletteItems: BrickPaletteItem[] = listBrickDefinitions().map((definition) => ({
+  id: definition.id,
+  name: definition.name,
+  summary: definition.summary,
+}));
 
-const initialFields: PropertyField[] = [
-  { key: "locked", label: "Locked", value: false },
-  { key: "openAngle", label: "Open Angle", value: 90 },
-  { key: "displayName", label: "Display Name", value: "MainDoor" },
-];
+const initialFields: PropertyField[] = DoorBrickDefinition.properties.map((property) => ({
+  key: property.key,
+  label: property.label,
+  value: property.defaultValue,
+}));
 
 const defaultNodes = [{ id: "door-1", type: "door" }];
 const defaultEdges: unknown[] = [];
 
 export default function App(): JSX.Element {
-  const adapter = useMemo(() => new DoorProtocolAdapter(new DoorBrick()), []);
+  const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
   const [events, setEvents] = useState<string[]>([]);
   const [protocolErrors, setProtocolErrors] = useState<string[]>([]);
   const [requestSeq, setRequestSeq] = useState(1);
   const [locked, setLocked] = useState(false);
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: "等待校验" }]);
-  const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.name ?? "None");
+  const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.id ?? "none");
   const [fields, setFields] = useState<PropertyField[]>(initialFields);
   const [nodes, setNodes] = useState<unknown[]>(defaultNodes);
   const [edges, setEdges] = useState<unknown[]>(defaultEdges);
@@ -183,6 +184,8 @@ export default function App(): JSX.Element {
     window.alert("加载成功");
   };
 
+  const selectedBrickDefinition = getBrickDefinition(selectedBrick);
+
   const validationWithEvents: ValidationItem[] = [
     ...validationItems,
     ...protocolErrors.slice(-3).map((errorText) => ({ level: "Error" as const, message: `协议错误: ${errorText}` })),
@@ -204,7 +207,7 @@ export default function App(): JSX.Element {
       }
       left={<BrickPalettePanel items={paletteItems} onSelect={(id) => setSelectedBrick(id)} />}
       center={<GraphCanvasPanel />}
-      right={<PropertyInspectorPanel nodeName={selectedBrick} fields={fields} onChange={onPropertyChange} />}
+      right={<PropertyInspectorPanel nodeName={selectedBrickDefinition?.name ?? selectedBrick} fields={fields} onChange={onPropertyChange} />}
       bottom={<ValidationPanel items={validationWithEvents} />}
     />
   );

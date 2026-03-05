@@ -1,6 +1,8 @@
+import type { BrickDefinition } from "./brick";
+
 /**
  * Door 领域模块：定义 Door 状态、行为与校验逻辑。
- * 后续可在此扩展积木列表/属性面板所需的领域模型。
+ * 拆分为定义层（编辑器可见）与运行层（交互逻辑）。
  */
 export type DoorState = {
   enabled: boolean;
@@ -19,7 +21,52 @@ export type ValidateOutput = {
   issues: string[];
 };
 
-export class DoorBrick {
+export const DoorBrickDefinition: BrickDefinition = {
+  id: "door",
+  name: "Door",
+  summary: "可交互开关门",
+  properties: [
+    {
+      key: "locked",
+      label: "Locked",
+      type: "boolean",
+      defaultValue: false,
+      description: "门是否上锁",
+    },
+    {
+      key: "openAngle",
+      label: "Open Angle",
+      type: "number",
+      defaultValue: 90,
+      description: "开门角度",
+    },
+    {
+      key: "displayName",
+      label: "Display Name",
+      type: "string",
+      defaultValue: "MainDoor",
+      description: "编辑器中展示名称",
+    },
+  ],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "门被成功交互时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "门被拒绝交互时触发",
+    },
+  ],
+};
+
+export class DoorRuntimeAdapter {
   private state: DoorState = {
     enabled: true,
     locked: false,
