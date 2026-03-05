@@ -36,7 +36,7 @@ cargo test --manifest-path runtime/door_core/Cargo.toml
 ## TS 最小 UI 类型检查
 ```bash
 cd editor/app
-npm install
-npm run typecheck
-npm run build
+pnpm install
+pnpm run typecheck
+pnpm run build
 ```
