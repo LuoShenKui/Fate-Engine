@@ -20,7 +20,7 @@ import { runBatchValidate, type BatchValidationStats } from "../workflow/validat
 import BrickPalettePanel, { type BrickPaletteItem } from "./BrickPalettePanel";
 import DebugToolbar from "./DebugToolbar";
 import EditorLayout from "./EditorLayout";
-import GraphCanvasPanel from "./GraphCanvasPanel";
+import GraphCanvasPanel, { type CanvasEdge, type CanvasNode } from "./GraphCanvasPanel";
 import { useI18n } from "./i18n/I18nProvider";
 import PropertyInspectorPanel, { type PropertyField, type PropertyValue } from "./PropertyInspectorPanel";
 import ValidationPanel, { type ValidationItem } from "./ValidationPanel";
@@ -46,8 +46,8 @@ const initialFields: PropertyField[] = DoorBrickDefinition.properties.map((prope
   value: property.defaultValue,
 }));
 
-const defaultNodes = [{ id: "door-1", type: "door" }];
-const defaultEdges: unknown[] = [];
+const defaultNodes: CanvasNode[] = [{ id: "door-1", type: "door" }];
+const defaultEdges: CanvasEdge[] = [];
 
 export default function App(): JSX.Element {
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
@@ -59,8 +59,8 @@ export default function App(): JSX.Element {
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: t("validation.waiting") }]);
   const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.id ?? "none");
   const [fields, setFields] = useState<PropertyField[]>(initialFields);
-  const [nodes, setNodes] = useState<unknown[]>(defaultNodes);
-  const [edges, setEdges] = useState<unknown[]>(defaultEdges);
+  const [nodes, setNodes] = useState<CanvasNode[]>(defaultNodes);
+  const [edges, setEdges] = useState<CanvasEdge[]>(defaultEdges);
   const [seed, setSeed] = useState<number>(Date.now());
   const [lastBatchStats, setLastBatchStats] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
   const [batchStatsDiff, setBatchStatsDiff] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
@@ -135,8 +135,8 @@ export default function App(): JSX.Element {
   });
 
   const applyRecipe = (recipe: EditorRecipeV0): void => {
-    setNodes(recipe.nodes);
-    setEdges(recipe.edges);
+    setNodes(recipe.nodes as CanvasNode[]);
+    setEdges(recipe.edges as CanvasEdge[]);
     setSeed(recipe.seed);
 
     const selected = typeof recipe.params.selected_brick === "string" ? recipe.params.selected_brick : selectedBrick;
@@ -210,8 +210,8 @@ export default function App(): JSX.Element {
 
   const onApplyTemplate = (): void => {
     const assembled = assembleWorkflowTemplate("warehouse_gate_v0");
-    setNodes(assembled.nodes);
-    setEdges(assembled.edges);
+    setNodes(assembled.nodes as CanvasNode[]);
+    setEdges(assembled.edges as CanvasEdge[]);
     const recipe = { ...getRecipe(), nodes: assembled.nodes, edges: assembled.edges };
     renderBatchValidate(recipe);
     window.alert(t("template.applied"));
@@ -275,7 +275,16 @@ export default function App(): JSX.Element {
         />
       }
       left={<BrickPalettePanel items={paletteItems} onSelect={(id) => setSelectedBrick(id)} />}
-      center={<GraphCanvasPanel />}
+      center={
+        <GraphCanvasPanel
+          nodes={nodes}
+          edges={edges}
+          onChange={(next) => {
+            setNodes(next.nodes);
+            setEdges(next.edges);
+          }}
+        />
+      }
       right={<PropertyInspectorPanel nodeName={selectedBrickDefinition?.name ?? selectedBrick} fields={fields} onChange={onPropertyChange} />}
       bottom={<ValidationPanel items={validationWithEvents} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
     />
