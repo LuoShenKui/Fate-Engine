@@ -41,16 +41,32 @@ cmake --build build
 ./build/fate_demo
 ```
 
-## 如何运行 package tests
+## 如何测试
 ```bash
-# C++ 包装层与 manifest 基础校验
+make check
+```
+
+<details>
+<summary>展开查看各子检查与原始命令</summary>
+
+```bash
+# 1) Schema 校验
+python3 tools/validate_schemas.py
+
+# 2) Rust package 自动化测试（OnUsed/OnDenied + 校验器分级）
+cargo test --manifest-path runtime/door_core/Cargo.toml
+
+# 3) C++ 包装层与 manifest 基础编译校验（仅构建，不运行 demo）
 cmake -S . -B build
 cmake --build build
-./build/fate_demo packages/door/manifest.json
 
-# Rust package 自动化测试（OnUsed/OnDenied + 校验器分级）
-cargo test --manifest-path runtime/door_core/Cargo.toml
+# 4) TS 类型检查与构建
+cd editor/app
+pnpm run typecheck
+pnpm run build
 ```
+
+</details>
 
 ## Rust 核心库编译与测试
 ```bash
