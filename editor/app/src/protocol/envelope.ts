@@ -2,7 +2,7 @@
  * 协议模块：定义 Envelope/错误结构与 Door 协议适配器。
  * 后续可在此扩展事件连线与多协议编解码。
  */
-import { DoorRuntimeAdapter, type AdapterMode, type DoorBrickEvent, type DoorState, type ValidateOutput } from "../domain/door";
+import { DoorRuntimeAdapter, type AdapterMode, type DoorBrickEvent, type DoorState, type DoorStateSyncPayload, type ValidateOutput } from "../domain/door";
 
 export type ProtocolError = {
   code: string;
@@ -20,6 +20,7 @@ export type Envelope<TPayload> = {
 
 type DoorInteractRequestPayload = {
   actor_id: string;
+  entity_id: string;
 };
 
 type DoorInteractResponsePayload = {
@@ -95,16 +96,18 @@ export class DoorProtocolAdapter {
       typeof request.payload !== "object" ||
       request.payload === null ||
       typeof request.payload.actor_id !== "string" ||
-      request.payload.actor_id.trim() === ""
+      request.payload.actor_id.trim() === "" ||
+      typeof request.payload.entity_id !== "string" ||
+      request.payload.entity_id.trim() === ""
     ) {
       return JSON.stringify(
         this.buildErrorEnvelope(request.request_id, "INVALID_ACTOR_ID", "ACTOR_ID_MUST_BE_NON_EMPTY_STRING", {
-          field: "payload.actor_id",
+          field: "payload.actor_id/payload.entity_id",
         }),
       );
     }
 
-    const event = this.door.interact(request.payload.actor_id);
+    const event = this.door.interact(request.payload.actor_id, request.payload.entity_id);
     const response: Envelope<DoorInteractResponsePayload> = {
       protocol_version: "1.0",
       type: "door.interact.response",
@@ -123,5 +126,9 @@ export class DoorProtocolAdapter {
 
   validate(doorName: string): ValidateOutput {
     return this.door.validate(doorName);
+  }
+
+  syncState(payload: DoorStateSyncPayload): DoorBrickEvent {
+    return this.door.syncState(payload);
   }
 }

@@ -24,6 +24,11 @@ export type TriggerZoneState = {
   has_bounds: boolean;
 };
 
+export type DoorStateSyncPayload = {
+  entity_id: string;
+  state: "Closed" | "Open" | "Locked";
+};
+
 export type DoorBrickEvent = {
   event: string;
   payload: string;
@@ -192,20 +197,27 @@ export class DoorRuntimeAdapter {
     has_trigger: true,
   };
 
-  interact(actorId: string): DoorBrickEvent {
+  interact(actorId: string, entityId: string): DoorBrickEvent {
     if (!this.state.enabled) {
-      return { event: DOOR_EVENTS.ON_DENIED, payload: "reason=disabled" };
+      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=disabled` };
     }
     if (this.state.locked) {
-      return { event: DOOR_EVENTS.ON_DENIED, payload: "reason=locked" };
+      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=locked` };
     }
     this.state.open = !this.state.open;
-    return { event: DOOR_EVENTS.ON_USED, payload: `actor_id=${actorId},open=${this.state.open}` };
+    return { event: DOOR_EVENTS.ON_USED, payload: `entity_id=${entityId},actor_id=${actorId},state=${this.state.open ? "Open" : "Closed"}` };
   }
 
   setState(key: keyof DoorState, value: boolean): DoorBrickEvent {
     this.state[key] = value;
     return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `key=${key},value=${value}` };
+  }
+
+
+  syncState(payload: DoorStateSyncPayload): DoorBrickEvent {
+    this.state.locked = payload.state === "Locked";
+    this.state.open = payload.state === "Open";
+    return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `entity_id=${payload.entity_id},state=${payload.state}` };
   }
 
   validate(doorName: string): ValidateOutput {
@@ -230,7 +242,7 @@ export class LadderRuntimeAdapter {
     has_top_anchor: true,
   };
 
-  interact(actorId: string): DoorBrickEvent {
+  interact(actorId: string, entityId: string): DoorBrickEvent {
     if (!this.state.enabled) {
       return { event: "OnDenied", payload: "reason=disabled" };
     }
@@ -254,7 +266,7 @@ export class TriggerZoneRuntimeAdapter {
     has_bounds: true,
   };
 
-  interact(actorId: string): DoorBrickEvent {
+  interact(actorId: string, entityId: string): DoorBrickEvent {
     if (!this.state.enabled) {
       return { event: "OnDenied", payload: "reason=disabled" };
     }

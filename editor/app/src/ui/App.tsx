@@ -3,6 +3,7 @@
  * 后续可在此接入积木列表/属性面板，并与协议事件连线联动。
  */
 import { useEffect, useMemo, useState } from "react";
+import { DoorSceneComponent } from "../runtime/doorScene";
 import { DoorRuntimeAdapter, type AdapterMode, type DoorBrickEvent, DoorBrickDefinition, formatRuntimeEventLog } from "../domain/door";
 import { DoorProtocolAdapter, type Envelope } from "../protocol/envelope";
 import { getBrickDefinition, listBrickDefinitions } from "../domain/registry";
@@ -27,6 +28,7 @@ import ValidationPanel, { type ValidationItem } from "./ValidationPanel";
 
 type DoorInteractRequestPayload = {
   actor_id: string;
+  entity_id: string;
 };
 
 type DoorInteractResponsePayload = {
@@ -52,6 +54,7 @@ const defaultEdges: CanvasEdge[] = [];
 export default function App(): JSX.Element {
   const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
+  const sceneDoor = useMemo(() => new DoorSceneComponent("door-1"), []);
   const { t } = useI18n();
   const [events, setEvents] = useState<string[]>([]);
   const [protocolErrors, setProtocolErrors] = useState<ValidationItem[]>([]);
@@ -67,6 +70,7 @@ export default function App(): JSX.Element {
   const [lastBatchStats, setLastBatchStats] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
   const [batchStatsDiff, setBatchStatsDiff] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
   const [batchEntries, setBatchEntries] = useState<Array<{ recipeId: string; items: ValidationItem[] }>>([]);
+  const [playMode, setPlayMode] = useState(false);
 
   useEffect(() => {
     document.title = t("app.title");
@@ -171,12 +175,23 @@ export default function App(): JSX.Element {
   };
 
   const onInteract = (sourceNodeId?: string): void => {
+    const entityId = sourceNodeId ?? "door-1";
+    if (playMode) {
+      sceneDoor.updateActorDistance(1.0);
+      const sceneResult = sceneDoor.interact();
+      if (!sceneResult.accepted) {
+        appendEvent(`req-${requestSeq}`, { event: "OnDenied", payload: `entity_id=${entityId},reason=${sceneResult.reason}` });
+        setRequestSeq((prev) => prev + 1);
+        return;
+      }
+    }
+
     const requestId = `req-${requestSeq}`;
     const request: Envelope<DoorInteractRequestPayload> = {
       protocol_version: "1.0",
       type: "door.interact.request",
       request_id: requestId,
-      payload: { actor_id: sourceNodeId ?? "player_1" },
+      payload: { actor_id: sourceNodeId ?? "player_1", entity_id: entityId },
     };
     setRequestSeq((prev) => prev + 1);
     const responseText = adapter.handleInteract(JSON.stringify(request));
@@ -187,11 +202,18 @@ export default function App(): JSX.Element {
         ...prev,
         {
           level: "Error",
-          message: `[request_id=${requestId}] ${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)}) [brick=door node=${sourceNodeId ?? "door-1"} slot=mesh]`,
+          message: `[request_id=${requestId}] ${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)}) [brick=door node=${entityId} slot=mesh]`,
         },
       ]);
     } else {
       appendEvent(requestId, response.payload);
+      const stateText = response.payload.payload.includes("state=Open") ? "Open" : "Closed";
+      adapter.syncState({ entity_id: entityId, state: locked ? "Locked" : stateText as "Open" | "Closed" });
+      sceneDoor.syncFromProtocol(locked ? "Locked" : stateText as "Open" | "Closed");
+      appendEvent(requestId, {
+        event: "OnStateChanged",
+        payload: `entity_id=${entityId},state=${sceneDoor.syncToProtocol()},blocked=${sceneDoor.blocksPassage()}` ,
+      });
     }
     renderValidate();
     renderBatchValidate(getRecipe());
@@ -203,6 +225,8 @@ export default function App(): JSX.Element {
     setRequestSeq((prev) => prev + 1);
     setLocked(nextLocked);
     appendEvent(requestId, adapter.setState("locked", nextLocked));
+    adapter.syncState({ entity_id: "door-1", state: nextLocked ? "Locked" : "Closed" });
+    sceneDoor.syncFromProtocol(nextLocked ? "Locked" : "Closed");
     setFields((prev) => prev.map((field) => (field.key === "locked" ? { ...field, value: nextLocked } : field)));
     renderValidate();
     renderBatchValidate({ ...getRecipe(), params: { ...getRecipe().params, locked: nextLocked }, lockfile: { packages: [{ id: "fate-door-ui", version: "0.1.0", hash: nextLocked ? "sha256-placeholder" : "" }] } });
@@ -286,6 +310,8 @@ export default function App(): JSX.Element {
         <DebugToolbar
           locked={locked}
           onInteract={() => onInteract()}
+          playMode={playMode}
+          onTogglePlayMode={() => setPlayMode((prev) => !prev)}
           onToggleLock={onToggleLock}
           onImport={onImport}
           onExport={onExport}

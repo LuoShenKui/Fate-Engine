@@ -55,6 +55,7 @@ pub struct Envelope {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DoorInteractRequestPayload {
     pub actor_id: String,
+    pub entity_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -70,6 +71,32 @@ pub struct DoorState {
     pub open: bool,
     pub has_collision: bool,
     pub has_trigger: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum DoorSyncState {
+    Closed,
+    Open,
+    Locked,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DoorSceneInteractResult {
+    pub accepted: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DoorSceneComponent {
+    pub entity_id: String,
+    pub has_collision: bool,
+    pub has_trigger: bool,
+    pub locked: bool,
+    pub open_progress: f32,
+    pub trigger_radius_m: f32,
+    pub actor_distance_m: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -176,6 +203,94 @@ impl Default for DoorState {
             has_collision: true,
             has_trigger: true,
         }
+    }
+}
+
+impl DoorSceneComponent {
+    pub fn new(entity_id: impl Into<String>) -> Self {
+        Self {
+            entity_id: entity_id.into(),
+            has_collision: true,
+            has_trigger: true,
+            locked: false,
+            open_progress: 0.0,
+            trigger_radius_m: 1.5,
+            actor_distance_m: Some(0.0),
+        }
+    }
+
+    pub fn sync_state_from_protocol(&mut self, state: DoorSyncState) {
+        match state {
+            DoorSyncState::Locked => {
+                self.locked = true;
+                self.open_progress = 0.0;
+            }
+            DoorSyncState::Open => {
+                self.locked = false;
+                self.open_progress = 1.0;
+            }
+            DoorSyncState::Closed => {
+                self.locked = false;
+                self.open_progress = 0.0;
+            }
+        }
+    }
+
+    pub fn sync_state_to_protocol(&self) -> DoorSyncState {
+        if self.locked {
+            DoorSyncState::Locked
+        } else if self.open_progress >= 0.999 {
+            DoorSyncState::Open
+        } else {
+            DoorSyncState::Closed
+        }
+    }
+
+    pub fn update_actor_distance(&mut self, distance_m: f32) {
+        self.actor_distance_m = Some(distance_m);
+    }
+
+    pub fn can_interact(&self) -> bool {
+        self.has_trigger
+            && self
+                .actor_distance_m
+                .map(|distance| distance <= self.trigger_radius_m)
+                .unwrap_or(false)
+    }
+
+    pub fn interact(&mut self) -> DoorSceneInteractResult {
+        if self.locked {
+            return DoorSceneInteractResult {
+                accepted: false,
+                reason: Some("locked".to_string()),
+            };
+        }
+        if !self.can_interact() {
+            return DoorSceneInteractResult {
+                accepted: false,
+                reason: Some("out_of_trigger".to_string()),
+            };
+        }
+
+        let target_open = self.open_progress < 0.5;
+        self.step_open_animation(target_open, 1.0);
+        DoorSceneInteractResult {
+            accepted: true,
+            reason: None,
+        }
+    }
+
+    pub fn step_open_animation(&mut self, target_open: bool, alpha: f32) {
+        let clamped_alpha = alpha.clamp(0.0, 1.0);
+        let target = if target_open { 1.0 } else { 0.0 };
+        self.open_progress += (target - self.open_progress) * clamped_alpha;
+        if (self.open_progress - target).abs() < 0.01 {
+            self.open_progress = target;
+        }
+    }
+
+    pub fn blocks_passage(&self) -> bool {
+        self.has_collision && self.open_progress < 0.95
     }
 }
 
@@ -348,11 +463,12 @@ impl TriggerZoneBrick {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DoorBrick {
     pub brick_id: String,
     pub state: DoorState,
     low_freq_tick_counter: u64,
+    pub scene: DoorSceneComponent,
 }
 
 impl DoorBrick {
@@ -361,6 +477,7 @@ impl DoorBrick {
             brick_id: brick_id.into(),
             state,
             low_freq_tick_counter: 0,
+            scene: DoorSceneComponent::new("door_entity_1"),
         }
     }
 
@@ -402,14 +519,27 @@ impl DoorBrick {
         if self.state.locked {
             return BrickEvent {
                 event: events::ON_DENIED.to_string(),
-                payload: "reason=locked".to_string(),
+                payload: format!("entity_id={},actor_id={},reason=locked", self.scene.entity_id, input.actor_id),
+            };
+        }
+
+        if !self.scene.can_interact() {
+            return BrickEvent {
+                event: events::ON_DENIED.to_string(),
+                payload: format!("entity_id={},actor_id={},reason=out_of_trigger", self.scene.entity_id, input.actor_id),
             };
         }
 
         self.state.open = !self.state.open;
+        self.scene.step_open_animation(self.state.open, 1.0);
         BrickEvent {
             event: events::ON_USED.to_string(),
-            payload: format!("actor_id={},open={}", input.actor_id, self.state.open),
+            payload: format!(
+                "entity_id={},actor_id={},state={}",
+                self.scene.entity_id,
+                input.actor_id,
+                if self.state.open { "Open" } else { "Closed" }
+            ),
         }
     }
 
@@ -426,6 +556,25 @@ impl DoorBrick {
                     payload: format!("reason=unknown_state:{}", input.key),
                 }
             }
+        }
+
+        if input.key == "locked" {
+            self.scene.sync_state_from_protocol(if input.value {
+                DoorSyncState::Locked
+            } else if self.state.open {
+                DoorSyncState::Open
+            } else {
+                DoorSyncState::Closed
+            });
+        }
+        if input.key == "open" {
+            self.scene.sync_state_from_protocol(if self.state.locked {
+                DoorSyncState::Locked
+            } else if input.value {
+                DoorSyncState::Open
+            } else {
+                DoorSyncState::Closed
+            });
         }
 
         BrickEvent {
@@ -617,12 +766,13 @@ pub fn handle_interact_envelope_json(
                 "INVALID_REQUEST_PAYLOAD",
                 "payload 缺失或格式错误",
                 serde_json::json!({
-                    "required": ["actor_id"]
+                    "required": ["actor_id", "entity_id"]
                 }),
             );
             return serde_json::to_string(&response);
         }
     };
+    brick.scene.entity_id = payload.entity_id;
     let event = brick.interact(InteractInput {
         actor_id: payload.actor_id,
     });
@@ -689,7 +839,7 @@ mod tests {
             actor_id: "player_1".to_string(),
         });
         assert_eq!(e1.event, events::ON_USED);
-        assert_eq!(e1.payload, "actor_id=player_1,open=true");
+        assert_eq!(e1.payload, "entity_id=door_entity_1,actor_id=player_1,state=Open");
 
         let e2 = brick.set_state(SetStateInput {
             key: "locked".to_string(),
@@ -702,7 +852,7 @@ mod tests {
             actor_id: "player_1".to_string(),
         });
         assert_eq!(e3.event, events::ON_DENIED);
-        assert_eq!(e3.payload, "reason=locked");
+        assert_eq!(e3.payload, "entity_id=door_entity_1,actor_id=player_1,reason=locked");
     }
 
     #[test]
@@ -805,7 +955,7 @@ mod tests {
             protocol_version: PROTOCOL_VERSION.to_string(),
             r#type: "door.interact.request".to_string(),
             request_id: "req-1".to_string(),
-            payload: serde_json::json!({"actor_id": "player_1"}),
+            payload: serde_json::json!({"actor_id": "player_1", "entity_id": "door-1"}),
             error: None,
         };
 
@@ -826,7 +976,7 @@ mod tests {
             protocol_version: "9.9".to_string(),
             r#type: "door.interact.request".to_string(),
             request_id: "req-err-version".to_string(),
-            payload: serde_json::json!({"actor_id": "player_1"}),
+            payload: serde_json::json!({"actor_id": "player_1", "entity_id": "door-1"}),
             error: None,
         };
 
@@ -847,7 +997,7 @@ mod tests {
             protocol_version: PROTOCOL_VERSION.to_string(),
             r#type: "door.foo.request".to_string(),
             request_id: "req-err-type".to_string(),
-            payload: serde_json::json!({"actor_id": "player_1"}),
+            payload: serde_json::json!({"actor_id": "player_1", "entity_id": "door-1"}),
             error: None,
         };
 
@@ -918,6 +1068,29 @@ mod tests {
             .issues
             .iter()
             .any(|issue| issue.code == "MISSING_BOUNDS"));
+    }
+
+
+    #[test]
+    fn door_scene_acceptance_flow_cover_trigger_lock_and_collision() {
+        let mut scene = DoorSceneComponent::new("door-acceptance");
+
+        scene.update_actor_distance(1.0);
+        assert!(scene.interact().accepted);
+        assert_eq!(scene.sync_state_to_protocol(), DoorSyncState::Open);
+        assert!(!scene.blocks_passage());
+
+        scene.sync_state_from_protocol(DoorSyncState::Locked);
+        scene.update_actor_distance(1.0);
+        let locked = scene.interact();
+        assert!(!locked.accepted);
+        assert_eq!(locked.reason.as_deref(), Some("locked"));
+
+        scene.sync_state_from_protocol(DoorSyncState::Open);
+        assert!(!scene.blocks_passage());
+
+        scene.sync_state_from_protocol(DoorSyncState::Closed);
+        assert!(scene.blocks_passage());
     }
 
     #[test]

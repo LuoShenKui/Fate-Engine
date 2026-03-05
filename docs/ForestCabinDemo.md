@@ -141,12 +141,21 @@ A. 命令执行成功证据（schema/rust/cpp/ts）
 
 B. 编辑器交互结果证据（门开关、校验输出）
 
-- 验收项：门交互状态正确，开关动作能触发事件。
-  - 操作：Play 模式下连续点击门（或触发 Interact），观察状态切换。
-  - 预期输出关键词：`Open` / `Closed`、`OnUsed`、`OnDenied`（上锁场景）
+- 验收项：角色接近门触发交互（Play 模式由场景驱动，不依赖工具栏 Interact 按钮）。
+  - 操作：点击工具栏 `Play Mode (enabled=true)`，在画布点击门实体。
+  - 预期输出关键词：`entity_id=door-1`、`state=Open`、`OnUsed`。
+- 验收项：上锁时拒绝交互。
+  - 操作：点击 `切换锁定` 后再次点击门。
+  - 预期输出关键词：`state=Locked`、`reason=locked`、`OnDenied`。
+- 验收项：开门后可通行。
+  - 操作：解锁并再次点击门，观察状态同步日志。
+  - 预期输出关键词：`state=Open`、`blocked=false`。
+- 验收项：关门后阻挡恢复。
+  - 操作：再次点击已打开的门使其关闭。
+  - 预期输出关键词：`state=Closed`、`blocked=true`。
 - 验收项：校验面板能输出分级结果并定位对象。
   - 操作：执行 Validate，分别制造缺 slot、超预算、禁用冲突等案例。
-  - 预期输出关键词：`Info`、`Warning`、`Error`（并包含对应 brick/参数定位）
+  - 预期输出关键词：`Info`、`Warning`、`Error`（并包含对应 brick/参数定位）。
 
 C. 导出配方/lockfile 的可复现证据
 

@@ -5,6 +5,8 @@ type DebugToolbarProps = {
   adapterMode: "demo" | "runtime";
   onToggleAdapterMode: () => void;
   onInteract: () => void;
+  playMode: boolean;
+  onTogglePlayMode: () => void;
   onToggleLock: () => void;
   onImport: () => void;
   onExport: () => void;
@@ -22,8 +24,13 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
   return (
     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
       <strong data-testid="editor-page-ready">{props.appTitle}</strong>
-      <button type="button" onClick={props.onInteract}>
-        {t("toolbar.interact")}
+      {!props.playMode ? (
+        <button type="button" onClick={props.onInteract}>
+          {t("toolbar.interact")}
+        </button>
+      ) : null}
+      <button type="button" onClick={props.onTogglePlayMode}>
+        {t("toolbar.playMode", { enabled: String(props.playMode) })}
       </button>
       <button type="button" onClick={props.onToggleLock}>
         {t("toolbar.toggleLock", { locked: String(props.locked) })}
