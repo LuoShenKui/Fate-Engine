@@ -30,8 +30,73 @@ type DoorInteractResponsePayload = {
 export class DoorProtocolAdapter {
   constructor(private readonly door: DoorBrick) {}
 
+  private buildErrorEnvelope(requestId: string, code: string, message: string, details: unknown): Envelope<Record<string, never>> {
+    return {
+      protocol_version: "1.0",
+      type: "door.interact.response",
+      request_id: requestId,
+      payload: {},
+      error: {
+        code,
+        message,
+        details,
+      },
+    };
+  }
+
   handleInteract(rawRequest: string): string {
-    const request = JSON.parse(rawRequest) as Envelope<DoorInteractRequestPayload>;
+    let parsedRequest: unknown;
+    try {
+      parsedRequest = JSON.parse(rawRequest);
+    } catch {
+      return JSON.stringify(
+        this.buildErrorEnvelope("", "INVALID_JSON", "请求不是合法 JSON", {
+          raw: rawRequest,
+        }),
+      );
+    }
+
+    if (typeof parsedRequest !== "object" || parsedRequest === null) {
+      return JSON.stringify(
+        this.buildErrorEnvelope("", "INVALID_REQUEST", "请求必须是对象", {
+          field: "root",
+        }),
+      );
+    }
+
+    const request = parsedRequest as Partial<Envelope<DoorInteractRequestPayload>>;
+    const requestId = typeof request.request_id === "string" ? request.request_id : "";
+
+    if (request.type !== "door.interact.request") {
+      return JSON.stringify(
+        this.buildErrorEnvelope(requestId, "INVALID_TYPE", "type 不合法", {
+          expected: "door.interact.request",
+          actual: request.type,
+        }),
+      );
+    }
+
+    if (typeof request.request_id !== "string" || request.request_id.trim() === "") {
+      return JSON.stringify(
+        this.buildErrorEnvelope("", "INVALID_REQUEST_ID", "request_id 必须是非空字符串", {
+          field: "request_id",
+        }),
+      );
+    }
+
+    if (
+      typeof request.payload !== "object" ||
+      request.payload === null ||
+      typeof request.payload.actor_id !== "string" ||
+      request.payload.actor_id.trim() === ""
+    ) {
+      return JSON.stringify(
+        this.buildErrorEnvelope(request.request_id, "INVALID_ACTOR_ID", "payload.actor_id 必须是非空字符串", {
+          field: "payload.actor_id",
+        }),
+      );
+    }
+
     const event = this.door.interact(request.payload.actor_id);
     const response: Envelope<DoorInteractResponsePayload> = {
       protocol_version: "1.0",

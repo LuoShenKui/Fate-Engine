@@ -47,6 +47,8 @@ const defaultEdges: unknown[] = [];
 export default function App(): JSX.Element {
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorBrick()), []);
   const [events, setEvents] = useState<string[]>([]);
+  const [protocolErrors, setProtocolErrors] = useState<string[]>([]);
+  const [requestSeq, setRequestSeq] = useState(1);
   const [locked, setLocked] = useState(false);
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([{ level: "Info", message: "等待校验" }]);
   const [selectedBrick, setSelectedBrick] = useState(paletteItems[0]?.name ?? "None");
@@ -116,12 +118,21 @@ export default function App(): JSX.Element {
     const request: Envelope<DoorInteractRequestPayload> = {
       protocol_version: "1.0",
       type: "door.interact.request",
-      request_id: `req-${events.length + 1}`,
+      request_id: `req-${requestSeq}`,
       payload: { actor_id: "player_1" },
     };
+    setRequestSeq((prev) => prev + 1);
     const responseText = adapter.handleInteract(JSON.stringify(request));
     const response = JSON.parse(responseText) as Envelope<DoorInteractResponsePayload>;
-    appendEvent(response.payload);
+    if (response.error !== undefined) {
+      const protocolError = response.error;
+      setProtocolErrors((prev) => [
+        ...prev,
+        `${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)})`,
+      ]);
+    } else {
+      appendEvent(response.payload);
+    }
     renderValidate();
   };
 
@@ -174,6 +185,7 @@ export default function App(): JSX.Element {
 
   const validationWithEvents: ValidationItem[] = [
     ...validationItems,
+    ...protocolErrors.slice(-3).map((errorText) => ({ level: "Error" as const, message: `协议错误: ${errorText}` })),
     ...events.slice(-3).map((eventText) => ({ level: "Info" as const, message: `事件: ${eventText}` })),
   ];
 
