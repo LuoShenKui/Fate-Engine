@@ -1,0 +1,29 @@
+{
+  "id": "fate.door.basic",
+  "version": "0.1.0",
+  "contract_version": "0.2",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "id": "fate.audio.core",
+      "optional": true
+    }
+  ],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:door.mesh.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/door/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}

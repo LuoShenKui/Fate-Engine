@@ -1,34 +1,95 @@
 {
   "id": "fate.door.basic",
   "version": "0.1.0",
-  "deps": [],
+  "contract_version": "0.2",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.open_close",
+      "level": 1,
+      "exposed_params": [
+        "locked",
+        "open",
+        "has_collision",
+        "has_trigger"
+      ]
+    }
+  ],
   "params": {
     "locked": {
+      "key": "locked",
       "type": "bool",
-      "required": true,
-      "default": false
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
     },
     "open": {
+      "key": "open",
       "type": "bool",
-      "required": true,
-      "default": false
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ],
+      "requires": "cap(interaction.open_close)>=1"
     },
     "has_collision": {
+      "key": "has_collision",
       "type": "bool",
-      "required": true,
-      "default": true
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay",
+        "performance"
+      ]
     },
     "has_trigger": {
+      "key": "has_trigger",
       "type": "bool",
-      "required": true,
-      "default": true
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
     }
   },
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:door.mesh.default",
+      "optional": false,
+      "requires": "true"
+    },
+    {
+      "slot_id": "audio.open_close",
+      "slot_type": "audio",
+      "fallback": "builtin:door.sfx.default",
+      "optional": false,
+      "requires": "cap(interaction.open_close)>=1"
+    },
+    {
+      "slot_id": "script.logic",
+      "slot_type": "script_ref",
+      "fallback": "builtin:door.logic.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
   "defaults": {
     "enabled": true
   },
-  "license": "MIT",
-  "compat": {
-    "engine": ">=0.1.0"
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/door/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0: 新增 state_version 并使用默认值补齐 runtime_state 字段。"
   }
 }
