@@ -80,7 +80,6 @@ pub enum DoorSyncState {
     Locked,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DoorSceneInteractResult {
     pub accepted: bool,
@@ -519,14 +518,20 @@ impl DoorBrick {
         if self.state.locked {
             return BrickEvent {
                 event: events::ON_DENIED.to_string(),
-                payload: format!("entity_id={},actor_id={},reason=locked", self.scene.entity_id, input.actor_id),
+                payload: format!(
+                    "entity_id={},actor_id={},reason=locked",
+                    self.scene.entity_id, input.actor_id
+                ),
             };
         }
 
         if !self.scene.can_interact() {
             return BrickEvent {
                 event: events::ON_DENIED.to_string(),
-                payload: format!("entity_id={},actor_id={},reason=out_of_trigger", self.scene.entity_id, input.actor_id),
+                payload: format!(
+                    "entity_id={},actor_id={},reason=out_of_trigger",
+                    self.scene.entity_id, input.actor_id
+                ),
             };
         }
 
@@ -839,7 +844,10 @@ mod tests {
             actor_id: "player_1".to_string(),
         });
         assert_eq!(e1.event, events::ON_USED);
-        assert_eq!(e1.payload, "entity_id=door_entity_1,actor_id=player_1,state=Open");
+        assert_eq!(
+            e1.payload,
+            "entity_id=door_entity_1,actor_id=player_1,state=Open"
+        );
 
         let e2 = brick.set_state(SetStateInput {
             key: "locked".to_string(),
@@ -852,7 +860,10 @@ mod tests {
             actor_id: "player_1".to_string(),
         });
         assert_eq!(e3.event, events::ON_DENIED);
-        assert_eq!(e3.payload, "entity_id=door_entity_1,actor_id=player_1,reason=locked");
+        assert_eq!(
+            e3.payload,
+            "entity_id=door_entity_1,actor_id=player_1,reason=locked"
+        );
     }
 
     #[test]
@@ -1070,7 +1081,6 @@ mod tests {
             .any(|issue| issue.code == "MISSING_BOUNDS"));
     }
 
-
     #[test]
     fn door_scene_acceptance_flow_cover_trigger_lock_and_collision() {
         let mut scene = DoorSceneComponent::new("door-acceptance");
@@ -1117,6 +1127,39 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "long-running soak entry, run explicitly in nightly"]
+    fn door_runtime_stability_soak_entry() {
+        let soak_seconds = std::env::var("DOOR_SOAK_SECONDS")
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .unwrap_or(30);
+
+        let start = std::time::Instant::now();
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let mut tick_total = 0_u64;
+
+        while start.elapsed().as_secs() < soak_seconds {
+            if tick_total % 11 == 0 {
+                let _ = brick.set_state(SetStateInput {
+                    key: "locked".to_string(),
+                    value: tick_total % 22 == 0,
+                });
+            }
+
+            let interact = brick.interact(InteractInput {
+                actor_id: format!("soak_actor_{}", tick_total % 16),
+            });
+            assert!(interact.event == events::ON_USED || interact.event == events::ON_DENIED);
+
+            let tick = brick.on_tick_low_freq();
+            assert_eq!(tick.event, events::ON_TICK_LOW_FREQ);
+            tick_total += 1;
+        }
+
+        assert!(tick_total > 0);
+    }
+
+    #[test]
     fn door_runtime_stability_smoke_10k_ticks() {
         let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
 
@@ -1142,7 +1185,10 @@ mod tests {
 
             let tick = brick.on_tick_low_freq();
             assert_eq!(tick.event, events::ON_TICK_LOW_FREQ);
-            assert!(tick.payload.contains("check=state_snapshot") || tick.payload.contains("check=skipped"));
+            assert!(
+                tick.payload.contains("check=state_snapshot")
+                    || tick.payload.contains("check=skipped")
+            );
             if tick.payload.contains("check=state_snapshot") {
                 snapshot_ticks += 1;
             }

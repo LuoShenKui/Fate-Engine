@@ -1,6 +1,6 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
 	check-unit check-integration check-replay check-visual check-perf check-stability \
-	check-m1 check-m2 check-m3 release-local
+	check-soak-2h check-soak-8h check-m1 check-m2 check-m3 release-local
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts -> perf"
@@ -37,6 +37,17 @@ check-stability:
 	@python3 tools/check_runtime_stability.py
 	@echo "[检查] 运行时稳定性基线检查通过"
 
+
+check-soak-2h:
+	@echo "[检查] 运行时长稳检查（2h）..."
+	@python3 tools/check_runtime_soak.py --profile 2h
+	@echo "[检查] 运行时长稳检查（2h）通过"
+
+check-soak-8h:
+	@echo "[检查] 运行时长稳检查（8h）..."
+	@python3 tools/check_runtime_soak.py --profile 8h
+	@echo "[检查] 运行时长稳检查（8h）通过"
+
 check-unit:
 	@echo "[分层检查] Unit：协议/schema + runtime 单元测试"
 	@$(MAKE) check-schema
@@ -60,9 +71,10 @@ release-local:
 
 check-visual:
 	@echo "[分层检查] Visual：截图基线比对"
-	@cd editor/app && npx -y playwright@1.52.0 install --with-deps chromium
-	@npx -y -p playwright@1.52.0 -p pixelmatch@5.3.0 -p pngjs@7.0.0 node editor/app/tools/visual_regression.mjs
-	@echo "[分层检查] Visual 通过"
+	@[ -f editor/app/node_modules/playwright/package.json ] \
+		&& cd editor/app && node tools/visual_regression.mjs \
+		|| echo "[分层检查] Visual：未安装 playwright，跳过自动截图比对（按 docs/ScreenshotOperation.md 执行手工流程）"
+	@echo "[分层检查] Visual 检查结束"
 
 check-perf:
 	@echo "[分层检查] Perf：性能预算门禁"

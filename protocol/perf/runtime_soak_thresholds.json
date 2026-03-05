@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "2h": {
+      "max_rss_mb": 512,
+      "max_error_count": 0
+    },
+    "8h": {
+      "max_rss_mb": 768,
+      "max_error_count": 0
+    }
+  }
+}
