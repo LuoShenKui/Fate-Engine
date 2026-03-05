@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.protocol/ladder.interact.response.schema.json",
+  "title": "Ladder Interact Response",
+  "allOf": [
+    {
+      "$ref": "./envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "type": {
+          "const": "ladder.interact.response"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    }
+  ]
+}

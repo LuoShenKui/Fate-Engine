@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.protocol/ladder.interact.request.schema.json",
+  "title": "Ladder Interact Request",
+  "allOf": [
+    {
+      "$ref": "./envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ladder.interact.request"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["actor_id"],
+          "properties": {
+            "actor_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

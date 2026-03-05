@@ -1,21 +1,9 @@
 import type { BrickDefinition } from "./brick";
-import { DoorBrickDefinition } from "./door";
-
-const LadderBrickDefinition: BrickDefinition = {
-  id: "ladder",
-  name: "Ladder",
-  summary: "可上下攀爬",
-  properties: [],
-  ports: [],
-};
-
-const TriggerZoneBrickDefinition: BrickDefinition = {
-  id: "trigger-zone",
-  name: "TriggerZone",
-  summary: "区域触发器",
-  properties: [],
-  ports: [],
-};
+import {
+  DoorBrickDefinition,
+  LadderBrickDefinition,
+  TriggerZoneBrickDefinition,
+} from "./door";
 
 const brickRegistry: Record<string, BrickDefinition> = {
   [DoorBrickDefinition.id]: DoorBrickDefinition,

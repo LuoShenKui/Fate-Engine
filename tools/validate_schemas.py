@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""协议 Schema 与 Door manifest 基础校验脚本（CI 可执行）。"""
+"""协议 Schema 与 package manifest 基础校验脚本（CI 可执行）。"""
 
 from __future__ import annotations
 
@@ -9,12 +9,14 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "protocol" / "schemas"
-DOOR_MANIFEST_PATH = ROOT / "packages" / "door" / "manifest.json"
-DOOR_TESTS_DIR = ROOT / "packages" / "door" / "tests"
 REQUIRED_FILES = [
     "envelope.schema.json",
     "door.interact.request.schema.json",
     "door.interact.response.schema.json",
+    "ladder.interact.request.schema.json",
+    "ladder.interact.response.schema.json",
+    "trigger_zone.interact.request.schema.json",
+    "trigger_zone.interact.response.schema.json",
 ]
 REQUIRED_TOP_LEVEL_FIELDS = [
     "id",
@@ -28,6 +30,23 @@ REQUIRED_TOP_LEVEL_FIELDS = [
     "slots",
     "state_version",
     "state_migration",
+]
+PACKAGE_CASES = [
+    {
+        "name": "door",
+        "manifest": ROOT / "packages" / "door" / "manifest.json",
+        "invalid": ROOT / "packages" / "door" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
+    {
+        "name": "ladder",
+        "manifest": ROOT / "packages" / "ladder" / "manifest.json",
+        "invalid": ROOT / "packages" / "ladder" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
+    {
+        "name": "trigger_zone",
+        "manifest": ROOT / "packages" / "trigger_zone" / "manifest.json",
+        "invalid": ROOT / "packages" / "trigger_zone" / "tests" / "manifest.invalid.missing_state_version.json",
+    },
 ]
 
 
@@ -127,30 +146,33 @@ def main() -> int:
         print("[ERROR] envelope.error.required 字段不符合约定")
         return 1
 
-    try:
-        manifest = load_json(DOOR_MANIFEST_PATH)
-    except json.JSONDecodeError as exc:
-        print(f"[ERROR] 非法 JSON: {DOOR_MANIFEST_PATH} ({exc})")
-        return 1
+    for package_case in PACKAGE_CASES:
+        try:
+            manifest = load_json(package_case["manifest"])
+        except json.JSONDecodeError as exc:
+            print(f"[ERROR] 非法 JSON: {package_case['manifest']} ({exc})")
+            return 1
 
-    manifest_errors = validate_manifest(manifest)
-    if manifest_errors:
-        print(f"[ERROR] door manifest 校验失败: {DOOR_MANIFEST_PATH}")
-        for item in manifest_errors:
-            print(f"  - {item}")
-        return 1
+        manifest_errors = validate_manifest(manifest)
+        if manifest_errors:
+            print(f"[ERROR] {package_case['name']} manifest 校验失败: {package_case['manifest']}")
+            for item in manifest_errors:
+                print(f"  - {item}")
+            return 1
 
-    invalid_case = load_json(DOOR_TESTS_DIR / "manifest.invalid.missing_state_version.json")
-    if not any("state_version" in msg for msg in validate_manifest(invalid_case)):
-        print("[ERROR] manifest 负例未触发 state_version 校验")
-        return 1
+        invalid_case = load_json(package_case["invalid"])
+        if not any("state_version" in msg for msg in validate_manifest(invalid_case)):
+            print(f"[ERROR] {package_case['name']} manifest 负例未触发 state_version 校验")
+            return 1
 
-    invalid_dep_case = load_json(DOOR_TESTS_DIR / "manifest.invalid.dependency_missing_version.json")
+    invalid_dep_case = load_json(
+        ROOT / "packages" / "door" / "tests" / "manifest.invalid.dependency_missing_version.json"
+    )
     if not any("dependencies[0] 缺少字段: version" in msg for msg in validate_manifest(invalid_dep_case)):
         print("[ERROR] manifest 负例未触发 dependencies.version 校验")
         return 1
 
-    print("[OK] protocol schemas + door manifest 校验通过")
+    print("[OK] protocol schemas + package manifests 校验通过")
     return 0
 
 
