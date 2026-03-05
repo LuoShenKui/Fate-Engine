@@ -170,13 +170,13 @@ export default function App(): JSX.Element {
     renderBatchValidate(recipe);
   };
 
-  const onInteract = (): void => {
+  const onInteract = (sourceNodeId?: string): void => {
     const requestId = `req-${requestSeq}`;
     const request: Envelope<DoorInteractRequestPayload> = {
       protocol_version: "1.0",
       type: "door.interact.request",
       request_id: requestId,
-      payload: { actor_id: "player_1" },
+      payload: { actor_id: sourceNodeId ?? "player_1" },
     };
     setRequestSeq((prev) => prev + 1);
     const responseText = adapter.handleInteract(JSON.stringify(request));
@@ -187,7 +187,7 @@ export default function App(): JSX.Element {
         ...prev,
         {
           level: "Error",
-          message: `[request_id=${requestId}] ${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)}) [brick=door node=door-1 slot=mesh]`,
+          message: `[request_id=${requestId}] ${protocolError.code}: ${protocolError.message} (${JSON.stringify(protocolError.details)}) [brick=door node=${sourceNodeId ?? "door-1"} slot=mesh]`,
         },
       ]);
     } else {
@@ -285,7 +285,7 @@ export default function App(): JSX.Element {
       top={
         <DebugToolbar
           locked={locked}
-          onInteract={onInteract}
+          onInteract={() => onInteract()}
           onToggleLock={onToggleLock}
           onImport={onImport}
           onExport={onExport}
@@ -307,6 +307,7 @@ export default function App(): JSX.Element {
             setNodes(next.nodes);
             setEdges(next.edges);
           }}
+          onInteract={(nodeId) => onInteract(nodeId)}
         />
       }
       right={
