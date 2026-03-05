@@ -24,6 +24,26 @@ export type TriggerZoneState = {
   has_bounds: boolean;
 };
 
+export type SwitchState = {
+  enabled: boolean;
+  active: boolean;
+};
+
+export type ContainerState = {
+  enabled: boolean;
+  opened: boolean;
+};
+
+export type CheckpointState = {
+  enabled: boolean;
+  activated: boolean;
+};
+
+export type TeleportState = {
+  enabled: boolean;
+  charging: boolean;
+};
+
 export type DoorStateSyncPayload = {
   entity_id: string;
   state: "Closed" | "Open" | "Locked";
@@ -188,6 +208,128 @@ export const TriggerZoneBrickDefinition: BrickDefinition = {
   ],
 };
 
+export const SwitchBrickDefinition: BrickDefinition = {
+  id: "switch",
+  name: "Switch",
+  summary: "可触发开关",
+  properties: [],
+  slots: [
+    {
+      slotId: "mesh",
+      label: "Switch Mesh",
+      optional: false,
+    },
+  ],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "开关切换时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "开关不可用时触发",
+    },
+  ],
+};
+
+export const ContainerBrickDefinition: BrickDefinition = {
+  id: "container",
+  name: "Container",
+  summary: "可打开容器",
+  properties: [],
+  slots: [
+    {
+      slotId: "mesh",
+      label: "Container Mesh",
+      optional: false,
+    },
+  ],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "容器开启/关闭时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "容器不可用时触发",
+    },
+  ],
+};
+
+export const CheckpointBrickDefinition: BrickDefinition = {
+  id: "checkpoint",
+  name: "Checkpoint",
+  summary: "存档检查点",
+  properties: [],
+  slots: [
+    {
+      slotId: "vfx-mark",
+      label: "Checkpoint VFX",
+      optional: true,
+      fallbackAssetRef: "asset://vfx/default-checkpoint",
+    },
+  ],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "触发检查点时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "检查点不可用时触发",
+    },
+  ],
+};
+
+export const TeleportBrickDefinition: BrickDefinition = {
+  id: "teleport",
+  name: "Teleport",
+  summary: "传送装置",
+  properties: [],
+  slots: [
+    {
+      slotId: "vfx-portal",
+      label: "Portal VFX",
+      optional: true,
+      fallbackAssetRef: "asset://vfx/default-portal",
+    },
+  ],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "传送成功时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "传送失败时触发",
+    },
+  ],
+};
+
 export class DoorRuntimeAdapter {
   private state: DoorState = {
     enabled: true,
@@ -280,5 +422,65 @@ export class TriggerZoneRuntimeAdapter {
       issues.push(`Error:${zoneName}:MISSING_BOUNDS:TriggerZone 缺少触发范围`);
     }
     return { issues };
+  }
+}
+
+export class SwitchRuntimeAdapter {
+  private state: SwitchState = {
+    enabled: true,
+    active: false,
+  };
+
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.active = !this.state.active;
+    return { event: "OnUsed", payload: `actor_id=${actorId},active=${this.state.active}` };
+  }
+}
+
+export class ContainerRuntimeAdapter {
+  private state: ContainerState = {
+    enabled: true,
+    opened: false,
+  };
+
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.opened = !this.state.opened;
+    return { event: "OnUsed", payload: `actor_id=${actorId},opened=${this.state.opened}` };
+  }
+}
+
+export class CheckpointRuntimeAdapter {
+  private state: CheckpointState = {
+    enabled: true,
+    activated: false,
+  };
+
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.activated = true;
+    return { event: "OnUsed", payload: `actor_id=${actorId},activated=${this.state.activated}` };
+  }
+}
+
+export class TeleportRuntimeAdapter {
+  private state: TeleportState = {
+    enabled: true,
+    charging: false,
+  };
+
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.charging = !this.state.charging;
+    return { event: "OnUsed", payload: `actor_id=${actorId},charging=${this.state.charging}` };
   }
 }
