@@ -25,14 +25,14 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
       <strong data-testid="editor-page-ready">{props.appTitle}</strong>
       {!props.playMode ? (
-        <button type="button" onClick={props.onInteract}>
+        <button type="button" data-testid="toolbar-interact" onClick={props.onInteract}>
           {t("toolbar.interact")}
         </button>
       ) : null}
-      <button type="button" onClick={props.onTogglePlayMode}>
+      <button type="button" data-testid="toolbar-toggle-play" onClick={props.onTogglePlayMode}>
         {t("toolbar.playMode", { enabled: String(props.playMode) })}
       </button>
-      <button type="button" onClick={props.onToggleLock}>
+      <button type="button" data-testid="toolbar-toggle-lock" onClick={props.onToggleLock}>
         {t("toolbar.toggleLock", { locked: String(props.locked) })}
       </button>
       <button type="button" onClick={props.onImport}>
