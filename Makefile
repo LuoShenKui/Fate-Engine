@@ -1,6 +1,6 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
 	check-unit check-integration check-replay check-visual check-perf check-stability \
-	check-m1 check-m2 check-m3 release-local
+	check-soak-2h check-soak-8h check-m1 check-m2 check-m3 release-local
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts -> perf"
@@ -36,6 +36,17 @@ check-stability:
 	@echo "[检查] 运行时稳定性基线检查中..."
 	@python3 tools/check_runtime_stability.py
 	@echo "[检查] 运行时稳定性基线检查通过"
+
+
+check-soak-2h:
+	@echo "[检查] 运行时长稳检查（2h）..."
+	@python3 tools/check_runtime_soak.py --profile 2h
+	@echo "[检查] 运行时长稳检查（2h）通过"
+
+check-soak-8h:
+	@echo "[检查] 运行时长稳检查（8h）..."
+	@python3 tools/check_runtime_soak.py --profile 8h
+	@echo "[检查] 运行时长稳检查（8h）通过"
 
 check-unit:
 	@echo "[分层检查] Unit：协议/schema + runtime 单元测试"

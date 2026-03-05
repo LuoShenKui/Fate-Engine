@@ -111,6 +111,10 @@ cargo test --manifest-path runtime/door_core/Cargo.toml
 # 2.1) 运行时稳定性基线（A1：10k tick smoke）
 python3 tools/check_runtime_stability.py
 
+# 2.2) 运行时长稳（nightly）
+python3 tools/check_runtime_soak.py --profile 2h
+python3 tools/check_runtime_soak.py --profile 8h
+
 # 3) C++ 包装层与 manifest 基础编译校验（仅构建，不运行 demo）
 cmake -S . -B build
 cmake --build build
@@ -198,7 +202,15 @@ python3 tools/release_local.py
 
 ## A 项（引擎与运行时稳定性）当前可机检入口
 ```bash
+# 快速门禁（PR 必跑）
 make check-stability
+
+# 夜间长稳（nightly）
+make check-soak-2h
+make check-soak-8h
 ```
 
-说明：该入口用于 A1 基线（10k tick smoke），用于快速发现运行时崩溃与状态异常。
+通过标准：
+- `check-stability`：10k tick smoke 成功，快速发现崩溃与状态异常。
+- `check-soak-2h` / `check-soak-8h`：输出统一 JSON 摘要（`duration/tick_total/error_count/max_rss_mb`），并满足 `protocol/perf/runtime_soak_thresholds.json` 阈值。
+- 与现有分层门禁对齐：`check-stability` 作为快速门禁留在日常检查，长稳 soak 建议纳入 nightly。
