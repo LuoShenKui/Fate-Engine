@@ -54,7 +54,7 @@ const defaultEdges: CanvasEdge[] = [];
 export default function App(): JSX.Element {
   const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
-  const sceneDoor = useMemo(() => new DoorSceneComponent("door-1"), []);
+  const sceneDoorMap = useMemo(() => new Map<string, DoorSceneComponent>(), []);
   const { t } = useI18n();
   const [events, setEvents] = useState<string[]>([]);
   const [protocolErrors, setProtocolErrors] = useState<ValidationItem[]>([]);
@@ -71,6 +71,17 @@ export default function App(): JSX.Element {
   const [batchStatsDiff, setBatchStatsDiff] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
   const [batchEntries, setBatchEntries] = useState<Array<{ recipeId: string; items: ValidationItem[] }>>([]);
   const [playMode, setPlayMode] = useState(false);
+  const [activeEntityId, setActiveEntityId] = useState("door-1");
+
+  const getSceneDoor = (entityId: string): DoorSceneComponent => {
+    const cached = sceneDoorMap.get(entityId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const created = new DoorSceneComponent(entityId);
+    sceneDoorMap.set(entityId, created);
+    return created;
+  };
 
   useEffect(() => {
     document.title = t("app.title");
@@ -176,6 +187,8 @@ export default function App(): JSX.Element {
 
   const onInteract = (sourceNodeId?: string): void => {
     const entityId = sourceNodeId ?? "door-1";
+    setActiveEntityId(entityId);
+    const sceneDoor = getSceneDoor(entityId);
     if (playMode) {
       sceneDoor.updateActorDistance(1.0);
       const sceneResult = sceneDoor.interact();
@@ -221,11 +234,13 @@ export default function App(): JSX.Element {
 
   const onToggleLock = (): void => {
     const nextLocked = !locked;
+    const entityId = activeEntityId;
+    const sceneDoor = getSceneDoor(entityId);
     const requestId = `req-${requestSeq}`;
     setRequestSeq((prev) => prev + 1);
     setLocked(nextLocked);
     appendEvent(requestId, adapter.setState("locked", nextLocked));
-    adapter.syncState({ entity_id: "door-1", state: nextLocked ? "Locked" : "Closed" });
+    adapter.syncState({ entity_id: entityId, state: nextLocked ? "Locked" : "Closed" });
     sceneDoor.syncFromProtocol(nextLocked ? "Locked" : "Closed");
     setFields((prev) => prev.map((field) => (field.key === "locked" ? { ...field, value: nextLocked } : field)));
     renderValidate();
