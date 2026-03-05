@@ -64,6 +64,21 @@ pub struct DoorState {
     pub has_trigger: bool,
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LadderState {
+    pub enabled: bool,
+    pub occupied: bool,
+    pub has_top_anchor: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TriggerZoneState {
+    pub enabled: bool,
+    pub occupied: bool,
+    pub has_bounds: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CameraMode {
     FirstPerson,
@@ -121,6 +136,27 @@ impl EngineDefaults {
                 offset_cm: [-200, 0, 120],
                 collision_enabled: true,
             },
+        }
+    }
+}
+
+
+impl Default for LadderState {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            occupied: false,
+            has_top_anchor: true,
+        }
+    }
+}
+
+impl Default for TriggerZoneState {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            occupied: false,
+            has_bounds: true,
         }
     }
 }
@@ -198,6 +234,107 @@ pub enum ValidationSeverity {
     Error,
     Warning,
     Info,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LadderBrick {
+    pub brick_id: String,
+    pub state: LadderState,
+}
+
+impl LadderBrick {
+    pub fn new(brick_id: impl Into<String>, state: LadderState) -> Self {
+        Self {
+            brick_id: brick_id.into(),
+            state,
+        }
+    }
+
+    pub fn interact(&mut self, input: InteractInput) -> BrickEvent {
+        if !self.state.enabled {
+            return BrickEvent {
+                event: events::ON_DENIED.to_string(),
+                payload: "reason=disabled".to_string(),
+            };
+        }
+
+        self.state.occupied = !self.state.occupied;
+        BrickEvent {
+            event: events::ON_USED.to_string(),
+            payload: format!("actor_id={},occupied={}", input.actor_id, self.state.occupied),
+        }
+    }
+
+    pub fn validate(&self) -> ValidateOutput {
+        let mut issues = Vec::new();
+        if !self.state.has_top_anchor {
+            issues.push(ValidationIssue {
+                severity: ValidationSeverity::Error,
+                code: "MISSING_TOP_ANCHOR".to_string(),
+                message: "Ladder 缺少顶部锚点".to_string(),
+                location: ValidationLocation {
+                    brick_id: self.brick_id.clone(),
+                    entity_id: None,
+                    param_key: None,
+                    slot_id: Some("top_anchor".to_string()),
+                    node_id: None,
+                },
+                suggested_fix: None,
+            });
+        }
+        ValidateOutput { issues }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TriggerZoneBrick {
+    pub brick_id: String,
+    pub state: TriggerZoneState,
+}
+
+impl TriggerZoneBrick {
+    pub fn new(brick_id: impl Into<String>, state: TriggerZoneState) -> Self {
+        Self {
+            brick_id: brick_id.into(),
+            state,
+        }
+    }
+
+    pub fn interact(&mut self, input: InteractInput) -> BrickEvent {
+        if !self.state.enabled {
+            return BrickEvent {
+                event: events::ON_DENIED.to_string(),
+                payload: "reason=disabled".to_string(),
+            };
+        }
+
+        self.state.occupied = !self.state.occupied;
+        BrickEvent {
+            event: events::ON_USED.to_string(),
+            payload: format!("actor_id={},occupied={}", input.actor_id, self.state.occupied),
+        }
+    }
+
+    pub fn validate(&self) -> ValidateOutput {
+        let mut issues = Vec::new();
+        if !self.state.has_bounds {
+            issues.push(ValidationIssue {
+                severity: ValidationSeverity::Error,
+                code: "MISSING_BOUNDS".to_string(),
+                message: "TriggerZone 缺少触发范围".to_string(),
+                location: ValidationLocation {
+                    brick_id: self.brick_id.clone(),
+                    entity_id: None,
+                    param_key: None,
+                    slot_id: Some("bounds".to_string()),
+                    node_id: None,
+                },
+                suggested_fix: None,
+            });
+        }
+        ValidateOutput { issues }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -732,6 +869,38 @@ mod tests {
         assert_eq!(response.r#type, "door.interact.response");
         assert_eq!(response.request_id, "req-err-payload");
         assert_eq!(response.error.unwrap().code, "INVALID_REQUEST_PAYLOAD");
+    }
+
+    #[test]
+    fn ladder_runtime_interact_and_validate_work() {
+        let mut state = LadderState::default();
+        state.has_top_anchor = false;
+        let mut brick = LadderBrick::new("fate.ladder.basic", state);
+
+        let event = brick.interact(InteractInput {
+            actor_id: "player_2".to_string(),
+        });
+        assert_eq!(event.event, events::ON_USED);
+        assert_eq!(event.payload, "actor_id=player_2,occupied=true");
+
+        let report = brick.validate();
+        assert!(report.issues.iter().any(|issue| issue.code == "MISSING_TOP_ANCHOR"));
+    }
+
+    #[test]
+    fn trigger_zone_runtime_interact_and_validate_work() {
+        let mut state = TriggerZoneState::default();
+        state.has_bounds = false;
+        let mut brick = TriggerZoneBrick::new("fate.trigger_zone.basic", state);
+
+        let event = brick.interact(InteractInput {
+            actor_id: "player_3".to_string(),
+        });
+        assert_eq!(event.event, events::ON_USED);
+        assert_eq!(event.payload, "actor_id=player_3,occupied=true");
+
+        let report = brick.validate();
+        assert!(report.issues.iter().any(|issue| issue.code == "MISSING_BOUNDS"));
     }
 
     #[test]

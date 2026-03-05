@@ -1,0 +1,65 @@
+{
+  "id": "fate.ladder.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.climb",
+      "level": 1,
+      "exposed_params": [
+        "enabled",
+        "occupied",
+        "has_top_anchor"
+      ]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "occupied": {
+      "key": "occupied",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "has_top_anchor": {
+      "key": "has_top_anchor",
+      "type": "bool",
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:ladder.mesh.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/ladder/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}

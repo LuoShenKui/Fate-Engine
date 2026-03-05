@@ -12,6 +12,18 @@ export type DoorState = {
   has_trigger: boolean;
 };
 
+export type LadderState = {
+  enabled: boolean;
+  occupied: boolean;
+  has_top_anchor: boolean;
+};
+
+export type TriggerZoneState = {
+  enabled: boolean;
+  occupied: boolean;
+  has_bounds: boolean;
+};
+
 export type DoorBrickEvent = {
   event: string;
   payload: string;
@@ -66,6 +78,52 @@ export const DoorBrickDefinition: BrickDefinition = {
   ],
 };
 
+export const LadderBrickDefinition: BrickDefinition = {
+  id: "ladder",
+  name: "Ladder",
+  summary: "可上下攀爬",
+  properties: [],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "玩家开始/结束攀爬时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "攀爬被拒绝时触发",
+    },
+  ],
+};
+
+export const TriggerZoneBrickDefinition: BrickDefinition = {
+  id: "trigger-zone",
+  name: "TriggerZone",
+  summary: "区域触发器",
+  properties: [],
+  ports: [
+    {
+      id: "on-used",
+      name: "OnUsed",
+      direction: "output",
+      dataType: "event",
+      description: "进入/离开触发区时触发",
+    },
+    {
+      id: "on-denied",
+      name: "OnDenied",
+      direction: "output",
+      dataType: "event",
+      description: "触发被拒绝时触发",
+    },
+  ],
+};
+
 export class DoorRuntimeAdapter {
   private state: DoorState = {
     enabled: true,
@@ -98,6 +156,54 @@ export class DoorRuntimeAdapter {
     }
     if (!this.state.has_trigger) {
       issues.push(`Error:${doorName}:MISSING_TRIGGER:Door 缺少触发体`);
+    }
+    return { issues };
+  }
+}
+
+export class LadderRuntimeAdapter {
+  private state: LadderState = {
+    enabled: true,
+    occupied: false,
+    has_top_anchor: true,
+  };
+
+  interact(actorId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.occupied = !this.state.occupied;
+    return { event: "OnUsed", payload: `actor_id=${actorId},occupied=${this.state.occupied}` };
+  }
+
+  validate(ladderName: string): ValidateOutput {
+    const issues: string[] = [];
+    if (!this.state.has_top_anchor) {
+      issues.push(`Error:${ladderName}:MISSING_TOP_ANCHOR:Ladder 缺少顶部锚点`);
+    }
+    return { issues };
+  }
+}
+
+export class TriggerZoneRuntimeAdapter {
+  private state: TriggerZoneState = {
+    enabled: true,
+    occupied: false,
+    has_bounds: true,
+  };
+
+  interact(actorId: string): DoorBrickEvent {
+    if (!this.state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    this.state.occupied = !this.state.occupied;
+    return { event: "OnUsed", payload: `actor_id=${actorId},occupied=${this.state.occupied}` };
+  }
+
+  validate(zoneName: string): ValidateOutput {
+    const issues: string[] = [];
+    if (!this.state.has_bounds) {
+      issues.push(`Error:${zoneName}:MISSING_BOUNDS:TriggerZone 缺少触发范围`);
     }
     return { issues };
   }

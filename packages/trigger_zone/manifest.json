@@ -1,0 +1,65 @@
+{
+  "id": "fate.trigger_zone.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.zone",
+      "level": 1,
+      "exposed_params": [
+        "enabled",
+        "occupied",
+        "has_bounds"
+      ]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "occupied": {
+      "key": "occupied",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "has_bounds": {
+      "key": "has_bounds",
+      "type": "bool",
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "volume.bounds",
+      "slot_type": "volume",
+      "fallback": "builtin:trigger_zone.bounds.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/trigger_zone/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  }
+}
