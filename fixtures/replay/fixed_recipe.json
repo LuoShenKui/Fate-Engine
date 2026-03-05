@@ -1,0 +1,25 @@
+{
+  "id": "forest-cabin-demo",
+  "name": "Forest Cabin Replay Baseline",
+  "version": 1,
+  "steps": [
+    {
+      "brick": "door",
+      "params": {
+        "locked": true
+      }
+    },
+    {
+      "brick": "trigger_zone",
+      "params": {
+        "radius": 3.5
+      }
+    },
+    {
+      "brick": "ladder",
+      "params": {
+        "height": 4
+      }
+    }
+  ]
+}

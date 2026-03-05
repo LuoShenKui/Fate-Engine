@@ -6,7 +6,12 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,5 +40,45 @@ jobs:
       - name: Install editor dependencies
         run: pnpm install --dir editor/app --frozen-lockfile
 
-      - name: Run checks
-        run: make check
+      - name: Run checks on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/validate_schemas.py
+          cargo test --manifest-path runtime/door_core/Cargo.toml
+          cmake -S . -B build
+          cmake --build build
+          cd editor/app
+          pnpm run typecheck
+          pnpm run build
+
+      - name: Run checks on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/validate_schemas.py
+          cargo test --manifest-path runtime/door_core/Cargo.toml
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          cmake --build build --config Release
+          pnpm --dir editor/app run typecheck
+          pnpm --dir editor/app run build
+
+  replay-determinism:
+    name: replay-determinism
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Replay determinism check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/replay_determinism_check.py --output-dir /tmp/replay-determinism
