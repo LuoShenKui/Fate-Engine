@@ -70,3 +70,29 @@ python3 tools/release_local.py --dry-run
 - `namespace=fate`
 - `channel=stable`
 - `endpoint` 先留空（后续 Go registry 可写 URL）。
+
+
+## 6) 跨机器复现实验（矩阵模式）
+
+执行命令：
+
+```bash
+python3 tools/check_replay_matrix.py --matrix fixtures/replay/matrix_cases.json --report-out fixtures/replay/report.latest.json
+```
+
+说明：
+- 固定 `seed/recipe/lockfile`，对 `vN-1 / vN / vN+1` 存档样本批量执行迁移回放；
+- 校验 `packages/*/manifest.json` 中 `state_migration.from_previous` 与 `state_version` 声明是否自洽；
+- 输出统一 machine-readable 报告，包含每个 case 的 `summary_hash`、`migration_paths`、`failed_diff_fields`。
+
+### 验收清单（可执行）
+
+1. 环境记录（提交到实验记录）：
+   - `os`: 操作系统名称与版本（如 `Ubuntu 24.04`）；
+   - `arch`: CPU 架构（如 `x86_64` / `arm64`）；
+   - `python`: `python3 --version`；
+   - `cmake`: `cmake --version`；
+   - `runtime`: 若涉及 Rust 运行时，记录 `rustc --version` 与 `cargo --version`。
+2. 执行 `python3 tools/check_replay_determinism.py ...`，确认 `summary_hash` 稳定。
+3. 执行 `python3 tools/check_replay_matrix.py ...`，确认 `failed_cases` 为空（或与预期失败用例一致）。
+4. 归档 `--report-out` 产物与命令行输出，作为跨机器复现证据。
