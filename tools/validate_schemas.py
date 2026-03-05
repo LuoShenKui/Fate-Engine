@@ -72,9 +72,12 @@ PACKAGE_CASES = [
     },
 ]
 
-REQUIRED_PUBLISH_FIELDS = ["package", "version", "hash", "license", "compat", "source", "registry"]
+REQUIRED_PUBLISH_FIELDS = ["package", "version", "hash", "license", "compat", "source", "registry", "lifecycle", "release", "announcement_ref"]
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
+
+LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
+RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
 
 
 def load_json(path: Path) -> dict:
@@ -209,6 +212,8 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
     compat = publish.get("compat")
     if not isinstance(compat, dict) or not isinstance(compat.get("engine"), str):
         errors.append("INVALID_PUBLISH_COMPAT_ENGINE_TYPE: expected string")
+    elif not isinstance(compat.get("matrix_ref"), str) or not compat.get("matrix_ref"):
+        errors.append("INVALID_PUBLISH_COMPAT_MATRIX_REF: expected non-empty string")
 
     source = publish.get("source")
     if not isinstance(source, dict):
@@ -228,6 +233,18 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
         for key in ("provider", "namespace", "channel"):
             if not isinstance(registry.get(key), str):
                 errors.append(f"INVALID_PUBLISH_REGISTRY_FIELD_TYPE: {key} expected string")
+
+    lifecycle = publish.get("lifecycle")
+    if not isinstance(lifecycle, dict) or lifecycle.get("status") not in LIFECYCLE_STATUS_ALLOWED:
+        errors.append("INVALID_PUBLISH_LIFECYCLE_STATUS: expected active|deprecated|revoked")
+
+    release = publish.get("release")
+    if not isinstance(release, dict) or release.get("channel") not in RELEASE_CHANNEL_ALLOWED:
+        errors.append("INVALID_PUBLISH_RELEASE_CHANNEL: expected canary|stable|lts")
+
+    announcement_ref = publish.get("announcement_ref")
+    if not isinstance(announcement_ref, str) or not announcement_ref:
+        errors.append("INVALID_PUBLISH_ANNOUNCEMENT_REF: expected non-empty string")
 
     pipeline_errors = validate_pipeline_summary(publish.get("pipeline"))
     errors.extend(pipeline_errors)

@@ -13,14 +13,22 @@
       "license": "MIT",
       "compat": {
         "engine": ">=0.1.0",
-        "contract": "0.1"
+        "contract": "0.1",
+        "matrix_ref": "docs/releases/compat_matrix.json"
       },
       "registry": {
         "provider": "local",
         "namespace": "fate",
         "channel": "stable",
         "endpoint": ""
-      }
+      },
+      "lifecycle": {
+        "status": "active"
+      },
+      "release": {
+        "channel": "stable"
+      },
+      "announcement_ref": "docs/releases/pending-door.md"
     },
     {
       "package": "fate.ladder.basic",
@@ -33,14 +41,22 @@
       "license": "MIT",
       "compat": {
         "engine": ">=0.1.0",
-        "contract": "0.1"
+        "contract": "0.1",
+        "matrix_ref": "docs/releases/compat_matrix.json"
       },
       "registry": {
         "provider": "local",
         "namespace": "fate",
         "channel": "stable",
         "endpoint": ""
-      }
+      },
+      "lifecycle": {
+        "status": "active"
+      },
+      "release": {
+        "channel": "stable"
+      },
+      "announcement_ref": "docs/releases/pending-ladder.md"
     },
     {
       "package": "fate.trigger_zone.basic",
@@ -53,14 +69,22 @@
       "license": "MIT",
       "compat": {
         "engine": ">=0.1.0",
-        "contract": "0.1"
+        "contract": "0.1",
+        "matrix_ref": "docs/releases/compat_matrix.json"
       },
       "registry": {
         "provider": "local",
         "namespace": "fate",
         "channel": "stable",
         "endpoint": ""
-      }
+      },
+      "lifecycle": {
+        "status": "active"
+      },
+      "release": {
+        "channel": "stable"
+      },
+      "announcement_ref": "docs/releases/pending-trigger_zone.md"
     }
   ]
 }

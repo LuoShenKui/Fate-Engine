@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_DIR = ROOT / "packages"
 DIST_DIR = ROOT / "dist"
 LOCKFILE = PACKAGES_DIR / "brick.lock.json"
+COMPAT_MATRIX_DEFAULT_REF = "docs/releases/compat_matrix.json"
+LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
+RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
 
 
 def sha256_file(path: Path) -> str:
@@ -86,6 +89,24 @@ def build_pipeline_summary(plan: dict | None) -> dict | None:
 
 def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: dict | None = None) -> dict:
     publish = load_json(package_dir / "publish.json")
+    lifecycle = publish.get("lifecycle")
+    release = publish.get("release")
+    compat = publish.get("compat")
+
+    if not isinstance(lifecycle, dict) or lifecycle.get("status") not in LIFECYCLE_STATUS_ALLOWED:
+        raise ValueError(f"{package_dir.name}: lifecycle.status 缺失或非法（active/deprecated/revoked）")
+    if not isinstance(release, dict) or release.get("channel") not in RELEASE_CHANNEL_ALLOWED:
+        raise ValueError(f"{package_dir.name}: release.channel 缺失或非法（canary/stable/lts）")
+    if not isinstance(compat, dict):
+        raise ValueError(f"{package_dir.name}: compat 缺失")
+
+    compat_matrix_ref = compat.get("matrix_ref")
+    if not isinstance(compat_matrix_ref, str) or not compat_matrix_ref:
+        raise ValueError(f"{package_dir.name}: compat.matrix_ref 缺失")
+    announcement_ref = publish.get("announcement_ref")
+    if not isinstance(announcement_ref, str) or not announcement_ref:
+        raise ValueError(f"{package_dir.name}: announcement_ref 缺失")
+
     package_name = publish["package"]
     version = publish["version"]
 
@@ -122,6 +143,9 @@ def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: di
         "license": publish["license"],
         "compat": publish["compat"],
         "registry": publish["registry"],
+        "lifecycle": publish["lifecycle"],
+        "release": publish["release"],
+        "announcement_ref": publish["announcement_ref"],
     }
 
 
@@ -155,14 +179,61 @@ def main() -> int:
             print("[ERROR] --pipeline-plan 内容缺少必要字段: plan_id/config_hash/source_hashes/tool_version")
             return 1
 
+    matrix_ref = COMPAT_MATRIX_DEFAULT_REF
+    for name in package_names:
+        package_dir = PACKAGES_DIR / name
+        publish_path = package_dir / "publish.json"
+        publish = load_json(publish_path)
+        publish.setdefault("compat", {})
+        publish["compat"]["matrix_ref"] = matrix_ref
+
+        release_note_cmd = [
+            "python3",
+            str(ROOT / "tools" / "build_release_note.py"),
+            "--package",
+            publish["package"],
+            "--version",
+            publish["version"],
+            "--lifecycle-status",
+            str(publish.get("lifecycle", {}).get("status", "")),
+            "--release-channel",
+            str(publish.get("release", {}).get("channel", "")),
+            "--compat-matrix-ref",
+            matrix_ref,
+            "--package-dir",
+            name,
+        ]
+        if args.dry_run:
+            release_note_cmd.append("--dry-run")
+        release_note_ref = subprocess.run(release_note_cmd, check=True, capture_output=True, text=True).stdout.strip()
+        publish["announcement_ref"] = release_note_ref
+        if not args.dry_run:
+            publish_path.write_text(json.dumps(publish, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
     entries: list[dict] = []
     for name in package_names:
         package_dir = PACKAGES_DIR / name
-        entries.append(build_package(package_dir, dry_run=args.dry_run, pipeline_summary=pipeline_summary))
+        try:
+            entries.append(build_package(package_dir, dry_run=args.dry_run, pipeline_summary=pipeline_summary))
+        except ValueError as exc:
+            print(f"[ERROR] {exc}")
+            return 1
         action = "已校验(干跑)" if args.dry_run else "已发布"
         print(f"[OK] {action}: {name}")
 
     write_lockfile(entries, dry_run=args.dry_run)
+    if not args.dry_run:
+        subprocess.run(
+            [
+                "python3",
+                str(ROOT / "tools" / "build_compat_matrix.py"),
+                "--lockfile",
+                str(LOCKFILE),
+                "--out",
+                matrix_ref,
+            ],
+            check=True,
+        )
     if args.dry_run:
         print(f"[OK] dry-run 通过（未写入）: {LOCKFILE.relative_to(ROOT)}")
     else:

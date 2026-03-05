@@ -5,7 +5,8 @@
   "license": "MIT",
   "compat": {
     "engine": ">=0.1.0",
-    "contract": "0.1"
+    "contract": "0.1",
+    "matrix_ref": "docs/releases/compat_matrix.json"
   },
   "source": {
     "type": "file",
@@ -20,5 +21,12 @@
   "artifact": {
     "path": "dist/fate.door.basic-0.1.1.tar.gz",
     "checksum": "sha256:27429f1b164350b024b6b292b667c3d741dc6c5fddfd633a5ad3df8b62e4a099"
-  }
+  },
+  "lifecycle": {
+    "status": "active"
+  },
+  "release": {
+    "channel": "stable"
+  },
+  "announcement_ref": "docs/releases/pending-door.md"
 }

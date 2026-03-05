@@ -14,11 +14,13 @@ python3 tools/check_replay_determinism.py --recipe fixtures/replay/fixed_recipe.
 python3 tools/release_local.py
 ```
 
-脚本会先执行 `tools/validate_schemas.py`，然后：
+脚本会先执行 `tools/validate_schemas.py`，并对 `lifecycle.status/release.channel/compat.matrix_ref/announcement_ref` 做治理字段检查；关键字段缺失会阻断发布。然后：
 - 按 `packages/<brick>/publish.json` 读取发布元数据；
 - 生成 `dist/<package>-<version>.tar.gz` 与同名 `.sha256` 摘要文件；
 - 回写 `publish.json` 的 `source` 为 `file://dist/...`；
-- 生成 `packages/brick.lock.json`（锁定版本 + checksum + compat + registry 保留字段）。
+- 自动产出发布公告 `docs/releases/<date>-<package>-<version>.md` 并回写 `announcement_ref`；
+- 自动生成兼容矩阵 `docs/releases/compat_matrix.json`，并回写 `compat.matrix_ref`；
+- 生成 `packages/brick.lock.json`（锁定版本 + checksum + compat + registry + 治理字段）。
 
 CI 只做流程校验时可使用：
 
@@ -135,3 +137,47 @@ python3 tools/check_dependency_compliance.py
 - 触发的 `violation_code`；
 - 风险评估与替代方案对比；
 - 生效时长（到期后必须复审）。
+
+
+## 9) 发布治理状态机（灰度→稳定→弃用→回滚）
+
+状态机：
+- `canary + active`：灰度验证阶段；
+- `stable/lts + active`：稳定可消费；
+- `stable/lts + deprecated`：已弃用，允许读取但不建议新接入；
+- `* + revoked`：撤销发布，必须回滚。
+
+推荐操作命令：
+
+1. **灰度发布（canary）**
+   ```bash
+   python3 tools/release_local.py <package_dir>
+   ```
+   在 `packages/<package_dir>/publish.json` 中设置：
+   - `release.channel=canary`
+   - `lifecycle.status=active`
+
+2. **提升稳定（stable/lts）**
+   修改 `release.channel` 为 `stable` 或 `lts` 后再次执行：
+   ```bash
+   python3 tools/release_local.py <package_dir>
+   ```
+
+3. **弃用（deprecated）**
+   修改 `lifecycle.status=deprecated`，并执行：
+   ```bash
+   python3 tools/release_local.py <package_dir>
+   ```
+
+4. **回滚（revoked + 历史版本）**
+   - 将问题版本标记为 `lifecycle.status=revoked` 并重新发布元数据；
+   - 用目标历史版本重新执行发布：
+   ```bash
+   python3 tools/release_local.py <package_dir>
+   ```
+
+辅助命令：
+```bash
+python3 tools/build_compat_matrix.py --lockfile packages/brick.lock.json --out docs/releases/compat_matrix.json
+```
+用于在 lockfile 变更后单独重建 machine-readable 兼容矩阵。

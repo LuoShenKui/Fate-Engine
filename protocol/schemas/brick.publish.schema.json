@@ -10,7 +10,10 @@
     "license",
     "compat",
     "source",
-    "registry"
+    "registry",
+    "lifecycle",
+    "release",
+    "announcement_ref"
   ],
   "properties": {
     "package": { "type": "string", "minLength": 1 },
@@ -25,10 +28,11 @@
     "license": { "type": "string", "minLength": 1 },
     "compat": {
       "type": "object",
-      "required": ["engine"],
+      "required": ["engine", "matrix_ref"],
       "properties": {
         "engine": { "type": "string", "minLength": 1 },
-        "contract": { "type": "string" }
+        "contract": { "type": "string" },
+        "matrix_ref": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": true
     },
@@ -52,6 +56,23 @@
       },
       "additionalProperties": true
     },
+    "lifecycle": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["active", "deprecated", "revoked"] }
+      },
+      "additionalProperties": false
+    },
+    "release": {
+      "type": "object",
+      "required": ["channel"],
+      "properties": {
+        "channel": { "type": "string", "enum": ["canary", "stable", "lts"] }
+      },
+      "additionalProperties": false
+    },
+    "announcement_ref": { "type": "string", "minLength": 1 },
     "artifact": {
       "type": "object",
       "required": ["path", "checksum"],
