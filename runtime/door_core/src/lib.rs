@@ -1115,4 +1115,47 @@ mod tests {
         assert_eq!(third.offset_cm, [-200, 0, 120]);
         assert!(third.collision_enabled);
     }
+
+    #[test]
+    fn door_runtime_stability_smoke_10k_ticks() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+
+        let mut snapshot_ticks = 0;
+        for i in 0..10_000 {
+            if i % 7 == 0 {
+                let event = brick.set_state(SetStateInput {
+                    key: "locked".to_string(),
+                    value: i % 14 == 0,
+                });
+                assert_eq!(event.event, events::ON_STATE_CHANGED);
+            }
+
+            let interact = brick.interact(InteractInput {
+                actor_id: format!("soak_actor_{}", i % 8),
+            });
+            assert!(
+                interact.event == events::ON_USED || interact.event == events::ON_DENIED,
+                "unexpected interact event at tick {}: {}",
+                i,
+                interact.event
+            );
+
+            let tick = brick.on_tick_low_freq();
+            assert_eq!(tick.event, events::ON_TICK_LOW_FREQ);
+            assert!(tick.payload.contains("check=state_snapshot") || tick.payload.contains("check=skipped"));
+            if tick.payload.contains("check=state_snapshot") {
+                snapshot_ticks += 1;
+            }
+        }
+
+        assert!(snapshot_ticks > 0);
+
+        let report = brick.validate(ValidateInput {
+            door_name: "soak_door".to_string(),
+        });
+        assert!(report
+            .issues
+            .iter()
+            .all(|issue| issue.severity != ValidationSeverity::Error));
+    }
 }

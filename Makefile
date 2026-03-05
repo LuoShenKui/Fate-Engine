@@ -1,5 +1,5 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
-	check-unit check-integration check-replay check-visual check-perf \
+	check-unit check-integration check-replay check-visual check-perf check-stability \
 	check-m1 check-m2 check-m3 release-local
 
 check:
@@ -31,6 +31,11 @@ check-ts:
 	@echo "[检查] TS 类型检查与构建中..."
 	@cd editor/app && pnpm run typecheck && pnpm run build
 	@echo "[检查] TS 类型检查与构建通过"
+
+check-stability:
+	@echo "[检查] 运行时稳定性基线检查中..."
+	@python3 tools/check_runtime_stability.py
+	@echo "[检查] 运行时稳定性基线检查通过"
 
 check-unit:
 	@echo "[分层检查] Unit：协议/schema + runtime 单元测试"

@@ -108,6 +108,9 @@ python3 tools/validate_schemas.py
 # 2) Rust package 自动化测试（OnUsed/OnDenied + 校验器分级）
 cargo test --manifest-path runtime/door_core/Cargo.toml
 
+# 2.1) 运行时稳定性基线（A1：10k tick smoke）
+python3 tools/check_runtime_stability.py
+
 # 3) C++ 包装层与 manifest 基础编译校验（仅构建，不运行 demo）
 cmake -S . -B build
 cmake --build build
@@ -191,3 +194,11 @@ python3 tools/release_local.py
 ```
 
 消费流程说明见：`docs/PackageConsumeFlow.md`。
+
+
+## A 项（引擎与运行时稳定性）当前可机检入口
+```bash
+make check-stability
+```
+
+说明：该入口用于 A1 基线（10k tick smoke），用于快速发现运行时崩溃与状态异常。
