@@ -48,9 +48,10 @@ check-replay:
 	@echo "[分层检查] Replay 通过"
 
 check-visual:
-	@echo "[分层检查] Visual：截图基线比对（当前仓库使用流程文档与里程碑日志门禁）"
-	@echo "[分层检查] 请按 docs/ScreenshotOperation.md 执行截图基线比对"
-	@echo "[分层检查] Visual 通过（文档门禁）"
+	@echo "[分层检查] Visual：截图基线比对"
+	@cd editor/app && npx -y playwright@1.52.0 install --with-deps chromium
+	@npx -y -p playwright@1.52.0 -p pixelmatch@5.3.0 -p pngjs@7.0.0 node editor/app/tools/visual_regression.mjs
+	@echo "[分层检查] Visual 通过"
 
 check-perf:
 	@echo "[分层检查] Perf：性能预算门禁（当前使用 C++ 构建与里程碑演示作为基础门禁）"

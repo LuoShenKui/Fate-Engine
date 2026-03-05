@@ -1,3 +1,5 @@
 editor/app/dist/*
 editor/app/node_modules/*
 dist/*
+editor/app/tests/visual-current/*
+editor/app/tests/visual-diff/*

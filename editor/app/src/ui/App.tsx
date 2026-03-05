@@ -60,6 +60,7 @@ const calcDistance = (from: [number, number, number], to: [number, number, numbe
 };
 
 export default function App(): JSX.Element {
+  const visualScenario = new URLSearchParams(window.location.search).get("visualScenario");
   const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
   const adapter = useMemo(() => new DoorProtocolAdapter(new DoorRuntimeAdapter()), []);
   const sceneDoorMap = useMemo(() => new Map<string, DoorSceneComponent>(), []);
@@ -107,6 +108,36 @@ export default function App(): JSX.Element {
       return prev;
     });
   }, [t]);
+
+  useEffect(() => {
+    if (visualScenario === null) {
+      return;
+    }
+    if (visualScenario === "door-lock-unlock") {
+      onToggleLock();
+      onToggleLock();
+      onInteract("door-1");
+      return;
+    }
+    if (visualScenario === "validation-levels") {
+      setValidationItems([
+        { level: "Error", message: "脚本化回归：Error 示例" },
+        { level: "Warning", message: "脚本化回归：Warning 示例" },
+        { level: "Info", message: "脚本化回归：Info 示例" },
+      ]);
+      setBatchEntries([
+        {
+          recipeId: "visual-validation-levels",
+          items: [
+            { level: "Error", message: "脚本化回归：Error 示例" },
+            { level: "Warning", message: "脚本化回归：Warning 示例" },
+            { level: "Info", message: "脚本化回归：Info 示例" },
+          ],
+        },
+      ]);
+      setBatchStatsDiff({ totalErrors: 1, totalWarnings: 1 });
+    }
+  }, [visualScenario]);
 
   const renderValidate = (): void => {
     const report = adapter.validate("demo_door");

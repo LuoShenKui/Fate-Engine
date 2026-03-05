@@ -14,6 +14,17 @@
    - 统一格式：`editor-<页面名>-<场景名>-<YYYYMMDD-HHmmss>.png`
    - 示例：`editor-home-default-20260305-101530.png`
 
+## 手工截图 vs 自动回归截图（边界）
+- **手工截图**：用于需求评审、设计对齐、文档示例；允许人工调整窗口大小、语言和演示步骤，不作为 CI 门禁输入。
+- **自动回归截图**：用于 CI 可重复门禁，仅使用脚本化场景（`default`、`door-lock-unlock`、`validation-levels`）与固定选择器 `data-testid="editor-page-ready"`。
+- **冲突处理**：若手工截图与自动回归结果不一致，以自动回归基线为准；手工截图只更新文档，不更新 `editor/app/tests/visual-baseline/`。
+
+## 自动回归命令
+1. 更新基线（开发者本地）：
+   - `npx -y -p playwright@1.52.0 -p pixelmatch@5.3.0 -p pngjs@7.0.0 node editor/app/tools/visual_regression.mjs --update-baseline`
+2. 执行比对（CI/本地）：
+   - `make check-visual`
+
 ## 空白截图排查顺序
 1. 服务未启动
 2. 路径错误
