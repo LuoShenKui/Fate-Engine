@@ -26,5 +26,9 @@
   },
   "defaults": {
     "enabled": true
+  },
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0"
   }
 }

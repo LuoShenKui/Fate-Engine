@@ -149,6 +149,12 @@ impl DoorBrick {
                 input.door_name
             ));
         }
+        if self.state.locked {
+            issues.push(format!(
+                "Warning:{}:LOCKED_DEFAULT:Door 默认上锁，需确认玩法预期",
+                input.door_name
+            ));
+        }
 
         ValidateOutput { issues }
     }
@@ -201,6 +207,40 @@ mod tests {
     use super::*;
 
     #[test]
+    fn interaction_events_and_validator_levels_are_covered() {
+        let mut state = DoorState::default();
+        state.has_collision = false;
+        state.locked = false;
+
+        let mut brick = DoorBrick::new("fate.door.basic", state);
+        let used = brick.interact(InteractInput {
+            actor_id: "player_1".to_string(),
+        });
+        assert_eq!(used.event, "OnUsed");
+
+        let _ = brick.set_state(SetStateInput {
+            key: "locked".to_string(),
+            value: true,
+        });
+        let denied = brick.interact(InteractInput {
+            actor_id: "player_1".to_string(),
+        });
+        assert_eq!(denied.event, "OnDenied");
+
+        let report = brick.validate(ValidateInput {
+            door_name: "demo_door".to_string(),
+        });
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.starts_with("Error:demo_door:MISSING_COLLISION")));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.starts_with("Warning:demo_door:LOCKED_DEFAULT")));
+    }
+
+    #[test]
     fn interact_and_lock_flow_matches_cpp_demo() {
         let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
 
@@ -225,17 +265,29 @@ mod tests {
     }
 
     #[test]
-    fn validate_reports_missing_parts() {
+    fn validate_reports_error_and_warning_levels() {
         let mut state = DoorState::default();
         state.has_collision = false;
         state.has_trigger = false;
+        state.locked = true;
 
         let brick = DoorBrick::new("fate.door.basic", state);
         let report = brick.validate(ValidateInput {
             door_name: "demo_door".to_string(),
         });
 
-        assert_eq!(report.issues.len(), 2);
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.starts_with("Error:demo_door:MISSING_COLLISION")));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.starts_with("Error:demo_door:MISSING_TRIGGER")));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.starts_with("Warning:demo_door:LOCKED_DEFAULT")));
     }
 
     #[test]

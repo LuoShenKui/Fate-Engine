@@ -70,6 +70,31 @@ std::vector<std::string> ValidateDoorConfig(const std::string& door_name,
   return issues;
 }
 
+
+void ValidateManifestRequiredFields(const std::string& content) {
+  const std::vector<std::string> required_fields = {"\"id\"",      "\"version\"", "\"deps\"",
+                                                    "\"params\"",  "\"defaults\"", "\"license\"",
+                                                    "\"compat\""};
+  std::vector<std::string> missing;
+  for (const auto& field : required_fields) {
+    if (content.find(field) == std::string::npos) {
+      missing.push_back(field);
+    }
+  }
+
+  if (!missing.empty()) {
+    std::ostringstream oss;
+    oss << "manifest 缺少必填字段: ";
+    for (size_t i = 0; i < missing.size(); ++i) {
+      if (i > 0) {
+        oss << ",";
+      }
+      oss << missing[i];
+    }
+    throw std::runtime_error(oss.str());
+  }
+}
+
 bool ParseDefaultBool(const std::string& content, const std::string& key,
                       bool fallback) {
   struct JsonValue {
@@ -344,6 +369,7 @@ DoorState LoadDoorDefaults(const std::string& path) {
   std::stringstream buffer;
   buffer << input.rdbuf();
   const auto content = buffer.str();
+  ValidateManifestRequiredFields(content);
 
   DoorState state;
   try {
