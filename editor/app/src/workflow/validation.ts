@@ -1,6 +1,7 @@
+import { getBrickDefinition } from "../domain/registry";
 import type { EditorRecipeV0 } from "../project/recipe";
 
-export type BatchValidationIssueLevel = "Error" | "Warning";
+export type BatchValidationIssueLevel = "Error" | "Warning" | "Info";
 
 export type BatchValidationIssue = {
   level: BatchValidationIssueLevel;
@@ -37,6 +38,22 @@ const collectRecipeIssues = (recipe: EditorRecipeV0): BatchValidationIssue[] => 
   if (!isLocked(recipe)) {
     issues.push({ level: "Warning", message: "lockfile 未完整锁定" });
   }
+
+  const selectedBrickId = typeof recipe.params.selected_brick === "string" ? recipe.params.selected_brick : "";
+  const selectedDefinition = getBrickDefinition(selectedBrickId);
+  if (selectedDefinition !== undefined) {
+    for (const slot of selectedDefinition.slots) {
+      const binding = recipe.slot_bindings[slot.slotId];
+      const hasBinding = typeof binding === "string" && binding.trim() !== "";
+      if (!hasBinding && !slot.optional) {
+        issues.push({ level: "Error", message: `slot 缺失: ${slot.slotId}` });
+      }
+      if (!hasBinding && slot.fallbackAssetRef !== undefined && slot.fallbackAssetRef !== "") {
+        issues.push({ level: slot.optional ? "Info" : "Warning", message: `slot 使用 fallback: ${slot.slotId} -> ${slot.fallbackAssetRef}` });
+      }
+    }
+  }
+
   return issues;
 };
 
@@ -51,7 +68,7 @@ export const runBatchValidate = (recipes: Array<{ recipeId: string; recipe: Edit
       for (const issue of entry.issues) {
         if (issue.level === "Error") {
           acc.totalErrors += 1;
-        } else {
+        } else if (issue.level === "Warning") {
           acc.totalWarnings += 1;
         }
       }

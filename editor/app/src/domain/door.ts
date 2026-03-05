@@ -60,6 +60,19 @@ export const DoorBrickDefinition: BrickDefinition = {
       description: "编辑器中展示名称",
     },
   ],
+  slots: [
+    {
+      slotId: "mesh",
+      label: "Door Mesh",
+      optional: false,
+    },
+    {
+      slotId: "sfx-open",
+      label: "Open SFX",
+      optional: true,
+      fallbackAssetRef: "asset://audio/default-door-open",
+    },
+  ],
   ports: [
     {
       id: "on-used",
@@ -83,6 +96,13 @@ export const LadderBrickDefinition: BrickDefinition = {
   name: "Ladder",
   summary: "可上下攀爬",
   properties: [],
+  slots: [
+    {
+      slotId: "mesh",
+      label: "Ladder Mesh",
+      optional: false,
+    },
+  ],
   ports: [
     {
       id: "on-used",
@@ -106,6 +126,14 @@ export const TriggerZoneBrickDefinition: BrickDefinition = {
   name: "TriggerZone",
   summary: "区域触发器",
   properties: [],
+  slots: [
+    {
+      slotId: "vfx-enter",
+      label: "Enter VFX",
+      optional: true,
+      fallbackAssetRef: "asset://vfx/default-enter",
+    },
+  ],
   ports: [
     {
       id: "on-used",
