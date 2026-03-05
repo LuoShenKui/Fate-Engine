@@ -28,6 +28,17 @@ cmake --build build
 ./build/fate_demo
 ```
 
+## 如何运行 package tests
+```bash
+# C++ 包装层与 manifest 基础校验
+cmake -S . -B build
+cmake --build build
+./build/fate_demo packages/door/manifest.json
+
+# Rust package 自动化测试（OnUsed/OnDenied + 校验器分级）
+cargo test --manifest-path runtime/door_core/Cargo.toml
+```
+
 ## Rust 核心库编译与测试
 ```bash
 cargo test --manifest-path runtime/door_core/Cargo.toml
