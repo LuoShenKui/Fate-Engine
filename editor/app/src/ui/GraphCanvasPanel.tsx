@@ -122,6 +122,8 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
   const cameraRef = useRef<CameraState>({ yaw: 0.6, pitch: 0.4, distance: 9 });
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const doorAnimRef = useRef<Record<string, { current: number; target: number }>>({});
+  const actorRef = useRef<Vec3>([0, 0, 2]);
+  const inputRef = useRef({ forward: false, back: false, left: false, right: false });
 
   const doorEntities = useMemo(() => nodes.filter((node) => node.type === "door").map(toDoorEntity), [nodes]);
 
@@ -140,8 +142,30 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
   }, [doorEntities, onDoorPositionsChange]);
 
   useEffect(() => {
-    onActorPositionChange?.([0, 0, 2]);
+    actorRef.current = [0, 0, 2];
+    onActorPositionChange?.(actorRef.current);
   }, [onActorPositionChange]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.code === "KeyW") inputRef.current.forward = true;
+      if (event.code === "KeyS") inputRef.current.back = true;
+      if (event.code === "KeyA") inputRef.current.left = true;
+      if (event.code === "KeyD") inputRef.current.right = true;
+    };
+    const onKeyUp = (event: KeyboardEvent): void => {
+      if (event.code === "KeyW") inputRef.current.forward = false;
+      if (event.code === "KeyS") inputRef.current.back = false;
+      if (event.code === "KeyA") inputRef.current.left = false;
+      if (event.code === "KeyD") inputRef.current.right = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -221,7 +245,65 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
     };
 
     let raf = 0;
+    let lastTime = performance.now();
+
+    const collidesWithAabb = (position: Vec3, center: Vec3, halfExtents: Vec3): boolean =>
+      Math.abs(position[0] - center[0]) <= halfExtents[0] &&
+      Math.abs(position[1] - center[1]) <= halfExtents[1] &&
+      Math.abs(position[2] - center[2]) <= halfExtents[2];
+
+    const moveActor = (dt: number): void => {
+      const input = inputRef.current;
+      const direction: Vec3 = [0, 0, 0];
+      if (input.forward) direction[2] -= 1;
+      if (input.back) direction[2] += 1;
+      if (input.left) direction[0] -= 1;
+      if (input.right) direction[0] += 1;
+      if (Math.abs(direction[0]) < 1e-4 && Math.abs(direction[2]) < 1e-4) {
+        return;
+      }
+
+      const normalized = vec3Normalize(direction);
+      const speed = 3;
+      const candidate: Vec3 = [
+        actorRef.current[0] + normalized[0] * speed * dt,
+        0,
+        actorRef.current[2] + normalized[2] * speed * dt,
+      ];
+
+      const wallBlocks: Array<{ center: Vec3; half: Vec3 }> = [
+        { center: [0, 0.8, -6], half: [6.2, 0.8, 0.18] },
+        { center: [0, 0.8, 6], half: [6.2, 0.8, 0.18] },
+        { center: [-6, 0.8, 0], half: [0.18, 0.8, 6.2] },
+        { center: [6, 0.8, 0], half: [0.18, 0.8, 6.2] },
+      ];
+
+      const dynamicDoorBlocks = doorEntities
+        .map((door) => {
+          const anim = doorAnimRef.current[door.id] ?? { current: 0, target: 0 };
+          if (anim.current > 0.88) {
+            return null;
+          }
+          return {
+            center: [door.transform.position[0] + 0.5, 0.8, door.transform.position[2]] as Vec3,
+            half: [0.55, 0.8, 0.35] as Vec3,
+          };
+        })
+        .filter((value): value is { center: Vec3; half: Vec3 } => value !== null);
+
+      const blocked = [...wallBlocks, ...dynamicDoorBlocks].some((obstacle) => collidesWithAabb(candidate, obstacle.center, obstacle.half));
+      if (!blocked) {
+        actorRef.current = [Math.max(-5.5, Math.min(5.5, candidate[0])), 0, Math.max(-5.5, Math.min(5.5, candidate[2]))];
+        onActorPositionChange?.(actorRef.current);
+      }
+    };
+
     const render = (): void => {
+      const now = performance.now();
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+      moveActor(dt);
+
       resize();
       gl.clearColor(0.964, 0.973, 0.98, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -248,6 +330,18 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
       const viewProj = mat4Multiply(projection, view);
 
       drawBox(viewProj, mat4Multiply(mat4Translate(0, -0.03, 0), mat4Scale(30, 0.02, 30)), [0.87, 0.91, 0.94, 1]);
+
+      const staticWalls: Array<{ center: Vec3; size: Vec3 }> = [
+        { center: [0, 0.8, -6], size: [12, 1.6, 0.2] },
+        { center: [0, 0.8, 6], size: [12, 1.6, 0.2] },
+        { center: [-6, 0.8, 0], size: [0.2, 1.6, 12] },
+        { center: [6, 0.8, 0], size: [0.2, 1.6, 12] },
+      ];
+      staticWalls.forEach((wall) => {
+        drawBox(viewProj, mat4Multiply(mat4Translate(...wall.center), mat4Scale(...wall.size)), [0.71, 0.75, 0.8, 1]);
+      });
+
+      drawBox(viewProj, mat4Multiply(mat4Translate(actorRef.current[0], 0.45, actorRef.current[2]), mat4Scale(0.35, 0.9, 0.35)), [0.16, 0.71, 0.35, 1]);
 
       for (let i = -12; i <= 12; i += 1) {
         drawBox(viewProj, mat4Multiply(mat4Translate(i, 0.001, 0), mat4Scale(0.01, 0.01, 24)), [0.82, 0.84, 0.87, 0.9]);
@@ -449,6 +543,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
           onWheel={onWheel}
           onClick={onCanvasClick}
         />
+        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放，点击门体触发开关。</div>
 
         <details>
           <summary style={{ cursor: "pointer", marginBottom: "8px" }}>调试列表（节点/连线）</summary>
