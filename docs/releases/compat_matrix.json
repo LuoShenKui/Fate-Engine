@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "generated_by": "tools/build_compat_matrix.py",
+  "entries": [
+    {
+      "package": "fate.door.basic",
+      "package_version": "0.1.1",
+      "engine": ">=0.1.0",
+      "contract": "0.1",
+      "manifest": "packages/door/manifest.json"
+    },
+    {
+      "package": "fate.ladder.basic",
+      "package_version": "0.1.0",
+      "engine": ">=0.1.0",
+      "contract": "0.1",
+      "manifest": "packages/ladder/manifest.json"
+    },
+    {
+      "package": "fate.trigger_zone.basic",
+      "package_version": "0.1.0",
+      "engine": ">=0.1.0",
+      "contract": "0.1",
+      "manifest": "packages/trigger_zone/manifest.json"
+    }
+  ]
+}
