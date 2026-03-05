@@ -50,6 +50,14 @@ const initialFields: PropertyField[] = DoorBrickDefinition.properties.map((prope
 
 const defaultNodes: CanvasNode[] = [{ id: "door-1", type: "door" }];
 const defaultEdges: CanvasEdge[] = [];
+const DEFAULT_TRIGGER_DISTANCE = 1.5;
+
+const calcDistance = (from: [number, number, number], to: [number, number, number]): number => {
+  const dx = from[0] - to[0];
+  const dy = from[1] - to[1];
+  const dz = from[2] - to[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+};
 
 export default function App(): JSX.Element {
   const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
@@ -72,6 +80,8 @@ export default function App(): JSX.Element {
   const [batchEntries, setBatchEntries] = useState<Array<{ recipeId: string; items: ValidationItem[] }>>([]);
   const [playMode, setPlayMode] = useState(false);
   const [activeEntityId, setActiveEntityId] = useState("door-1");
+  const [actorPosition, setActorPosition] = useState<[number, number, number]>([0, 0, 2]);
+  const [doorPositions, setDoorPositions] = useState<Record<string, [number, number, number]>>({});
 
   const getSceneDoor = (entityId: string): DoorSceneComponent => {
     const cached = sceneDoorMap.get(entityId);
@@ -190,8 +200,25 @@ export default function App(): JSX.Element {
     setActiveEntityId(entityId);
     const sceneDoor = getSceneDoor(entityId);
     if (playMode) {
-      sceneDoor.updateActorDistance(1.0);
+      sceneDoor.setTriggerDistance(DEFAULT_TRIGGER_DISTANCE);
+      const doorPosition = doorPositions[entityId];
+      const distance = doorPosition === undefined ? Number.POSITIVE_INFINITY : calcDistance(actorPosition, doorPosition);
+      const inTrigger = distance <= DEFAULT_TRIGGER_DISTANCE;
+      console.debug("[door_scene] interact distance check", {
+        entityId,
+        actorPosition,
+        doorPosition,
+        distance,
+        triggerDistance: DEFAULT_TRIGGER_DISTANCE,
+        inTrigger,
+      });
+      sceneDoor.updateActorDistance(distance);
       const sceneResult = sceneDoor.interact();
+      console.debug("[door_scene] interact result", {
+        entityId,
+        accepted: sceneResult.accepted,
+        reason: sceneResult.reason,
+      });
       if (!sceneResult.accepted) {
         appendEvent(`req-${requestSeq}`, { event: "OnDenied", payload: `entity_id=${entityId},reason=${sceneResult.reason}` });
         setRequestSeq((prev) => prev + 1);
@@ -348,6 +375,8 @@ export default function App(): JSX.Element {
             setNodes(next.nodes);
             setEdges(next.edges);
           }}
+          onDoorPositionsChange={setDoorPositions}
+          onActorPositionChange={setActorPosition}
           onInteract={(nodeId) => onInteract(nodeId)}
         />
       }

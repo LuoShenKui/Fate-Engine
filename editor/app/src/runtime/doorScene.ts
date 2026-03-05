@@ -34,6 +34,10 @@ export class DoorSceneComponent {
     this.actorDistance = distance;
   }
 
+  setTriggerDistance(distance: number): void {
+    this.triggerDistance = Math.max(0, distance);
+  }
+
   interact(): DoorSceneInteractResult {
     if (this.locked) {
       return { accepted: false, reason: "locked" };
