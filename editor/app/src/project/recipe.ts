@@ -15,6 +15,10 @@ export type EditorRecipeV0 = {
   package_lock: {
     packages: Record<string, string>;
   };
+  suppress: Array<{
+    ruleId: string;
+    target: string;
+  }>;
 };
 
 const RECIPE_VERSION = "0";
@@ -54,6 +58,18 @@ export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
         .filter((pkg) => pkg.id !== "" || pkg.version !== "" || pkg.hash !== "")
     : [];
 
+  const suppress = Array.isArray(obj.suppress)
+    ? obj.suppress
+        .map((item) => {
+          const suppressItem = ensureObject(item);
+          return {
+            ruleId: typeof suppressItem.ruleId === "string" ? suppressItem.ruleId : "",
+            target: typeof suppressItem.target === "string" ? suppressItem.target : "",
+          };
+        })
+        .filter((item) => item.ruleId !== "" && item.target !== "")
+    : [];
+
   return {
     version: RECIPE_VERSION,
     nodes: Array.isArray(obj.nodes) ? obj.nodes : [],
@@ -67,6 +83,7 @@ export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
     package_lock: {
       packages: ensureStringMap(packageLock.packages),
     },
+    suppress,
   };
 };
 

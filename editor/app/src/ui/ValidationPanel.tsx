@@ -5,6 +5,9 @@ export type ValidationLevel = "Error" | "Warning" | "Info";
 export type ValidationItem = {
   level: ValidationLevel;
   message: string;
+  ruleId?: string;
+  target?: { type: "node"; nodeId: string } | { type: "edge"; edgeId: string } | { type: "brick"; brickId: string };
+  suppressed?: boolean;
 };
 
 type ValidationPanelProps = {
@@ -13,6 +16,19 @@ type ValidationPanelProps = {
   businessItems?: ValidationItem[];
   batchEntries?: Array<{ recipeId: string; items: ValidationItem[] }>;
   batchStatsDiff?: { totalErrors: number; totalWarnings: number };
+};
+
+const formatTarget = (target: ValidationItem["target"]): string => {
+  if (target === undefined) {
+    return "";
+  }
+  if (target.type === "node") {
+    return `node:${target.nodeId}`;
+  }
+  if (target.type === "edge") {
+    return `edge:${target.edgeId}`;
+  }
+  return `brick:${target.brickId}`;
 };
 
 export default function ValidationPanel(props: ValidationPanelProps): JSX.Element {
@@ -25,6 +41,11 @@ export default function ValidationPanel(props: ValidationPanelProps): JSX.Elemen
       {items.map((item, index) => (
         <li key={`${item.level}-${index}`}>
           <strong>[{item.level === "Error" ? t("validation.level.Error") : item.level === "Warning" ? t("validation.level.Warning") : t("validation.level.Info")}]</strong> {item.message}
+          {item.ruleId !== undefined && (
+            <span style={{ marginLeft: "6px", opacity: 0.75 }}>
+              ({item.ruleId}{item.target !== undefined ? ` @ ${formatTarget(item.target)}` : ""}{item.suppressed ? " / suppressed" : ""})
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -55,6 +76,11 @@ export default function ValidationPanel(props: ValidationPanelProps): JSX.Elemen
                 {entry.items.map((item, index) => (
                   <li key={`${entry.recipeId}-${item.level}-${index}`}>
                     <strong>[{item.level === "Error" ? t("validation.level.Error") : item.level === "Warning" ? t("validation.level.Warning") : t("validation.level.Info")}]</strong> {item.message}
+                    {item.ruleId !== undefined && (
+                      <span style={{ marginLeft: "6px", opacity: 0.75 }}>
+                        ({item.ruleId}{item.target !== undefined ? ` @ ${formatTarget(item.target)}` : ""}{item.suppressed ? " / suppressed" : ""})
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
