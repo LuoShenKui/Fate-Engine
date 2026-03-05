@@ -357,9 +357,13 @@ DoorState LoadDoorDefaults(const std::string& path) {
   return state;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   try {
-    auto state = LoadDoorDefaults("bricks/door/manifest.json");
+    const std::string manifest_path =
+        (argc > 1) ? std::string(argv[1]) : "bricks/door/manifest.json";
+    std::cout << "实际使用的 manifest 路径: " << manifest_path << "\n";
+
+    auto state = LoadDoorDefaults(manifest_path);
     DoorBrick door("fate.door.basic", state);
 
     std::cout << "=== Door Demo (C++) ===\n";
