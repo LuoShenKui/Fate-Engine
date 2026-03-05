@@ -105,9 +105,9 @@ def print_human_summary(report: dict[str, Any]) -> None:
         print(f" - {metric}: {value} (warning={warning}, error={error}) => {status}")
 
     if report["status_count"]["warning"] > 0:
-        print("[PerfBudget][WARNING] 存在 warning 阈值超标，请在 CI 中打标跟踪。")
+        print("[PerfBudget][WARNING] warning threshold exceeded, please track it in CI.")
     if report["status"] == "error":
-        print("[PerfBudget][ERROR] 存在 error 阈值超标或缺失关键指标。")
+        print("[PerfBudget][ERROR] error threshold exceeded or required metrics are missing.")
 
 
 def main() -> int:
