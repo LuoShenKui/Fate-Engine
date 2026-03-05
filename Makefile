@@ -1,4 +1,4 @@
-.PHONY: check check-schema check-rust check-cpp check-ts \
+.PHONY: check check-schema check-rust check-cpp check-ts check-compliance \
 	check-unit check-integration check-replay check-visual check-perf check-perf-scenes check-stability \
 	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
 	check-render-matrix release-local
@@ -9,8 +9,14 @@ check:
 	@$(MAKE) check-rust
 	@$(MAKE) check-cpp
 	@$(MAKE) check-ts
+	@$(MAKE) check-compliance
 	@$(MAKE) check-perf-scenes
 	@echo "[检查] 全量检查完成"
+
+check-compliance:
+	@echo "[检查] 依赖合规扫描中..."
+	@python3 tools/check_dependency_compliance.py
+	@echo "[检查] 依赖合规扫描通过"
 
 check-schema:
 	@echo "[检查] Schema 校验中..."
