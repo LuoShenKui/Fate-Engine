@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 pub const PROTOCOL_VERSION: &str = "1.0";
 
@@ -468,6 +469,91 @@ pub struct DoorBrick {
     pub state: DoorState,
     low_freq_tick_counter: u64,
     pub scene: DoorSceneComponent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PartitionDoorSpec {
+    pub entity_id: String,
+    pub initial_state: DoorState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PartitionSpec {
+    pub partition_id: String,
+    pub doors: Vec<PartitionDoorSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PartitionLoadResult {
+    pub partition_id: String,
+    pub door_count: usize,
+}
+
+#[derive(Debug, Default)]
+pub struct PartitionRuntime {
+    pub active_partition: Option<String>,
+    loaded_doors: HashMap<String, DoorBrick>,
+    mounted_states: HashMap<String, DoorState>,
+    partition_entities: HashMap<String, Vec<String>>,
+}
+
+impl PartitionRuntime {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn load_partition(&mut self, spec: &PartitionSpec) -> PartitionLoadResult {
+        let mut entities = Vec::with_capacity(spec.doors.len());
+        for door in &spec.doors {
+            let mut brick = DoorBrick::new("fate.door.basic", door.initial_state.clone());
+            brick.scene.entity_id = door.entity_id.clone();
+            if let Some(mounted) = self.mounted_states.get(&door.entity_id) {
+                brick.state = mounted.clone();
+            }
+            entities.push(door.entity_id.clone());
+            self.loaded_doors.insert(door.entity_id.clone(), brick);
+        }
+
+        self.partition_entities
+            .insert(spec.partition_id.clone(), entities);
+        self.active_partition = Some(spec.partition_id.clone());
+        PartitionLoadResult {
+            partition_id: spec.partition_id.clone(),
+            door_count: spec.doors.len(),
+        }
+    }
+
+    pub fn unload_partition(&mut self, partition_id: &str) -> bool {
+        let Some(entities) = self.partition_entities.remove(partition_id) else {
+            return false;
+        };
+
+        for entity_id in entities {
+            if let Some(brick) = self.loaded_doors.remove(&entity_id) {
+                self.mounted_states.insert(entity_id, brick.state);
+            }
+        }
+
+        if self.active_partition.as_deref() == Some(partition_id) {
+            self.active_partition = None;
+        }
+        true
+    }
+
+    pub fn switch_partition(&mut self, next: &PartitionSpec) -> PartitionLoadResult {
+        if let Some(current) = self.active_partition.clone() {
+            let _ = self.unload_partition(&current);
+        }
+        self.load_partition(next)
+    }
+
+    pub fn door_mut(&mut self, entity_id: &str) -> Option<&mut DoorBrick> {
+        self.loaded_doors.get_mut(entity_id)
+    }
+
+    pub fn door_state(&self, entity_id: &str) -> Option<&DoorState> {
+        self.loaded_doors.get(entity_id).map(|brick| &brick.state)
+    }
 }
 
 impl DoorBrick {
@@ -1203,5 +1289,43 @@ mod tests {
             .issues
             .iter()
             .all(|issue| issue.severity != ValidationSeverity::Error));
+    }
+
+    #[test]
+    fn partition_switch_round_trip_keeps_door_state() {
+        let mut runtime = PartitionRuntime::new();
+        let partition_a = PartitionSpec {
+            partition_id: "p_a".to_string(),
+            doors: vec![PartitionDoorSpec {
+                entity_id: "door_a_1".to_string(),
+                initial_state: DoorState::default(),
+            }],
+        };
+        let partition_b = PartitionSpec {
+            partition_id: "p_b".to_string(),
+            doors: vec![],
+        };
+
+        let _ = runtime.load_partition(&partition_a);
+        let door = runtime
+            .door_mut("door_a_1")
+            .expect("door should be loaded in partition A");
+        let _ = door.set_state(SetStateInput {
+            key: "open".to_string(),
+            value: true,
+        });
+        let _ = door.set_state(SetStateInput {
+            key: "locked".to_string(),
+            value: true,
+        });
+
+        let _ = runtime.switch_partition(&partition_b);
+        let _ = runtime.switch_partition(&partition_a);
+
+        let restored = runtime
+            .door_state("door_a_1")
+            .expect("door should be restored after switching back");
+        assert!(restored.open);
+        assert!(restored.locked);
     }
 }

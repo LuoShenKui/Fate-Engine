@@ -1,0 +1,50 @@
+{
+  "id": "minimal-partition-door-roundtrip",
+  "partitions": {
+    "p_a": {
+      "doors": [
+        {
+          "entity_id": "door_a_1",
+          "initial_state": {
+            "enabled": true,
+            "locked": false,
+            "open": false,
+            "has_collision": true,
+            "has_trigger": true
+          }
+        }
+      ]
+    },
+    "p_b": {
+      "doors": []
+    }
+  },
+  "stream": ["p_a", "p_b", "p_a"],
+  "actions": [
+    {
+      "partition": "p_a",
+      "entity_id": "door_a_1",
+      "set": {
+        "open": true,
+        "locked": true
+      }
+    }
+  ],
+  "switch_durations_ms": [11.2, 15.4, 13.0],
+  "thresholds": {
+    "p95_ms": 35.0,
+    "max_ms": 50.0
+  },
+  "consistency_checks": [
+    {
+      "entity_id": "door_a_1",
+      "expected_state": {
+        "enabled": true,
+        "locked": true,
+        "open": true,
+        "has_collision": true,
+        "has_trigger": true
+      }
+    }
+  ]
+}
