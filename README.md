@@ -26,8 +26,24 @@
 ## 协议开发流程（重要）
 1. **先修改 `protocol/schemas/*.json`**，明确协议契约。
 2. 运行 `python3 tools/validate_schemas.py`，确保 schema 基础校验通过。
-3. 再修改 Runtime 与 Editor 的编解码适配层实现。
-4. 提交前检查新增错误文案是否为英文。
+3. 运行 `python3 tools/check_schema_compat.py --baseline-dir <基线目录> --current-dir protocol/schemas`，检查兼容性破坏项并生成 JSON 报告。
+4. 若 `protocol/schemas` 有变更，必须补充迁移文档：`docs/protocol-migrations/<schema-name>/<version>.md`，文档必须包含“版本 / 影响面 / 回滚策略”段落。
+5. 再修改 Runtime 与 Editor 的编解码适配层实现。
+6. 提交前检查新增错误文案是否为英文。
+
+失败示例（高风险破坏）：
+```bash
+$ python3 tools/check_schema_compat.py --baseline-dir ./old-schemas --current-dir protocol/schemas
+[schema-compat] changed=1 total=3 error=3 warn=0
+[ERROR][FIELD_REMOVED] schema=door.interact.request.schema.json path=#/properties/request_id detail=字段 `request_id` 被删除
+[ERROR][OPTIONAL_TO_REQUIRED] schema=door.interact.request.schema.json path=#/required/session_id detail=字段 `session_id` 从 optional 变更为 required
+[ERROR][MIGRATION_DOC_MISSING] schema=door.interact.request.schema.json path=docs/protocol-migrations/door.interact.request/2.0.0.md detail=缺少迁移文档
+```
+
+修复指引：
+- 恢复被删除字段，或通过新增字段 + 默认值策略保持向后兼容。
+- 避免直接将 optional 改为 required；优先分阶段发布并保留兼容窗口。
+- 为每个变更 schema 补齐迁移文档，并确保含“版本 / 影响面 / 回滚策略”三级段落。
 
 ## 语言策略（Language Policy）
 - 支持中文与英文文档/讨论。
