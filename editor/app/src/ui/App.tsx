@@ -156,7 +156,13 @@ export default function App(): JSX.Element {
     setBatchEntries(
       report.entries.map((entry) => ({
         recipeId: entry.recipeId,
-        items: entry.issues.map((issue) => ({ level: issue.level, message: issue.message })),
+        items: entry.issues.map((issue) => ({
+          level: issue.level,
+          message: issue.message,
+          ruleId: issue.ruleId,
+          target: issue.target,
+          suppressed: issue.suppressed,
+        })),
       })),
     );
   };
@@ -191,6 +197,7 @@ export default function App(): JSX.Element {
         editor: "0.1.0",
       },
     },
+    suppress: [],
   });
 
   const applyRecipe = (recipe: EditorRecipeV0): void => {
