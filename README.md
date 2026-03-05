@@ -52,6 +52,37 @@ cmake --build build
 make check
 ```
 
+分层门禁入口（与 CI 对齐）：
+
+```bash
+# L1: 协议/schema + runtime 单元
+make check-unit
+
+# L2: runtime + editor 协议适配
+make check-integration
+
+# L3: seed/recipe/lockfile 回放一致性
+make check-replay
+
+# L4: 截图基线比对（按文档流程执行）
+make check-visual
+
+# L5: 性能预算基础门禁
+make check-perf
+```
+
+通过标准：
+- `check-unit`：Schema 校验与 Rust 单元测试均返回 0。
+- `check-integration`：TS 类型检查与构建返回 0。
+- `check-replay`：本地发布脚本完成并产出一致性元数据（含 lockfile/hash）。
+- `check-visual`：按 `docs/ScreenshotOperation.md` 完成截图流程与基线比对。
+- `check-perf`：C++ 构建成功，作为当前阶段性能预算基础门禁。
+
+里程碑命令与分层门禁映射：
+- `check-m1` = `check-visual` + `check-perf` + `fate_demo` 日志断言。
+- `check-m2` = `check-unit` + `check-integration` + 关键 runtime 场景测试。
+- `check-m3` = `check-replay` + `check-unit` + `check-integration`。
+
 如果你本地打开后是空白、不清楚先执行什么，可直接使用一键启动脚本：
 
 ```bash

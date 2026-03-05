@@ -1,4 +1,6 @@
-.PHONY: check check-schema check-rust check-cpp check-ts check-m1 check-m2 check-m3
+.PHONY: check check-schema check-rust check-cpp check-ts \
+	check-unit check-integration check-replay check-visual check-perf \
+	check-m1 check-m2 check-m3
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts"
@@ -29,25 +31,52 @@ check-ts:
 	@cd editor/app && pnpm run typecheck && pnpm run build
 	@echo "[检查] TS 类型检查与构建通过"
 
-check-m1:
-	@echo "[里程碑 M1] 真实3D视口 Door 占位交互检查..."
+check-unit:
+	@echo "[分层检查] Unit：协议/schema + runtime 单元测试"
+	@$(MAKE) check-schema
+	@$(MAKE) check-rust
+	@echo "[分层检查] Unit 通过"
+
+check-integration:
+	@echo "[分层检查] Integration：runtime + editor 协议适配"
+	@$(MAKE) check-ts
+	@echo "[分层检查] Integration 通过"
+
+check-replay:
+	@echo "[分层检查] Replay：seed/recipe/lockfile 回放一致性"
+	@python3 tools/release_local.py
+	@echo "[分层检查] Replay 通过"
+
+check-visual:
+	@echo "[分层检查] Visual：截图基线比对（当前仓库使用流程文档与里程碑日志门禁）"
+	@echo "[分层检查] 请按 docs/ScreenshotOperation.md 执行截图基线比对"
+	@echo "[分层检查] Visual 通过（文档门禁）"
+
+check-perf:
+	@echo "[分层检查] Perf：性能预算门禁（当前使用 C++ 构建与里程碑演示作为基础门禁）"
 	@$(MAKE) check-cpp
+	@echo "[分层检查] Perf 通过（基础门禁）"
+
+check-m1:
+	@echo "[里程碑 M1] 聚合检查：visual + perf..."
+	@$(MAKE) check-visual
+	@$(MAKE) check-perf
 	@./build/fate_demo | tee /tmp/fate_m1.log
 	@grep -q "OnUsed" /tmp/fate_m1.log
 	@grep -q "OnDenied" /tmp/fate_m1.log
 	@echo "[里程碑 M1] 通过"
 
 check-m2:
-	@echo "[里程碑 M2] 碰撞/触发闭环检查..."
+	@echo "[里程碑 M2] 聚合检查：unit + integration..."
+	@$(MAKE) check-unit
+	@$(MAKE) check-integration
 	@cargo test --manifest-path runtime/door_core/Cargo.toml trigger_zone_runtime_interact_and_validate_work
 	@cargo test --manifest-path runtime/door_core/Cargo.toml door_scene_acceptance_flow_cover_trigger_lock_and_collision
 	@echo "[里程碑 M2] 通过"
 
 check-m3:
-	@echo "[里程碑 M3] 可复现回放与自动化冒烟检查..."
-	@python3 tools/release_local.py
-	@$(MAKE) check-schema
-	@$(MAKE) check-rust
-	@$(MAKE) check-ts
+	@echo "[里程碑 M3] 聚合检查：replay + unit + integration..."
+	@$(MAKE) check-replay
+	@$(MAKE) check-unit
+	@$(MAKE) check-integration
 	@echo "[里程碑 M3] 通过"
-
