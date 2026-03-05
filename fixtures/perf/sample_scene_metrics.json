@@ -1,0 +1,11 @@
+{
+  "scene": "door_demo_scene",
+  "build": "local-debug",
+  "metrics": {
+    "frame_time_cpu_ms": 11.8,
+    "frame_time_gpu_ms": 14.1,
+    "draw_calls": 2410,
+    "material_count": 172,
+    "shadow_distance": 108
+  }
+}
