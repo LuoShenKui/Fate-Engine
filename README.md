@@ -74,7 +74,7 @@ make check-perf
 通过标准：
 - `check-unit`：Schema 校验与 Rust 单元测试均返回 0。
 - `check-integration`：TS 类型检查与构建返回 0。
-- `check-replay`：本地发布脚本完成并产出一致性元数据（含 lockfile/hash）。
+- `check-replay`：只读执行 replay 一致性校验（recipe/seed/lockfile），不写发布产物。
 - `check-visual`：按 `docs/ScreenshotOperation.md` 完成截图流程与基线比对。
 - `check-perf`：C++ 构建成功，作为当前阶段性能预算基础门禁。
 
@@ -82,6 +82,11 @@ make check-perf
 - `check-m1` = `check-visual` + `check-perf` + `fate_demo` 日志断言。
 - `check-m2` = `check-unit` + `check-integration` + 关键 runtime 场景测试。
 - `check-m3` = `check-replay` + `check-unit` + `check-integration`。
+
+发布与门禁职责分离：
+- 只读门禁：`make check-replay`（调用 `tools/check_replay_determinism.py`）。
+- 有副作用发布：`make release-local`（调用 `tools/release_local.py`，会写入 dist/publish/lockfile）。
+- CI 仅校验发布流程有效性时可执行：`python3 tools/release_local.py --dry-run`（不写文件）。
 
 如果你本地打开后是空白、不清楚先执行什么，可直接使用一键启动脚本：
 
@@ -175,10 +180,13 @@ pnpm run dev
 
 ## 本地发布与消费（最小流程）
 ```bash
-# 1) 校验 schema + manifest + publish 元数据
-python3 tools/validate_schemas.py
+# 1) 回放一致性只读校验（门禁）
+python3 tools/check_replay_determinism.py --recipe fixtures/replay/fixed_recipe.json --seed 123 --lockfile packages/brick.lock.json
 
-# 2) 产出本地可分发包、sha256 摘要、lockfile
+# 2) 发布流程有效性校验（只校验，不落盘）
+python3 tools/release_local.py --dry-run
+
+# 3) 本地发布（有副作用，会写 dist/publish/lockfile）
 python3 tools/release_local.py
 ```
 

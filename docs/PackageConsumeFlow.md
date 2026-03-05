@@ -1,6 +1,14 @@
 # 本地包消费流程（file:// / 目录源）
 
-## 1) 发布侧：生成可分发包与 lockfile
+## 1) 回放一致性校验（只读，无副作用）
+
+```bash
+python3 tools/check_replay_determinism.py --recipe fixtures/replay/fixed_recipe.json --seed 123 --lockfile packages/brick.lock.json
+```
+
+说明：该命令只读取 recipe/seed/lockfile，输出标准化快照摘要并做一致性比对（默认二次运行比对，也可通过 `--expected` 对比期望快照）。
+
+## 2) 发布侧：生成可分发包与 lockfile（有副作用）
 
 ```bash
 python3 tools/release_local.py
@@ -12,7 +20,15 @@ python3 tools/release_local.py
 - 回写 `publish.json` 的 `source` 为 `file://dist/...`；
 - 生成 `packages/brick.lock.json`（锁定版本 + checksum + compat + registry 保留字段）。
 
-## 2) 消费侧：导入本地包
+CI 只做流程校验时可使用：
+
+```bash
+python3 tools/release_local.py --dry-run
+```
+
+该模式仅校验流程，不会写入 `dist/`、`publish.json` 或 lockfile。
+
+## 3) 消费侧：导入本地包
 
 ### 2.1 file:// 压缩包
 读取 `packages/brick.lock.json` 中的 `source.uri`，例如：
@@ -32,14 +48,14 @@ python3 tools/release_local.py
 2. 校验 `publish.package/version/license` 与 `manifest` 一致；
 3. 对 `manifest.json` 做 hash 校验（`publish.hash`）。
 
-## 3) 版本兼容校验（最小规则）
+## 4) 版本兼容校验（最小规则）
 
 安装前对每个包执行：
 - `compat.engine` 与当前引擎版本做范围匹配；
 - `compat.contract` 与引擎支持的 contract 版本匹配；
 - 若不兼容，拒绝安装并提示具体字段。
 
-## 4) 落到编辑器 registry 的最小映射
+## 5) 落到编辑器 registry 的最小映射
 
 建议编辑器侧维护一个本地 registry 索引，字段最小集：
 - `package`
