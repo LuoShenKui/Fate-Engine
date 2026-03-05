@@ -5,4 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(FATE_ENABLE_RENDER "Enable render placeholder module" OFF)
+
+if(FATE_ENABLE_RENDER)
+    add_library(fate_render_placeholder STATIC render/render_placeholder.cpp)
+endif()
+
 add_executable(fate_demo src/main.cpp)

@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fate Render Capability Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "backend",
+    "feature_tier",
+    "fallback_chain"
+  ],
+  "properties": {
+    "backend": {
+      "type": "string",
+      "enum": ["none", "dx12", "vulkan"]
+    },
+    "feature_tier": {
+      "type": "string",
+      "enum": ["tier0", "tier1"]
+    },
+    "fallback_chain": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["none", "dx12", "vulkan"]
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "render": {
+    "backend": "none",
+    "feature_tier": "tier0",
+    "fallback_chain": ["none"]
+  }
+}

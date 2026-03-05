@@ -9,6 +9,7 @@
 
 ## 当前能力边界
 - 当前仓库定位是**原型验证阶段**，目标是先打通契约、交互、校验与构建链路。
+- 渲染能力层默认关闭（`backend=none`，`FATE_ENABLE_RENDER=OFF`），该开关仅表示工程能力矩阵与编译路径，不代表画质功能已开启。
 - 当前可证明：Door 相关的 schema/runtime/editor/cpp 最小链路可运行。
 - 当前不等于：真实 3D 场景下的完整联调已完成（包括美术资产质量、复杂物理、全链路性能与多机协同）。
 - 因此里程碑验收以“可机检命令 + 可复现输出”为主，而不是口头或单次手工演示。
@@ -45,11 +46,18 @@
 cmake -S . -B build
 cmake --build build
 ./build/fate_demo
+
+# 可选：仅启用 render 占位模块（默认关闭）
+cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON
+cmake --build build-render
 ```
 
 ## 如何测试
 ```bash
 make check
+
+# 渲染能力矩阵（配置合法性 + fallback 收敛）
+make check-render-matrix
 ```
 
 分层门禁入口（与 CI 对齐）：

@@ -1,6 +1,7 @@
 .PHONY: check check-schema check-rust check-cpp check-ts \
 	check-unit check-integration check-replay check-visual check-perf check-stability \
-	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 release-local
+	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
+	check-render-matrix release-local
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts -> perf"
@@ -68,6 +69,11 @@ check-partition-streaming:
 	@echo "[检查] 分区流送回放检查中..."
 	@python3 tools/check_partition_streaming.py
 	@echo "[检查] 分区流送回放检查通过"
+
+check-render-matrix:
+	@echo "[检查] Render 能力矩阵检查中..."
+	@python3 tools/check_render_matrix.py
+	@echo "[检查] Render 能力矩阵检查通过"
 
 release-local:
 	@echo "[发布] 本地发布（会写入 dist/publish/lockfile）"
