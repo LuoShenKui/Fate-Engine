@@ -1,0 +1,13 @@
+{
+  "scene": "door_demo_scene",
+  "build": "ci-ubuntu-release",
+  "source": "ci_auto_capture",
+  "captured_at": "2026-03-01T12:00:00Z",
+  "metrics": {
+    "frame_time_cpu_ms": 11.2,
+    "frame_time_gpu_ms": 12.7,
+    "draw_calls": 2360,
+    "material_count": 168,
+    "shadow_distance": 98
+  }
+}

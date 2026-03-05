@@ -1,6 +1,8 @@
 {
   "scene": "door_demo_scene",
   "build": "local-debug",
+  "source": "manual_capture",
+  "captured_at": "2026-03-01T10:30:00Z",
   "metrics": {
     "frame_time_cpu_ms": 11.8,
     "frame_time_gpu_ms": 14.1,

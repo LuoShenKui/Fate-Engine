@@ -1,0 +1,13 @@
+{
+  "scene": "stress_scene",
+  "build": "ci-ubuntu-release",
+  "source": "ci_auto_capture",
+  "captured_at": "2026-03-01T12:05:00Z",
+  "metrics": {
+    "frame_time_cpu_ms": 15.2,
+    "frame_time_gpu_ms": 17.3,
+    "draw_calls": 3110,
+    "material_count": 232,
+    "shadow_distance": 126
+  }
+}
