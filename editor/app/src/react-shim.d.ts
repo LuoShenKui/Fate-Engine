@@ -6,6 +6,15 @@ declare namespace JSX {
 }
 
 declare module "react" {
+  export type ReactNode = JSX.Element | string | number | boolean | null | undefined;
+
+  export interface Context<T> {
+    Provider: (props: { value: T; children?: ReactNode }) => JSX.Element;
+  }
+
+  export function createContext<T>(defaultValue: T): Context<T>;
+  export function useContext<T>(context: Context<T>): T;
+  export function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
   export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
   export function useState<T>(initial: T): [T, (value: T | ((prev: T) => T)) => void];
 }

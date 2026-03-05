@@ -1,3 +1,5 @@
+import { useI18n } from "./i18n/I18nProvider";
+
 export type PropertyValue = boolean | number | string;
 
 export type PropertyField = {
@@ -13,10 +15,14 @@ type PropertyInspectorPanelProps = {
 };
 
 export default function PropertyInspectorPanel(props: PropertyInspectorPanelProps): JSX.Element {
+  const { t } = useI18n();
+
   return (
     <div>
-      <h2>PropertyInspectorPanel</h2>
-      <div style={{ marginBottom: "10px", color: "#57606a" }}>当前节点：{props.nodeName}</div>
+      <h2>{t("panel.propertyInspector.title")}</h2>
+      <div style={{ marginBottom: "10px", color: "#57606a" }}>
+        {t("panel.propertyInspector.currentNode", { nodeName: props.nodeName })}
+      </div>
       {props.fields.map((field) => {
         const value = field.value;
         return (

@@ -1,3 +1,5 @@
+import { useI18n, type Locale } from "./i18n/I18nProvider";
+
 type DebugToolbarProps = {
   locked: boolean;
   onInteract: () => void;
@@ -9,26 +11,32 @@ type DebugToolbarProps = {
 };
 
 export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
+  const { locale, switchLocale, t } = useI18n();
+  const nextLocale: Locale = locale === "zh-CN" ? "en-US" : "zh-CN";
+
   return (
     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-      <strong>DebugToolbar</strong>
+      <strong>{t("toolbar.title")}</strong>
       <button type="button" onClick={props.onInteract}>
-        Interact
+        {t("toolbar.interact")}
       </button>
       <button type="button" onClick={props.onToggleLock}>
-        SetState(locked={String(props.locked)})
+        {t("toolbar.toggleLock", { locked: String(props.locked) })}
       </button>
       <button type="button" onClick={props.onImport}>
-        导入
+        {t("toolbar.import")}
       </button>
       <button type="button" onClick={props.onExport}>
-        导出
+        {t("toolbar.export")}
       </button>
       <button type="button" onClick={props.onSave}>
-        保存
+        {t("toolbar.save")}
       </button>
       <button type="button" onClick={props.onLoad}>
-        加载
+        {t("toolbar.load")}
+      </button>
+      <button type="button" onClick={() => switchLocale(nextLocale)}>
+        {t("toolbar.locale.zh")} / {t("toolbar.locale.en")}
       </button>
     </div>
   );
