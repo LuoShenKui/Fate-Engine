@@ -32,6 +32,8 @@ type GraphCanvasPanelProps = {
   edges: CanvasEdge[];
   onChange: (next: { nodes: CanvasNode[]; edges: CanvasEdge[] }) => void;
   onInteract?: (nodeId: string) => void;
+  onDoorPositionsChange?: (next: Record<string, [number, number, number]>) => void;
+  onActorPositionChange?: (position: [number, number, number]) => void;
 };
 
 type CameraState = {
@@ -83,7 +85,7 @@ const project = (point: [number, number, number], camera: CameraState, width: nu
   return [width / 2 + rx * perspective * 40, height / 2 - ry * perspective * 40, rz2];
 };
 
-export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract }: GraphCanvasPanelProps): JSX.Element {
+export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, onDoorPositionsChange, onActorPositionChange }: GraphCanvasPanelProps): JSX.Element {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number>(0);
@@ -92,6 +94,18 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract }:
   const hitRectsRef = useRef<ScreenRect[]>([]);
 
   const doorEntities = useMemo(() => nodes.filter((node) => node.type === "door").map(toDoorEntity), [nodes]);
+
+  useEffect(() => {
+    const nextPositions: Record<string, [number, number, number]> = {};
+    doorEntities.forEach((entity) => {
+      nextPositions[entity.id] = entity.transform.position;
+    });
+    onDoorPositionsChange?.(nextPositions);
+  }, [doorEntities, onDoorPositionsChange]);
+
+  useEffect(() => {
+    onActorPositionChange?.([0, 0, 2]);
+  }, [onActorPositionChange]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
