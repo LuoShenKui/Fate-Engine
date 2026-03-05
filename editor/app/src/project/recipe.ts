@@ -4,6 +4,13 @@ export type EditorRecipeV0 = {
   edges: unknown[];
   params: Record<string, unknown>;
   seed: number;
+  lockfile: {
+    packages: Array<{
+      id: string;
+      version: string;
+      hash: string;
+    }>;
+  };
   package_lock: {
     packages: Record<string, string>;
   };
@@ -32,6 +39,19 @@ const ensureStringMap = (value: unknown): Record<string, string> => {
 export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
   const obj = ensureObject(raw);
   const packageLock = ensureObject(obj.package_lock);
+  const lockfile = ensureObject(obj.lockfile);
+  const lockfilePackages = Array.isArray(lockfile.packages)
+    ? lockfile.packages
+        .map((item) => {
+          const pkg = ensureObject(item);
+          return {
+            id: typeof pkg.id === "string" ? pkg.id : "",
+            version: typeof pkg.version === "string" ? pkg.version : "",
+            hash: typeof pkg.hash === "string" ? pkg.hash : "",
+          };
+        })
+        .filter((pkg) => pkg.id !== "" || pkg.version !== "" || pkg.hash !== "")
+    : [];
 
   return {
     version: RECIPE_VERSION,
@@ -39,10 +59,20 @@ export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
     edges: Array.isArray(obj.edges) ? obj.edges : [],
     params: ensureObject(obj.params),
     seed: typeof obj.seed === "number" ? obj.seed : Date.now(),
+    lockfile: {
+      packages: lockfilePackages,
+    },
     package_lock: {
       packages: ensureStringMap(packageLock.packages),
     },
   };
+};
+
+export const isRecipeLockfileLocked = (recipe: EditorRecipeV0): boolean => {
+  if (recipe.lockfile.packages.length === 0) {
+    return false;
+  }
+  return recipe.lockfile.packages.every((pkg) => pkg.id !== "" && pkg.version !== "" && pkg.hash !== "");
 };
 
 export const exportRecipe = (recipe: EditorRecipeV0): string => {

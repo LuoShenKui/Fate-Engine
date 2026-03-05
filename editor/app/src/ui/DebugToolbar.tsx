@@ -8,6 +8,8 @@ type DebugToolbarProps = {
   onExport: () => void;
   onSave: () => void;
   onLoad: () => void;
+  onApplyTemplate: () => void;
+  lockStatusText: string;
 };
 
 export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
@@ -35,6 +37,10 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
       <button type="button" onClick={props.onLoad}>
         {t("toolbar.load")}
       </button>
+      <button type="button" onClick={props.onApplyTemplate}>
+        {t("toolbar.applyTemplate")}
+      </button>
+      <span>{props.lockStatusText}</span>
       <button type="button" onClick={() => switchLocale(nextLocale)}>
         {t("toolbar.locale.zh")} / {t("toolbar.locale.en")}
       </button>

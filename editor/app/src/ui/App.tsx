@@ -10,10 +10,13 @@ import {
   downloadRecipe,
   exportRecipe,
   importRecipe,
+  isRecipeLockfileLocked,
   loadFromLocalStorage,
   saveToLocalStorage,
   type EditorRecipeV0,
 } from "../project/recipe";
+import { assembleWorkflowTemplate } from "../workflow/templates";
+import { runBatchValidate, type BatchValidationStats } from "../workflow/validation";
 import BrickPalettePanel, { type BrickPaletteItem } from "./BrickPalettePanel";
 import DebugToolbar from "./DebugToolbar";
 import EditorLayout from "./EditorLayout";
@@ -59,6 +62,9 @@ export default function App(): JSX.Element {
   const [nodes, setNodes] = useState<unknown[]>(defaultNodes);
   const [edges, setEdges] = useState<unknown[]>(defaultEdges);
   const [seed, setSeed] = useState<number>(Date.now());
+  const [lastBatchStats, setLastBatchStats] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
+  const [batchStatsDiff, setBatchStatsDiff] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
+  const [batchEntries, setBatchEntries] = useState<Array<{ recipeId: string; items: ValidationItem[] }>>([]);
 
   useEffect(() => {
     document.title = t("app.title");
@@ -81,6 +87,22 @@ export default function App(): JSX.Element {
     setValidationItems(issues.length > 0 ? issues : [{ level: "Info", message: t("validation.ok") }]);
   };
 
+  const renderBatchValidate = (recipe: EditorRecipeV0): void => {
+    const report = runBatchValidate([{ recipeId: "current", recipe }]);
+    const nextStats = report.stats;
+    setBatchStatsDiff({
+      totalErrors: nextStats.totalErrors - lastBatchStats.totalErrors,
+      totalWarnings: nextStats.totalWarnings - lastBatchStats.totalWarnings,
+    });
+    setLastBatchStats(nextStats);
+    setBatchEntries(
+      report.entries.map((entry) => ({
+        recipeId: entry.recipeId,
+        items: entry.issues.map((issue) => ({ level: issue.level, message: issue.message })),
+      })),
+    );
+  };
+
   const appendEvent = (e: DoorBrickEvent): void => {
     const line = `${e.event} {${e.payload}}`;
     setEvents((prev) => [...prev, line]);
@@ -96,6 +118,15 @@ export default function App(): JSX.Element {
       locked,
     },
     seed,
+    lockfile: {
+      packages: [
+        {
+          id: "fate-door-ui",
+          version: "0.1.0",
+          hash: locked ? "sha256-placeholder" : "",
+        },
+      ],
+    },
     package_lock: {
       packages: {
         editor: "0.1.0",
@@ -130,6 +161,8 @@ export default function App(): JSX.Element {
         setFields(validFields);
       }
     }
+
+    renderBatchValidate(recipe);
   };
 
   const onInteract = (): void => {
@@ -152,6 +185,7 @@ export default function App(): JSX.Element {
       appendEvent(response.payload);
     }
     renderValidate();
+    renderBatchValidate(getRecipe());
   };
 
   const onToggleLock = (): void => {
@@ -160,6 +194,7 @@ export default function App(): JSX.Element {
     appendEvent(adapter.setState("locked", nextLocked));
     setFields((prev) => prev.map((field) => (field.key === "locked" ? { ...field, value: nextLocked } : field)));
     renderValidate();
+    renderBatchValidate({ ...getRecipe(), params: { ...getRecipe().params, locked: nextLocked }, lockfile: { packages: [{ id: "fate-door-ui", version: "0.1.0", hash: nextLocked ? "sha256-placeholder" : "" }] } });
   };
 
   const onPropertyChange = (key: string, value: PropertyValue): void => {
@@ -171,6 +206,15 @@ export default function App(): JSX.Element {
     const json = exportRecipe(recipe);
     downloadRecipe(json);
     window.alert(t("export.started"));
+  };
+
+  const onApplyTemplate = (): void => {
+    const assembled = assembleWorkflowTemplate("warehouse_gate_v0");
+    setNodes(assembled.nodes);
+    setEdges(assembled.edges);
+    const recipe = { ...getRecipe(), nodes: assembled.nodes, edges: assembled.edges };
+    renderBatchValidate(recipe);
+    window.alert(t("template.applied"));
   };
 
   const onImport = (): void => {
@@ -188,7 +232,9 @@ export default function App(): JSX.Element {
   };
 
   const onSave = (): void => {
-    const ok = saveToLocalStorage(getRecipe());
+    const recipe = getRecipe();
+    renderBatchValidate(recipe);
+    const ok = saveToLocalStorage(recipe);
     window.alert(ok ? t("save.success") : t("save.failed"));
   };
 
@@ -203,6 +249,7 @@ export default function App(): JSX.Element {
   };
 
   const selectedBrickDefinition = getBrickDefinition(selectedBrick);
+  const lockStatusText = isRecipeLockfileLocked(getRecipe()) ? t("lockfile.locked") : t("lockfile.unlocked");
 
   const validationWithEvents: ValidationItem[] = [
     ...validationItems,
@@ -223,12 +270,14 @@ export default function App(): JSX.Element {
           onExport={onExport}
           onSave={onSave}
           onLoad={onLoad}
+          onApplyTemplate={onApplyTemplate}
+          lockStatusText={lockStatusText}
         />
       }
       left={<BrickPalettePanel items={paletteItems} onSelect={(id) => setSelectedBrick(id)} />}
       center={<GraphCanvasPanel />}
       right={<PropertyInspectorPanel nodeName={selectedBrickDefinition?.name ?? selectedBrick} fields={fields} onChange={onPropertyChange} />}
-      bottom={<ValidationPanel items={validationWithEvents} />}
+      bottom={<ValidationPanel items={validationWithEvents} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
     />
   );
 }

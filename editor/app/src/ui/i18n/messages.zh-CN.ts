@@ -7,6 +7,7 @@ const zhCNMessages = {
   "toolbar.export": "导出",
   "toolbar.save": "保存",
   "toolbar.load": "加载",
+  "toolbar.applyTemplate": "应用模板",
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
@@ -24,6 +25,12 @@ const zhCNMessages = {
   "validation.level.Error": "错误",
   "validation.level.Warning": "警告",
   "validation.level.Info": "信息",
+  "validation.compareDiff": "与上次相比：错误 {errorDelta}，警告 {warningDelta}",
+
+  "lockfile.locked": "lockfile：已锁定",
+  "lockfile.unlocked": "lockfile：未锁定",
+
+  "template.applied": "模板已应用",
 
   "import.prompt": "请粘贴配方 JSON",
   "import.failed": "导入失败：JSON 无法解析",
