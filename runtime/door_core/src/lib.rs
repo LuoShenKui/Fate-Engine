@@ -3,6 +3,30 @@ use serde_json::Value;
 
 pub const PROTOCOL_VERSION: &str = "1.0";
 
+pub mod events {
+    pub const ON_SPAWN: &str = "OnSpawn";
+    pub const ON_ENABLE: &str = "OnEnable";
+    pub const ON_DISABLE: &str = "OnDisable";
+    pub const ON_DESTROY: &str = "OnDestroy";
+    pub const ON_USED: &str = "OnUsed";
+    pub const ON_DENIED: &str = "OnDenied";
+    pub const ON_STATE_CHANGED: &str = "OnStateChanged";
+    pub const ON_VALIDATE: &str = "OnValidate";
+    pub const ON_TICK_LOW_FREQ: &str = "OnTickLowFreq";
+
+    pub const REQUIRED_EVENTS: [&str; 9] = [
+        ON_SPAWN,
+        ON_ENABLE,
+        ON_DISABLE,
+        ON_DESTROY,
+        ON_USED,
+        ON_DENIED,
+        ON_STATE_CHANGED,
+        ON_VALIDATE,
+        ON_TICK_LOW_FREQ,
+    ];
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProtocolError {
     pub code: String,
@@ -119,6 +143,7 @@ pub enum ValidationSeverity {
 pub struct DoorBrick {
     pub brick_id: String,
     pub state: DoorState,
+    low_freq_tick_counter: u64,
 }
 
 impl DoorBrick {
@@ -126,26 +151,55 @@ impl DoorBrick {
         Self {
             brick_id: brick_id.into(),
             state,
+            low_freq_tick_counter: 0,
+        }
+    }
+
+    pub fn on_spawn(&self) -> BrickEvent {
+        BrickEvent {
+            event: events::ON_SPAWN.to_string(),
+            payload: "status=noop".to_string(),
+        }
+    }
+
+    pub fn on_enable(&self) -> BrickEvent {
+        BrickEvent {
+            event: events::ON_ENABLE.to_string(),
+            payload: "status=noop".to_string(),
+        }
+    }
+
+    pub fn on_disable(&self) -> BrickEvent {
+        BrickEvent {
+            event: events::ON_DISABLE.to_string(),
+            payload: "status=noop".to_string(),
+        }
+    }
+
+    pub fn on_destroy(&self) -> BrickEvent {
+        BrickEvent {
+            event: events::ON_DESTROY.to_string(),
+            payload: "status=noop".to_string(),
         }
     }
 
     pub fn interact(&mut self, input: InteractInput) -> BrickEvent {
         if !self.state.enabled {
             return BrickEvent {
-                event: "OnDenied".to_string(),
+                event: events::ON_DENIED.to_string(),
                 payload: "reason=disabled".to_string(),
             };
         }
         if self.state.locked {
             return BrickEvent {
-                event: "OnDenied".to_string(),
+                event: events::ON_DENIED.to_string(),
                 payload: "reason=locked".to_string(),
             };
         }
 
         self.state.open = !self.state.open;
         BrickEvent {
-            event: "OnUsed".to_string(),
+            event: events::ON_USED.to_string(),
             payload: format!("actor_id={},open={}", input.actor_id, self.state.open),
         }
     }
@@ -159,19 +213,41 @@ impl DoorBrick {
             "has_trigger" => self.state.has_trigger = input.value,
             _ => {
                 return BrickEvent {
-                    event: "OnDenied".to_string(),
+                    event: events::ON_DENIED.to_string(),
                     payload: format!("reason=unknown_state:{}", input.key),
                 }
             }
         }
 
         BrickEvent {
-            event: "OnStateChanged".to_string(),
+            event: events::ON_STATE_CHANGED.to_string(),
             payload: format!("key={},value={}", input.key, input.value),
         }
     }
 
-    pub fn validate(&self, input: ValidateInput) -> ValidateOutput {
+    pub fn on_tick_low_freq(&mut self) -> BrickEvent {
+        self.low_freq_tick_counter += 1;
+        let throttle_window = 5;
+        if self.low_freq_tick_counter % throttle_window == 0 {
+            return BrickEvent {
+                event: events::ON_TICK_LOW_FREQ.to_string(),
+                payload: format!(
+                    "tick={},check=state_snapshot,open={},locked={}",
+                    self.low_freq_tick_counter, self.state.open, self.state.locked
+                ),
+            };
+        }
+
+        BrickEvent {
+            event: events::ON_TICK_LOW_FREQ.to_string(),
+            payload: format!(
+                "tick={},check=skipped,throttle={}",
+                self.low_freq_tick_counter, throttle_window
+            ),
+        }
+    }
+
+    fn run_validate(&self, input: ValidateInput) -> ValidateOutput {
         let mut issues = Vec::new();
         if !self.state.has_collision {
             issues.push(ValidationIssue {
@@ -239,6 +315,21 @@ impl DoorBrick {
 
         ValidateOutput { issues }
     }
+
+    pub fn on_validate(&self, input: ValidateInput) -> BrickEvent {
+        let output = self.run_validate(input);
+        BrickEvent {
+            event: events::ON_VALIDATE.to_string(),
+            payload: serde_json::to_string(&output)
+                .unwrap_or_else(|_| "{\"issues\":[]}".to_string()),
+        }
+    }
+
+    pub fn validate(&self, input: ValidateInput) -> ValidateOutput {
+        let event = self.on_validate(input);
+        serde_json::from_str::<ValidateOutput>(&event.payload)
+            .unwrap_or_else(|_| ValidateOutput { issues: vec![] })
+    }
 }
 
 pub fn interact_json(brick: &mut DoorBrick, input_json: &str) -> Result<String, serde_json::Error> {
@@ -247,7 +338,10 @@ pub fn interact_json(brick: &mut DoorBrick, input_json: &str) -> Result<String, 
     serde_json::to_string(&event)
 }
 
-pub fn set_state_json(brick: &mut DoorBrick, input_json: &str) -> Result<String, serde_json::Error> {
+pub fn set_state_json(
+    brick: &mut DoorBrick,
+    input_json: &str,
+) -> Result<String, serde_json::Error> {
     let input: SetStateInput = serde_json::from_str(input_json)?;
     let event = brick.set_state(input);
     serde_json::to_string(&event)
@@ -297,7 +391,7 @@ mod tests {
         let used = brick.interact(InteractInput {
             actor_id: "player_1".to_string(),
         });
-        assert_eq!(used.event, "OnUsed");
+        assert_eq!(used.event, events::ON_USED);
 
         let _ = brick.set_state(SetStateInput {
             key: "locked".to_string(),
@@ -306,7 +400,7 @@ mod tests {
         let denied = brick.interact(InteractInput {
             actor_id: "player_1".to_string(),
         });
-        assert_eq!(denied.event, "OnDenied");
+        assert_eq!(denied.event, events::ON_DENIED);
 
         let report = brick.validate(ValidateInput {
             door_name: "demo_door".to_string(),
@@ -314,11 +408,13 @@ mod tests {
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.code == "MISSING_COLLISION" && issue.severity == ValidationSeverity::Error));
+            .any(|issue| issue.code == "MISSING_COLLISION"
+                && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.code == "LOCKED_DEFAULT" && issue.severity == ValidationSeverity::Warning));
+            .any(|issue| issue.code == "LOCKED_DEFAULT"
+                && issue.severity == ValidationSeverity::Warning));
     }
 
     #[test]
@@ -328,20 +424,20 @@ mod tests {
         let e1 = brick.interact(InteractInput {
             actor_id: "player_1".to_string(),
         });
-        assert_eq!(e1.event, "OnUsed");
+        assert_eq!(e1.event, events::ON_USED);
         assert_eq!(e1.payload, "actor_id=player_1,open=true");
 
         let e2 = brick.set_state(SetStateInput {
             key: "locked".to_string(),
             value: true,
         });
-        assert_eq!(e2.event, "OnStateChanged");
+        assert_eq!(e2.event, events::ON_STATE_CHANGED);
         assert_eq!(e2.payload, "key=locked,value=true");
 
         let e3 = brick.interact(InteractInput {
             actor_id: "player_1".to_string(),
         });
-        assert_eq!(e3.event, "OnDenied");
+        assert_eq!(e3.event, events::ON_DENIED);
         assert_eq!(e3.payload, "reason=locked");
     }
 
@@ -360,15 +456,18 @@ mod tests {
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.code == "MISSING_COLLISION" && issue.severity == ValidationSeverity::Error));
+            .any(|issue| issue.code == "MISSING_COLLISION"
+                && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.code == "MISSING_TRIGGER" && issue.severity == ValidationSeverity::Error));
+            .any(|issue| issue.code == "MISSING_TRIGGER"
+                && issue.severity == ValidationSeverity::Error));
         assert!(report
             .issues
             .iter()
-            .any(|issue| issue.code == "LOCKED_DEFAULT" && issue.severity == ValidationSeverity::Warning));
+            .any(|issue| issue.code == "LOCKED_DEFAULT"
+                && issue.severity == ValidationSeverity::Warning));
     }
 
     #[test]
@@ -383,9 +482,58 @@ mod tests {
         assert_eq!(output.issues.len(), 1);
         assert_eq!(output.issues[0].code, "MISSING_COLLISION");
         assert_eq!(output.issues[0].location.brick_id, "fate.door.basic");
-        assert_eq!(output.issues[0].location.slot_id.as_deref(), Some("collision"));
+        assert_eq!(
+            output.issues[0].location.slot_id.as_deref(),
+            Some("collision")
+        );
     }
 
+    #[test]
+    fn lifecycle_entrypoints_and_required_events_exist() {
+        let brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        assert_eq!(brick.on_spawn().event, events::ON_SPAWN);
+        assert_eq!(brick.on_enable().event, events::ON_ENABLE);
+        assert_eq!(brick.on_disable().event, events::ON_DISABLE);
+        assert_eq!(brick.on_destroy().event, events::ON_DESTROY);
+        assert!(events::REQUIRED_EVENTS.contains(&events::ON_VALIDATE));
+        assert!(events::REQUIRED_EVENTS.contains(&events::ON_TICK_LOW_FREQ));
+    }
+
+    #[test]
+    fn validate_and_on_validate_share_the_same_path() {
+        let mut state = DoorState::default();
+        state.has_collision = false;
+        let brick = DoorBrick::new("fate.door.basic", state);
+
+        let direct = brick.validate(ValidateInput {
+            door_name: "demo_door".to_string(),
+        });
+
+        let event = brick.on_validate(ValidateInput {
+            door_name: "demo_door".to_string(),
+        });
+        assert_eq!(event.event, events::ON_VALIDATE);
+
+        let from_event: ValidateOutput = serde_json::from_str(&event.payload).unwrap();
+        assert_eq!(direct, from_event);
+    }
+
+    #[test]
+    fn low_freq_tick_event_can_be_triggered() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let mut last = BrickEvent {
+            event: String::new(),
+            payload: String::new(),
+        };
+
+        for _ in 0..5 {
+            last = brick.on_tick_low_freq();
+        }
+
+        assert_eq!(last.event, events::ON_TICK_LOW_FREQ);
+        assert!(last.payload.contains("tick=5"));
+        assert!(last.payload.contains("check=state_snapshot"));
+    }
     #[test]
     fn interact_envelope_adapter_round_trip() {
         let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
