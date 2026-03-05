@@ -8,6 +8,7 @@ const enUSMessages = {
   "toolbar.save": "Save",
   "toolbar.load": "Load",
   "toolbar.applyTemplate": "Apply Template",
+  "toolbar.adapterMode": "Adapter Mode: {mode} (click to toggle)",
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
@@ -17,6 +18,8 @@ const enUSMessages = {
   "panel.propertyInspector.title": "Property Inspector",
   "panel.propertyInspector.currentNode": "Current Node: {nodeName}",
   "panel.validation.title": "Validation Results",
+  "panel.validation.business": "Business Validation",
+  "panel.validation.protocol": "Protocol Validation",
 
   "validation.waiting": "Waiting for validation",
   "validation.ok": "OK",

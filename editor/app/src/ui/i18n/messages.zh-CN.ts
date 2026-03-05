@@ -8,6 +8,7 @@ const zhCNMessages = {
   "toolbar.save": "保存",
   "toolbar.load": "加载",
   "toolbar.applyTemplate": "应用模板",
+  "toolbar.adapterMode": "适配器模式：{mode}（点击切换）",
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
@@ -17,6 +18,8 @@ const zhCNMessages = {
   "panel.propertyInspector.title": "属性面板",
   "panel.propertyInspector.currentNode": "当前节点：{nodeName}",
   "panel.validation.title": "校验结果",
+  "panel.validation.business": "业务校验",
+  "panel.validation.protocol": "协议校验",
 
   "validation.waiting": "等待校验",
   "validation.ok": "通过",
