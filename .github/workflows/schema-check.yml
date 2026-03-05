@@ -1,0 +1,14 @@
+name: schema-check
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate protocol schemas
+        run: python3 tools/validate_schemas.py

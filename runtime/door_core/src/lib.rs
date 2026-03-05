@@ -1,4 +1,35 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+pub const PROTOCOL_VERSION: &str = "1.0";
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProtocolError {
+    pub code: String,
+    pub message: String,
+    pub details: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Envelope {
+    pub protocol_version: String,
+    pub r#type: String,
+    pub request_id: String,
+    pub payload: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ProtocolError>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DoorInteractRequestPayload {
+    pub actor_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DoorInteractResponsePayload {
+    pub event: String,
+    pub payload: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DoorState {
@@ -141,6 +172,30 @@ pub fn validate_json(brick: &DoorBrick, input_json: &str) -> Result<String, serd
     serde_json::to_string(&output)
 }
 
+pub fn handle_interact_envelope_json(
+    brick: &mut DoorBrick,
+    request_json: &str,
+) -> Result<String, serde_json::Error> {
+    let request: Envelope = serde_json::from_str(request_json)?;
+    let payload: DoorInteractRequestPayload = serde_json::from_value(request.payload)?;
+    let event = brick.interact(InteractInput {
+        actor_id: payload.actor_id,
+    });
+
+    let response = Envelope {
+        protocol_version: PROTOCOL_VERSION.to_string(),
+        r#type: "door.interact.response".to_string(),
+        request_id: request.request_id,
+        payload: serde_json::to_value(DoorInteractResponsePayload {
+            event: event.event,
+            payload: event.payload,
+        })?,
+        error: None,
+    };
+
+    serde_json::to_string(&response)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,5 +236,25 @@ mod tests {
         });
 
         assert_eq!(report.issues.len(), 2);
+    }
+
+    #[test]
+    fn interact_envelope_adapter_round_trip() {
+        let mut brick = DoorBrick::new("fate.door.basic", DoorState::default());
+        let request = Envelope {
+            protocol_version: PROTOCOL_VERSION.to_string(),
+            r#type: "door.interact.request".to_string(),
+            request_id: "req-1".to_string(),
+            payload: serde_json::json!({"actor_id": "player_1"}),
+            error: None,
+        };
+
+        let request_json = serde_json::to_string(&request).unwrap();
+        let response_json = handle_interact_envelope_json(&mut brick, &request_json).unwrap();
+        let response: Envelope = serde_json::from_str(&response_json).unwrap();
+
+        assert_eq!(response.protocol_version, PROTOCOL_VERSION);
+        assert_eq!(response.r#type, "door.interact.response");
+        assert_eq!(response.request_id, "req-1");
     }
 }
