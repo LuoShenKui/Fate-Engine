@@ -1,7 +1,9 @@
+RENDER_BUILD_CONFIG ?= Release
+
 .PHONY: check check-schema check-rust check-cpp check-ts check-compliance \
 	check-unit check-integration check-replay check-visual check-perf check-perf-scenes check-stability \
 	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
-	check-render-matrix release-local
+	check-render-matrix check-render-backend-init release-local
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts -> perf"
@@ -77,8 +79,14 @@ check-partition-streaming:
 	@python3 tools/check_partition_streaming.py
 	@echo "[检查] 分区流送回放检查通过"
 
-check-render-matrix:
-	@echo "[检查] Render 能力矩阵检查中..."
+check-render-backend-init:
+	@echo "[检查] Render 后端初始化探测构建中..."
+	@cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON
+	@cmake --build build-render --config $(RENDER_BUILD_CONFIG) --target fate_render_probe
+	@echo "[检查] Render 后端初始化探测构建通过"
+
+check-render-matrix: check-render-backend-init
+	@echo "[检查] Render 能力矩阵检查中（配置合法 + 后端可用性探测）..."
 	@python3 tools/check_render_matrix.py
 	@echo "[检查] Render 能力矩阵检查通过"
 

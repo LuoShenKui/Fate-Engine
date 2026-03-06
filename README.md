@@ -9,7 +9,7 @@
 
 ## 当前能力边界
 - 当前仓库定位是**原型验证阶段**，目标是先打通契约、交互、校验与构建链路。
-- 渲染能力层默认关闭（`backend=none`，`FATE_ENABLE_RENDER=OFF`），该开关仅表示工程能力矩阵与编译路径，不代表画质功能已开启。
+- 渲染能力层默认关闭（`FATE_ENABLE_RENDER=OFF`）；运行时能力矩阵默认提供 `vulkan -> none` 可回退配置（由最小模拟后端支撑），用于验证可切换与可探测，不代表真实画质功能已开启。
 - 当前可证明：Door 相关的 schema/runtime/editor/cpp 最小链路可运行。
 - 当前不等于：真实 3D 场景下的完整联调已完成（包括美术资产质量、复杂物理、全链路性能与多机协同）。
 - 因此里程碑验收以“可机检命令 + 可复现输出”为主，而不是口头或单次手工演示。
@@ -63,16 +63,16 @@ cmake -S . -B build
 cmake --build build
 ./build/fate_demo
 
-# 可选：仅启用 render 占位模块（默认关闭）
+# 可选：启用最小 render 后端探测模块（默认关闭）
 cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON
-cmake --build build-render
+cmake --build build-render --target fate_render_probe
 ```
 
 ## 如何测试
 ```bash
 make check
 
-# 渲染能力矩阵（配置合法性 + fallback 收敛）
+# 渲染能力矩阵（配置合法性 + 后端可初始化）
 make check-render-matrix
 ```
 
@@ -262,3 +262,13 @@ make check-soak-8h
 - `check-stability`：10k tick smoke 成功，快速发现崩溃与状态异常。
 - `check-soak-2h` / `check-soak-8h`：输出统一 JSON 摘要（`duration/tick_total/error_count/max_rss_mb`），并满足 `protocol/perf/runtime_soak_thresholds.json` 阈值。
 - 与现有分层门禁对齐：`check-stability` 作为快速门禁留在日常检查，长稳 soak 建议纳入 nightly。
+
+
+## 渲染后端测试通过标准与排障
+- 通过标准：
+  1. `make check-render-backend-init` 成功（能构建 `fate_render_probe`）。
+  2. `make check-render-matrix` 成功（配置合法 + 非 `none` backend 可探测）。
+- 常见失败排查：
+  1. `fate_render_probe` 不存在：先执行 `cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && cmake --build build-render --target fate_render_probe`。
+  2. `backend_unavailable=vulkan`：确认未设置 `FATE_RENDER_DISABLE_VULKAN_SIM=1`，或显式开启 `-DFATE_RENDER_ENABLE_VULKAN_SIM=ON`。
+  3. 配置校验失败：检查 `protocol/runtime/render_capabilities.json` 的 `backend/feature_tier/fallback_chain` 是否命中枚举，且链路以 `none` 收敛。

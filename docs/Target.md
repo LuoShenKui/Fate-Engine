@@ -290,8 +290,9 @@
 ## B. 3D 渲染与性能（生产门槛）
 
 1. **渲染后端能力仍需工程化**
-   - 缺口：`render/` 目前预留，尚未形成可切换、可压测、可降级的渲染后端矩阵。
-   - 目标：先实现“开关可控”的渲染能力层，再推进高阶效果。
+   - 现状：已补充“最小可运行后端层”（模拟 Vulkan + `fate_render_probe` 探测程序），并接入 `make check-render-matrix` 双重校验。
+   - 仍有缺口：当前 Vulkan 为软件模拟探测，不代表真实 GPU 驱动链路能力。
+   - 目标：在保持可开关、可回退的前提下，逐步替换为真实后端初始化与压测数据。
 
 2. **性能预算体系未固化**
    - 缺口：缺少帧时间预算（CPU/GPU）、draw call/材质/阴影距离等硬阈值与 CI 报告。
@@ -352,3 +353,14 @@
 5. 文档、测试、发布门禁三者一致（禁止“文档说有，命令跑不通”）。
 
 > 结论：当前阶段可用于“原型验证与流程打样”，若要进入生产可用 3D 环境，优先级应是“测试体系 + 可观测性 + 资源流水线 + 发布治理”，而不是先追求高阶渲染特效。
+
+
+### 渲染后端测试通过标准（当前最小门槛）
+1. 配置合法：`protocol/runtime/render_capabilities.json` 中 `backend/feature_tier/fallback_chain` 命中枚举，且回退链以 `none` 收敛。
+2. 后端可初始化：`make check-render-backend-init` 成功构建 `fate_render_probe`。
+3. 双重校验通过：`make check-render-matrix` 同时通过“配置合法性 + 非 `none` 后端探测可用性”。
+
+### 渲染后端失败排查（最短路径）
+1. 若提示缺少探测程序：执行 `cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && cmake --build build-render --target fate_render_probe`。
+2. 若提示 `backend_unavailable=vulkan`：检查是否设置了 `FATE_RENDER_DISABLE_VULKAN_SIM=1`，并确认 `FATE_RENDER_ENABLE_VULKAN_SIM=ON`。
+3. 若配置校验失败：检查 `fallback_chain` 是否非空、无重复、以 `none` 结尾，且所有后端值在允许枚举内。

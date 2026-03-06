@@ -2,16 +2,59 @@
 """Render capability matrix checker."""
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 ALLOWED_BACKENDS = {"none", "dx12", "vulkan"}
 ALLOWED_TIERS = {"tier0", "tier1"}
+PROBE_BASENAME = "fate_render_probe"
+
+
+def candidate_probe_bins() -> list[Path]:
+    names = [PROBE_BASENAME, f"{PROBE_BASENAME}.exe"]
+    dirs = [Path("build-render"), Path("build-render/Release"), Path("build-render/Debug"), Path("build-render/RelWithDebInfo")]
+    return [directory / name for directory in dirs for name in names]
+
+
+def find_probe_bin() -> Path | None:
+    for candidate in candidate_probe_bins():
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def fail(message: str) -> int:
     print(f"[错误] {message}")
     return 1
+
+
+def probe_backend(backend: str) -> bool:
+    probe_bin = find_probe_bin()
+    if probe_bin is None:
+        candidates = ", ".join(str(path) for path in candidate_probe_bins())
+        print(
+            "[错误] 后端探测程序不存在，请先执行 cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && "
+            "cmake --build build-render --target fate_render_probe；已尝试路径: " + candidates
+        )
+        return False
+
+    result = subprocess.run(
+        [str(probe_bin), backend],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        stdout = result.stdout.strip()
+        detail = stderr or stdout or f"exit={result.returncode}"
+        print(f"[错误] 后端可用性探测失败: backend={backend}, detail={detail}")
+        return False
+
+    print(f"[检查] 后端可用性探测通过: backend={backend}")
+    return True
 
 
 def main() -> int:
@@ -52,6 +95,14 @@ def main() -> int:
 
     if backend != "none" and backend not in fallback_chain:
         print("[警告] backend 未出现在 fallback_chain 中，将按配置直接尝试 backend 后再按链路回退")
+
+    probed = set()
+    for candidate in [backend, *fallback_chain]:
+        if candidate == "none" or candidate in probed:
+            continue
+        probed.add(candidate)
+        if not probe_backend(candidate):
+            return 1
 
     print("[检查] Render capability matrix 校验通过")
     print(f"[检查] backend={backend}, feature_tier={tier}, fallback_chain={fallback_chain}")
