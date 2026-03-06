@@ -113,9 +113,13 @@
    - `python3 tools/publisher_workflow.py scaffold <name>`
 2. 发布前自动检查
    - `python3 tools/publisher_workflow.py precheck <name>`
-3. 一键打包（`.fateblock`）
+3. 本地预览/调试（参数即时反馈 + 生命周期日志）
+   - `python3 tools/publisher_workflow.py preview <name> --param message=你好`
+4. 一键打包（`.fateblock`）
    - `python3 tools/publisher_workflow.py package <name>`
-4. 一键安装到另一个项目
+5. 上传发布（本地 publish + 返回可分享标识）
+   - `python3 tools/publisher_workflow.py publish <name>`
+6. 一键安装到另一个项目
    - `python3 tools/publisher_workflow.py install dist/<artifact>.fateblock <target_project_dir>`
 
 > 说明：该链路先聚焦 MVP 的发布者体验，后续再补充预览器日志面板与远端 publish 分享标识。
@@ -133,4 +137,3 @@
 7. 发布
 8. 被另一个项目安装
 9. 安装后可运行
-

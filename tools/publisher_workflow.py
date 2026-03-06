@@ -4,13 +4,16 @@
 命令：
 - scaffold: 生成 Hello Block 模板
 - precheck: 发布前高频错误校验
+- preview: 本地预览参数与生命周期日志
 - package: 打包为 .fateblock
+- publish: 本地发布并生成可分享标识
 - install: 安装到另一个项目目录
 """
 
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import re
@@ -208,13 +211,82 @@ def cmd_package(args: argparse.Namespace) -> int:
             print(f"  - {item}")
         return 1
 
+    output_path, checksum = build_package_artifact(package_dir, args.output)
+
+    print(f"[OK] package created: {output_path.relative_to(ROOT)}")
+    print(f"[OK] checksum: sha256:{checksum}")
+    return 0
+
+
+def parse_param_value(raw: str, expected_type: str) -> object:
+    if expected_type == "string":
+        return raw
+    if expected_type == "bool":
+        normalized = raw.strip().lower()
+        if normalized in {"true", "1", "yes", "y"}:
+            return True
+        if normalized in {"false", "0", "no", "n"}:
+            return False
+        raise ValueError(f"bool value expected, got: {raw}")
+    if expected_type == "int":
+        return int(raw)
+    if expected_type == "float":
+        return float(raw)
+    raise ValueError(f"unsupported param type: {expected_type}")
+
+
+def cmd_preview(args: argparse.Namespace) -> int:
+    package_dir = (PACKAGES_DIR / args.package) if not args.package.startswith("packages/") else (ROOT / args.package)
+    manifest_path = package_dir / "manifest.json"
+    if not manifest_path.exists():
+        print(f"[ERROR] manifest not found: {manifest_path}")
+        return 1
+
+    manifest = load_json(manifest_path)
+    params = manifest.get("params")
+    if not isinstance(params, dict):
+        print("[ERROR] manifest params invalid: expected object")
+        return 1
+
+    resolved: dict[str, object] = {}
+    for name, item in params.items():
+        if isinstance(item, dict) and "default" in item:
+            resolved[name] = item["default"]
+
+    for raw_pair in args.param:
+        if "=" not in raw_pair:
+            print(f"[ERROR] invalid --param format: {raw_pair}, expected key=value")
+            return 1
+        key, value = raw_pair.split("=", 1)
+        item = params.get(key)
+        if not isinstance(item, dict):
+            print(f"[ERROR] param not found in manifest: {key}")
+            return 1
+        expected_type = item.get("type")
+        try:
+            resolved[key] = parse_param_value(value, expected_type)
+        except (TypeError, ValueError) as exc:
+            print(f"[ERROR] param parse failed: {key} ({exc})")
+            return 1
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    print(f"[preview][{timestamp}] package={manifest.get('id')} version={manifest.get('version')}")
+    print("[preview] lifecycle=load -> parse_params -> onSpawn -> onUpdate")
+    print(f"[preview] params={json.dumps(resolved, ensure_ascii=False, sort_keys=True)}")
+    print(f"[preview] log:onSpawn message={resolved.get('message', '<none>')}")
+    print(f"[preview] log:onUpdate message={resolved.get('message', '<none>')}")
+    print("[OK] preview completed")
+    return 0
+
+
+def build_package_artifact(package_dir: Path, output_name: str | None) -> tuple[Path, str]:
     manifest = load_json(package_dir / "manifest.json")
     package_name = manifest["id"]
     version = manifest["version"]
 
     DIST_DIR.mkdir(parents=True, exist_ok=True)
-    output_name = args.output or f"{package_name}-{version}.fateblock"
-    output_path = DIST_DIR / output_name
+    resolved_output_name = output_name or f"{package_name}-{version}.fateblock"
+    output_path = DIST_DIR / resolved_output_name
 
     with tarfile.open(output_path, "w:gz") as tar:
         tar.add(package_dir, arcname=package_dir.name)
@@ -223,9 +295,36 @@ def cmd_package(args: argparse.Namespace) -> int:
     (output_path.with_suffix(output_path.suffix + ".sha256")).write_text(
         f"sha256:{checksum}  {output_path.name}\n", encoding="utf-8"
     )
+    return output_path, checksum
 
-    print(f"[OK] package created: {output_path.relative_to(ROOT)}")
-    print(f"[OK] checksum: sha256:{checksum}")
+
+def cmd_publish(args: argparse.Namespace) -> int:
+    package_dir = (PACKAGES_DIR / args.package) if not args.package.startswith("packages/") else (ROOT / args.package)
+    if not (package_dir / "manifest.json").exists():
+        print(f"[ERROR] manifest not found: {package_dir / 'manifest.json'}")
+        return 1
+
+    precheck_errors = validate_manifest_for_precheck(package_dir, load_json(package_dir / "manifest.json"))
+    if precheck_errors:
+        print("[ERROR] publish aborted by precheck")
+        for item in precheck_errors:
+            print(f"  - {item}")
+        return 1
+
+    output_path, checksum = build_package_artifact(package_dir, args.output)
+    manifest = load_json(package_dir / "manifest.json")
+    share_id = f"local://fate/{manifest['id']}@{manifest['version']}"
+
+    publish_receipt = {
+        "package": manifest["id"],
+        "version": manifest["version"],
+        "share_id": share_id,
+        "artifact": str(output_path.relative_to(ROOT)),
+        "checksum": f"sha256:{checksum}",
+    }
+    write_json(DIST_DIR / f"{manifest['id']}-{manifest['version']}.publish.json", publish_receipt)
+    print(f"[OK] publish completed: {output_path.relative_to(ROOT)}")
+    print(f"[OK] share id: {share_id}")
     return 0
 
 
@@ -276,10 +375,22 @@ def build_parser() -> argparse.ArgumentParser:
     precheck.add_argument("package", help="package 名称（如 door）或 packages/<name>")
     precheck.set_defaults(func=cmd_precheck)
 
+    preview = sub.add_parser("preview", help="本地预览（日志与参数解析）")
+    preview.add_argument("package", help="package 名称（如 door）或 packages/<name>")
+    preview.add_argument(
+        "--param", action="append", default=[], help="覆盖参数，格式 key=value；可重复传入"
+    )
+    preview.set_defaults(func=cmd_preview)
+
     package = sub.add_parser("package", help="打包为 .fateblock")
     package.add_argument("package", help="package 名称（如 door）或 packages/<name>")
     package.add_argument("--output", help="输出文件名（位于 dist/）")
     package.set_defaults(func=cmd_package)
+
+    publish = sub.add_parser("publish", help="本地发布（含 precheck + package）")
+    publish.add_argument("package", help="package 名称（如 door）或 packages/<name>")
+    publish.add_argument("--output", help="输出文件名（位于 dist/）")
+    publish.set_defaults(func=cmd_publish)
 
     install = sub.add_parser("install", help="安装 .fateblock 到项目")
     install.add_argument("artifact", help=".fateblock 文件路径")
