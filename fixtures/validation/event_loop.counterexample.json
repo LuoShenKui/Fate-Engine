@@ -1,0 +1,26 @@
+{
+  "version": "0",
+  "nodes": [
+    { "id": "door-1", "type": "door", "brickId": "brick.door" },
+    { "id": "trigger-1", "type": "trigger", "brickId": "brick.trigger" }
+  ],
+  "edges": [
+    { "from": "door-1", "to": "trigger-1" }
+  ],
+  "params": {
+    "selected_brick": "brick.door",
+    "event_links": [
+      { "from": "door-1", "to": "trigger-1" },
+      { "from": "trigger-1", "to": "door-1" }
+    ]
+  },
+  "slot_bindings": {},
+  "seed": 2,
+  "lockfile": {
+    "packages": [
+      { "id": "fate-door-ui", "version": "0.1.0", "hash": "sha256-placeholder" }
+    ]
+  },
+  "package_lock": { "packages": { "editor": "0.1.0" } },
+  "suppress": []
+}
