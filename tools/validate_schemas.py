@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import sys
 
+MVP_LOCAL_ONLY_VIOLATION = "MVP_LOCAL_ONLY_VIOLATION"
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "protocol" / "schemas"
 REQUIRED_FILES = [
@@ -80,6 +82,34 @@ SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
 
 LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
 RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
+
+
+def build_mvp_violation(path: str, detail: str) -> str:
+    return f"{MVP_LOCAL_ONLY_VIOLATION}: path={path} detail={detail}"
+
+
+def validate_publish_mvp_local_only(publish: dict) -> list[str]:
+    errors: list[str] = []
+
+    source = publish.get("source")
+    source_uri = source.get("uri") if isinstance(source, dict) else None
+    if not isinstance(source_uri, str) or not source_uri.startswith("file://"):
+        errors.append(build_mvp_violation("source.uri", "expected file:// prefix"))
+
+    registry = publish.get("registry")
+    if not isinstance(registry, dict):
+        errors.append(build_mvp_violation("registry", "expected object"))
+        return errors
+
+    provider = registry.get("provider")
+    if provider != "local":
+        errors.append(build_mvp_violation("registry.provider", "expected local"))
+
+    endpoint = registry.get("endpoint")
+    if endpoint not in (None, ""):
+        errors.append(build_mvp_violation("registry.endpoint", "must be empty in MVP local-only mode"))
+
+    return errors
 
 
 def load_json(path: Path) -> dict:
@@ -195,7 +225,7 @@ def validate_pipeline_summary(pipeline: object) -> list[str]:
 
     return errors
 
-def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
+def validate_publish_metadata(publish: dict, manifest: dict, mvp_local_only: bool = True) -> list[str]:
     errors: list[str] = []
 
     for field in REQUIRED_PUBLISH_FIELDS:
@@ -261,10 +291,17 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
     pipeline_errors = validate_pipeline_summary(publish.get("pipeline"))
     errors.extend(pipeline_errors)
 
+    if mvp_local_only:
+        errors.extend(validate_publish_mvp_local_only(publish))
+
     return errors
 
 
 def main() -> int:
+    mvp_local_only = True
+    if "--no-mvp-local-only" in sys.argv:
+        mvp_local_only = False
+
     for file_name in REQUIRED_FILES:
         file_path = SCHEMA_DIR / file_name
         if not file_path.exists():
@@ -315,7 +352,7 @@ def main() -> int:
             print(f"[ERROR][PUBLISH_METADATA_MISSING] path={publish_path}")
             return 1
 
-        publish_errors = validate_publish_metadata(publish_metadata, manifest)
+        publish_errors = validate_publish_metadata(publish_metadata, manifest, mvp_local_only=mvp_local_only)
         if publish_errors:
             print(f"[ERROR][PUBLISH_METADATA_VALIDATION_FAILED] package={package_case['name']} path={publish_path}")
             for item in publish_errors:

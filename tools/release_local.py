@@ -18,6 +18,7 @@ COMPAT_MATRIX_DEFAULT_REF = "docs/releases/compat_matrix.json"
 LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
 RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
 PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
+MVP_LOCAL_ONLY_VIOLATION = "MVP_LOCAL_ONLY_VIOLATION"
 
 
 def sha256_file(path: Path) -> str:
@@ -28,8 +29,11 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def run_validation() -> None:
-    subprocess.run(["python3", str(ROOT / "tools" / "validate_schemas.py")], check=True)
+def run_validation(mvp_local_only: bool = True) -> None:
+    cmd = ["python3", str(ROOT / "tools" / "validate_schemas.py")]
+    if not mvp_local_only:
+        cmd.append("--no-mvp-local-only")
+    subprocess.run(cmd, check=True)
 
 
 def load_json(path: Path) -> dict:
@@ -88,6 +92,29 @@ def build_pipeline_summary(plan: dict | None) -> dict | None:
     }
 
 
+def build_mvp_violation(path: str, detail: str) -> str:
+    return f"{MVP_LOCAL_ONLY_VIOLATION}: path={path} detail={detail}"
+
+
+def validate_publish_mvp_local_only(publish: dict) -> None:
+    source = publish.get("source")
+    source_uri = source.get("uri") if isinstance(source, dict) else None
+    if not isinstance(source_uri, str) or not source_uri.startswith("file://"):
+        raise ValueError(build_mvp_violation("source.uri", "expected file:// prefix"))
+
+    registry = publish.get("registry")
+    if not isinstance(registry, dict):
+        raise ValueError(build_mvp_violation("registry", "expected object"))
+
+    provider = registry.get("provider")
+    if provider != "local":
+        raise ValueError(build_mvp_violation("registry.provider", "expected local"))
+
+    endpoint = registry.get("endpoint")
+    if endpoint not in (None, ""):
+        raise ValueError(build_mvp_violation("registry.endpoint", "must be empty in MVP local-only mode"))
+
+
 def validate_package_kind_and_structure(package_dir: Path, manifest: dict, publish: dict) -> None:
     manifest_kind = manifest.get("package_kind")
     publish_kind = publish.get("package_kind")
@@ -119,10 +146,17 @@ def validate_package_kind_and_structure(package_dir: Path, manifest: dict, publi
             raise ValueError(f"{package_dir.name}: logic 包缺少 script_ref 脚本入口")
 
 
-def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: dict | None = None) -> dict:
+def build_package(
+    package_dir: Path,
+    dry_run: bool = False,
+    pipeline_summary: dict | None = None,
+    mvp_local_only: bool = True,
+) -> dict:
     manifest = load_json(package_dir / "manifest.json")
     publish = load_json(package_dir / "publish.json")
     validate_package_kind_and_structure(package_dir, manifest, publish)
+    if mvp_local_only:
+        validate_publish_mvp_local_only(publish)
     lifecycle = publish.get("lifecycle")
     release = publish.get("release")
     compat = publish.get("compat")
@@ -199,9 +233,12 @@ def main() -> int:
     parser.add_argument("packages", nargs="*", help="要发布的包目录名，例如 door")
     parser.add_argument("--dry-run", action="store_true", help="仅做校验与流程检查，不写文件")
     parser.add_argument("--pipeline-plan", type=Path, help="可选：附带写入 publish.json.pipeline 的 plan 文件")
+    parser.add_argument("--no-mvp-local-only", action="store_true", help="关闭 MVP local-only 约束")
     args = parser.parse_args()
 
-    run_validation()
+    mvp_local_only = not args.no_mvp_local_only
+
+    run_validation(mvp_local_only=mvp_local_only)
 
     package_names = args.packages or sorted(
         item.name for item in PACKAGES_DIR.iterdir() if item.is_dir() and (item / "publish.json").exists()
@@ -249,7 +286,14 @@ def main() -> int:
     for name in package_names:
         package_dir = PACKAGES_DIR / name
         try:
-            entries.append(build_package(package_dir, dry_run=args.dry_run, pipeline_summary=pipeline_summary))
+            entries.append(
+                build_package(
+                    package_dir,
+                    dry_run=args.dry_run,
+                    pipeline_summary=pipeline_summary,
+                    mvp_local_only=mvp_local_only,
+                )
+            )
         except ValueError as exc:
             print(f"[ERROR] {exc}")
             return 1
