@@ -57,6 +57,33 @@ python3 tools/release_local.py --dry-run
 - `compat.contract` 与引擎支持的 contract 版本匹配；
 - 若不兼容，拒绝安装并提示具体字段。
 
+### 导入前校验顺序（`tools/publisher_workflow.py install`）
+
+1. **只读解析包元数据**：先读取 `.fateblock` 内 `manifest.json`，不落盘解压；
+2. **引擎兼容校验**：比对 `manifest.engine_compat` 与目标项目 `engine_version`；
+3. **合同版本校验**：比对 `manifest.contract_version` 与目标项目 `supported_contract_versions`；
+4. **依赖校验**：逐项检查 `dependencies[]` 是否在目标项目已安装包集合中满足版本约束；
+5. **通过后再解压安装**：仅当前述校验全部通过时执行真正解压。
+
+当前稳定错误码：
+- `ENGINE_INCOMPATIBLE`
+- `CONTRACT_INCOMPATIBLE`
+- `DEPENDENCY_MISSING`
+- `DEPENDENCY_VERSION_CONFLICT`
+
+示例报错：
+
+```text
+[ERROR] install blocked by pre-import validation
+  - ENGINE_INCOMPATIBLE: {"code":"ENGINE_INCOMPATIBLE","current":"0.1.0","required":">=0.2.0"}
+  - DEPENDENCY_MISSING: {"code":"DEPENDENCY_MISSING","current":null,"package_id":"fate.core.runtime","required":">=1.2.0"}
+  - DEPENDENCY_VERSION_CONFLICT: {"code":"DEPENDENCY_VERSION_CONFLICT","current":"1.1.0","package_id":"fate.ai.nav","required":">=1.3.0"}
+[ERROR] 缺失项清单:
+  - id=fate.core.runtime, required=>=1.2.0, current=<none>
+[ERROR] 冲突项清单:
+  - id=fate.ai.nav, required=>=1.3.0, current=1.1.0
+```
+
 ## 5) 落到编辑器 registry 的最小映射
 
 建议编辑器侧维护一个本地 registry 索引，字段最小集：
