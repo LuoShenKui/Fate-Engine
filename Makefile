@@ -97,9 +97,7 @@ release-local:
 
 check-visual:
 	@echo "[分层检查] Visual：截图基线比对"
-	@[ -f editor/app/node_modules/playwright/package.json ] \
-		&& cd editor/app && node tools/visual_regression.mjs \
-		|| echo "[分层检查] Visual：未安装 playwright，跳过自动截图比对（按 docs/ScreenshotOperation.md 执行手工流程）"
+	@cd editor/app && node tools/visual_regression.mjs
 	@echo "[分层检查] Visual 检查结束"
 
 check-perf:
