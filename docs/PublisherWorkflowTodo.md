@@ -104,6 +104,22 @@
 - [ ] 缺依赖时是否给出可定位、可执行的错误提示
 - [ ] 许可信息是否随包分发并可被消费端读取
 
+
+## 7.1 当前实现进度（代码已落地）
+
+已新增 `tools/publisher_workflow.py`，先打通 P0 的最小命令链路：
+
+1. 创建积木（脚手架）
+   - `python3 tools/publisher_workflow.py scaffold <name>`
+2. 发布前自动检查
+   - `python3 tools/publisher_workflow.py precheck <name>`
+3. 一键打包（`.fateblock`）
+   - `python3 tools/publisher_workflow.py package <name>`
+4. 一键安装到另一个项目
+   - `python3 tools/publisher_workflow.py install dist/<artifact>.fateblock <target_project_dir>`
+
+> 说明：该链路先聚焦 MVP 的发布者体验，后续再补充预览器日志面板与远端 publish 分享标识。
+
 ## 6. 里程碑定义（发布者闭环）
 
 当以下 9 步可稳定复现时，即视为当前阶段完成：
