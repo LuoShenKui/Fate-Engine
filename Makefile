@@ -1,3 +1,5 @@
+RENDER_BUILD_CONFIG ?= Release
+
 .PHONY: check check-schema check-rust check-cpp check-ts check-compliance \
 	check-unit check-integration check-replay check-visual check-perf check-perf-scenes check-stability \
 	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
@@ -80,7 +82,7 @@ check-partition-streaming:
 check-render-backend-init:
 	@echo "[检查] Render 后端初始化探测构建中..."
 	@cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON
-	@cmake --build build-render --target fate_render_probe
+	@cmake --build build-render --config $(RENDER_BUILD_CONFIG) --target fate_render_probe
 	@echo "[检查] Render 后端初始化探测构建通过"
 
 check-render-matrix: check-render-backend-init

@@ -8,7 +8,20 @@ from pathlib import Path
 
 ALLOWED_BACKENDS = {"none", "dx12", "vulkan"}
 ALLOWED_TIERS = {"tier0", "tier1"}
-PROBE_BIN = Path("build-render/fate_render_probe")
+PROBE_BASENAME = "fate_render_probe"
+
+
+def candidate_probe_bins() -> list[Path]:
+    names = [PROBE_BASENAME, f"{PROBE_BASENAME}.exe"]
+    dirs = [Path("build-render"), Path("build-render/Release"), Path("build-render/Debug"), Path("build-render/RelWithDebInfo")]
+    return [directory / name for directory in dirs for name in names]
+
+
+def find_probe_bin() -> Path | None:
+    for candidate in candidate_probe_bins():
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def fail(message: str) -> int:
@@ -17,14 +30,17 @@ def fail(message: str) -> int:
 
 
 def probe_backend(backend: str) -> bool:
-    if not PROBE_BIN.exists():
+    probe_bin = find_probe_bin()
+    if probe_bin is None:
+        candidates = ", ".join(str(path) for path in candidate_probe_bins())
         print(
-            f"[错误] 后端探测程序不存在: {PROBE_BIN}，请先执行 cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && cmake --build build-render"
+            "[错误] 后端探测程序不存在，请先执行 cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && "
+            "cmake --build build-render --target fate_render_probe；已尝试路径: " + candidates
         )
         return False
 
     result = subprocess.run(
-        [str(PROBE_BIN), backend],
+        [str(probe_bin), backend],
         capture_output=True,
         text=True,
         check=False,
