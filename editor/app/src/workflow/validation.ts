@@ -45,6 +45,12 @@ type PerfBudgetMetric = {
   lower_is_better?: boolean;
 };
 
+type GraphEdgeLike = {
+  id: string;
+  from: string;
+  to: string;
+};
+
 const isLocked = (recipe: EditorRecipeV0): boolean => {
   return recipe.lockfile.packages.every((pkg) => pkg.id !== "" && pkg.version !== "" && pkg.hash !== "");
 };
@@ -59,6 +65,28 @@ const makeEdgeId = (edge: unknown, index: number): string => {
 const toNodeId = (node: unknown, index: number): string => {
   const nodeObj = typeof node === "object" && node !== null ? (node as Record<string, unknown>) : {};
   return typeof nodeObj.id === "string" ? nodeObj.id : `node-${index}`;
+};
+
+const toObject = (value: unknown): Record<string, unknown> => {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+};
+
+const toStringList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string" && item !== "");
+};
+
+const getGraphEdges = (recipe: EditorRecipeV0): GraphEdgeLike[] => {
+  return recipe.edges.map((edge, index) => {
+    const edgeObj = toObject(edge);
+    return {
+      id: makeEdgeId(edge, index),
+      from: typeof edgeObj.from === "string" ? edgeObj.from : "",
+      to: typeof edgeObj.to === "string" ? edgeObj.to : "",
+    };
+  });
 };
 
 const getSuppressKeys = (recipe: EditorRecipeV0): Set<string> => {
@@ -180,14 +208,7 @@ const reachabilityRule: ValidationRule = {
       return [];
     }
     const nodeIds = recipe.nodes.map((node, index) => toNodeId(node, index));
-    const edges = recipe.edges.map((edge, index) => {
-      const edgeObj = typeof edge === "object" && edge !== null ? (edge as Record<string, unknown>) : {};
-      return {
-        id: makeEdgeId(edge, index),
-        from: typeof edgeObj.from === "string" ? edgeObj.from : "",
-        to: typeof edgeObj.to === "string" ? edgeObj.to : "",
-      };
-    });
+    const edges = getGraphEdges(recipe);
     const incoming = new Set(edges.map((edge) => edge.to));
     const entryNodes = nodeIds.filter((id) => !incoming.has(id));
     const start = entryNodes.length > 0 ? entryNodes[0] : nodeIds[0];
@@ -215,6 +236,140 @@ const reachabilityRule: ValidationRule = {
         evidence: `entry=${start}`,
         suggestion: "为该节点补充可达路径或删除冗余节点",
       }));
+  },
+};
+
+// 规则分组：跨砖块依赖
+const crossBrickDependencyRule: ValidationRule = {
+  id: "dependency.cross_brick",
+  run: (recipe) => {
+    const nodeBrickMap = new Map<string, string>();
+    recipe.nodes.forEach((node, index) => {
+      const nodeId = toNodeId(node, index);
+      const nodeObj = toObject(node);
+      const brickId = typeof nodeObj.brickId === "string" ? nodeObj.brickId : "";
+      if (brickId !== "") {
+        nodeBrickMap.set(nodeId, brickId);
+      }
+    });
+    const allowPairs = new Set(
+      toStringList(recipe.params.allowed_cross_brick_dependencies).flatMap((pair) => {
+        const [fromBrick, toBrick] = pair.split("->").map((part) => part.trim());
+        if (!fromBrick || !toBrick) {
+          return [];
+        }
+        return [`${fromBrick}->${toBrick}`, `${toBrick}->${fromBrick}`];
+      }),
+    );
+    return getGraphEdges(recipe).flatMap<BatchValidationIssue>((edge) => {
+      const fromBrick = nodeBrickMap.get(edge.from);
+      const toBrick = nodeBrickMap.get(edge.to);
+      if (fromBrick === undefined || toBrick === undefined || fromBrick === toBrick) {
+        return [];
+      }
+      const pairKey = `${fromBrick}->${toBrick}`;
+      if (allowPairs.has(pairKey)) {
+        return [];
+      }
+      return [
+        {
+          level: "Error",
+          ruleId: "dependency.cross_brick",
+          target: { type: "edge", edgeId: edge.id },
+          message: `检测到跨砖块依赖: ${fromBrick} -> ${toBrick}`,
+          evidence: `edge=${edge.from}->${edge.to}, allow=${allowPairs.size > 0 ? "configured" : "empty"}`,
+          suggestion: "在允许列表补充该砖块对，或拆分为同砖块内依赖",
+        },
+      ];
+    });
+  },
+};
+
+// 规则分组：事件环路
+const eventLoopRule: ValidationRule = {
+  id: "event.loop",
+  run: (recipe) => {
+    const links = Array.isArray(recipe.params.event_links) ? recipe.params.event_links : [];
+    const adjacency = new Map<string, Set<string>>();
+    links.forEach((link) => {
+      const linkObj = toObject(link);
+      const from = typeof linkObj.from === "string" ? linkObj.from : "";
+      const to = typeof linkObj.to === "string" ? linkObj.to : "";
+      if (from === "" || to === "") {
+        return;
+      }
+      const next = adjacency.get(from) ?? new Set<string>();
+      next.add(to);
+      adjacency.set(from, next);
+    });
+
+    const visiting = new Set<string>();
+    const visited = new Set<string>();
+    const loopNodes = new Set<string>();
+
+    const dfs = (nodeId: string): void => {
+      visiting.add(nodeId);
+      const nextNodes = adjacency.get(nodeId) ?? new Set<string>();
+      nextNodes.forEach((nextNodeId) => {
+        if (visiting.has(nextNodeId)) {
+          loopNodes.add(nextNodeId);
+          loopNodes.add(nodeId);
+          return;
+        }
+        if (!visited.has(nextNodeId)) {
+          dfs(nextNodeId);
+        }
+      });
+      visiting.delete(nodeId);
+      visited.add(nodeId);
+    };
+
+    adjacency.forEach((_toNodes, nodeId) => {
+      if (!visited.has(nodeId)) {
+        dfs(nodeId);
+      }
+    });
+
+    return Array.from(loopNodes).map<BatchValidationIssue>((nodeId) => ({
+      level: "Error",
+      ruleId: "event.loop",
+      target: { type: "node", nodeId },
+      message: `事件链路存在环路节点: ${nodeId}`,
+      evidence: `event_links 中存在回边，node=${nodeId}`,
+      suggestion: "打断回路或增加幂等保护，避免事件无限触发",
+    }));
+  },
+};
+
+// 规则分组：状态迁移非法路径
+const invalidStateTransitionRule: ValidationRule = {
+  id: "state.transition.invalid_path",
+  run: (recipe) => {
+    const transitions = Array.isArray(recipe.params.state_transitions) ? recipe.params.state_transitions : [];
+    const allowedPaths = new Set(toStringList(recipe.params.allowed_state_paths));
+    return transitions.flatMap<BatchValidationIssue>((transition, index) => {
+      const transitionObj = toObject(transition);
+      const from = typeof transitionObj.from === "string" ? transitionObj.from : "";
+      const to = typeof transitionObj.to === "string" ? transitionObj.to : "";
+      if (from === "" || to === "") {
+        return [];
+      }
+      const path = `${from}->${to}`;
+      if (allowedPaths.has(path)) {
+        return [];
+      }
+      const transitionBrickId = typeof transitionObj.brickId === "string" ? transitionObj.brickId : typeof recipe.params.selected_brick === "string" ? recipe.params.selected_brick : "";
+      return [
+        {
+          level: "Error",
+          ruleId: "state.transition.invalid_path",
+          target: transitionBrickId !== "" ? { type: "brick", brickId: transitionBrickId } : undefined,
+          message: `状态迁移非法路径: ${path}`,
+          evidence: `allowed_state_paths 缺失 ${path} (index=${index})`,
+          suggestion: "更新允许迁移路径配置，或删除不被允许的迁移",
+        },
+      ];
+    });
   },
 };
 
@@ -266,6 +421,9 @@ const RULES: ValidationRule[] = [
   perfBudgetRule,
   reachabilityRule,
   disabledDependencyRule,
+  crossBrickDependencyRule,
+  eventLoopRule,
+  invalidStateTransitionRule,
 ];
 
 export const runRules = (recipe: EditorRecipeV0): BatchValidationIssue[] => {

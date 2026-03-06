@@ -161,6 +161,8 @@ export default function App(): JSX.Element {
           message: issue.message,
           ruleId: issue.ruleId,
           target: issue.target,
+          evidence: issue.evidence,
+          suggestion: issue.suggestion,
           suppressed: issue.suppressed,
         })),
       })),

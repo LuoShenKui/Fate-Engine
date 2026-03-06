@@ -1,0 +1,23 @@
+{
+  "version": "0",
+  "nodes": [
+    { "id": "door-1", "type": "door", "brickId": "brick.door" },
+    { "id": "switch-1", "type": "switch", "brickId": "brick.switch" }
+  ],
+  "edges": [
+    { "from": "door-1", "to": "switch-1" }
+  ],
+  "params": {
+    "selected_brick": "brick.door",
+    "allowed_cross_brick_dependencies": []
+  },
+  "slot_bindings": {},
+  "seed": 1,
+  "lockfile": {
+    "packages": [
+      { "id": "fate-door-ui", "version": "0.1.0", "hash": "sha256-placeholder" }
+    ]
+  },
+  "package_lock": { "packages": { "editor": "0.1.0" } },
+  "suppress": []
+}

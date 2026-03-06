@@ -7,6 +7,8 @@ export type ValidationItem = {
   message: string;
   ruleId?: string;
   target?: { type: "node"; nodeId: string } | { type: "edge"; edgeId: string } | { type: "brick"; brickId: string };
+  evidence?: string;
+  suggestion?: string;
   suppressed?: boolean;
 };
 
@@ -46,6 +48,13 @@ export default function ValidationPanel(props: ValidationPanelProps): JSX.Elemen
               ({item.ruleId}{item.target !== undefined ? ` @ ${formatTarget(item.target)}` : ""}{item.suppressed ? " / suppressed" : ""})
             </span>
           )}
+          {(item.evidence !== undefined || item.suggestion !== undefined) && (
+            <span style={{ marginLeft: "6px", opacity: 0.75 }}>
+              {item.evidence !== undefined ? `证据: ${item.evidence}` : ""}
+              {item.evidence !== undefined && item.suggestion !== undefined ? "；" : ""}
+              {item.suggestion !== undefined ? `建议: ${item.suggestion}` : ""}
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -79,6 +88,13 @@ export default function ValidationPanel(props: ValidationPanelProps): JSX.Elemen
                     {item.ruleId !== undefined && (
                       <span style={{ marginLeft: "6px", opacity: 0.75 }}>
                         ({item.ruleId}{item.target !== undefined ? ` @ ${formatTarget(item.target)}` : ""}{item.suppressed ? " / suppressed" : ""})
+                      </span>
+                    )}
+                    {(item.evidence !== undefined || item.suggestion !== undefined) && (
+                      <span style={{ marginLeft: "6px", opacity: 0.75 }}>
+                        {item.evidence !== undefined ? `证据: ${item.evidence}` : ""}
+                        {item.evidence !== undefined && item.suggestion !== undefined ? "；" : ""}
+                        {item.suggestion !== undefined ? `建议: ${item.suggestion}` : ""}
                       </span>
                     )}
                   </li>
