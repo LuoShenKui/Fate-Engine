@@ -11,7 +11,7 @@
 
 | 准入项 | 命令入口（唯一） | 通过阈值（关键词/字段） | 产出物 |
 | --- | --- | --- | --- |
-| 功能（Functional） | `make check-m1` | 输出包含 `OnUsed` 与 `OnDenied`，并标记 M1 通过（示例：`check-m1 passed`）。 | 命令日志 |
+| 功能（Functional） | `make check-m1` | 命令会先自动完成 C++ 构建，再执行 M1 检查；输出包含 `OnUsed` 与 `OnDenied`，并标记 M1 通过（示例：`check-m1 passed`）。 | 命令日志 |
 | 稳定性（Stability） | `make check-m2` | 输出包含 `door_scene_acceptance_flow_cover_trigger_lock_and_collision ... ok` 与 `trigger_zone_runtime_interact_and_validate_work ... ok`。 | 命令日志 |
 | 视觉（Visual） | `make check-visual` | 自动模式：输出包含 `[visual] visual baseline passed`。手工兜底模式：按 `docs/ScreenshotOperation.md` 产出并登记截图基线。 | 基线比对日志 / 截图 |
 | 性能（Performance） | `make check-perf-scenes` | 结构化报告（`artifacts/perf/*.json`）中无 `severity=error`；允许 `warning` 但需在 PR 说明。 | `artifacts/perf/*.json` |
