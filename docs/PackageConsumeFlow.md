@@ -1,5 +1,10 @@
 # 本地包消费流程（file:// / 目录源）
 
+## 阶段策略（MVP）
+
+- Stage 1 ~ Stage 4：**local-only**，仅允许 `registry.provider=local`，`source.uri` 必须为 `file://`，且 `registry.endpoint` 必须为空。
+- Stage 5：允许引入云端 provider（如 `go`），并可配置非空 endpoint。
+
 ## 1) 回放一致性校验（只读，无副作用）
 
 ```bash
