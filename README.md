@@ -195,6 +195,22 @@ pnpm run dev
 - 三种摄像头均启用碰撞约束，防止穿模卡视野，并可在测试期间随时切换。
 
 
+
+## 发布者体验 MVP（分步骤）
+```bash
+# 1) 生成 Hello Block 模板
+python3 tools/publisher_workflow.py scaffold hello_block
+
+# 2) 发布前自动检查（资源/参数/入口/引擎兼容）
+python3 tools/publisher_workflow.py precheck hello_block
+
+# 3) 打包为 .fateblock
+python3 tools/publisher_workflow.py package hello_block
+
+# 4) 安装到另一个项目目录
+python3 tools/publisher_workflow.py install dist/fate.hello_block.hello-0.1.0.fateblock /path/to/project
+```
+
 ## 本地发布与消费（最小流程）
 ```bash
 # 1) 回放一致性只读校验（门禁）
