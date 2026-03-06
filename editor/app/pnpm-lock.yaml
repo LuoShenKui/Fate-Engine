@@ -21,6 +21,15 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.1
         version: 18.3.7(@types/react@18.3.28)
+      pixelmatch:
+        specifier: ^7.1.0
+        version: 7.1.0
+      playwright:
+        specifier: ^1.54.2
+        version: 1.54.2
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -47,6 +56,21 @@ packages:
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
+
+  pixelmatch@7.1.0:
+    resolution: {tarball: https://registry.npmjs.org/pixelmatch/-/pixelmatch-7.1.0.tgz}
+
+  playwright-core@1.54.2:
+    resolution: {tarball: https://registry.npmjs.org/playwright-core/-/playwright-core-1.54.2.tgz}
+    engines: {node: '>=18'}
+
+  playwright@1.54.2:
+    resolution: {tarball: https://registry.npmjs.org/playwright/-/playwright-1.54.2.tgz}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  pngjs@7.0.0:
+    resolution: {tarball: https://registry.npmjs.org/pngjs/-/pngjs-7.0.0.tgz}
 
   react-dom@18.3.1:
     resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
@@ -85,6 +109,18 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  pixelmatch@7.1.0:
+    dependencies:
+      pngjs: 7.0.0
+
+  playwright-core@1.54.2: {}
+
+  playwright@1.54.2:
+    dependencies:
+      playwright-core: 1.54.2
+
+  pngjs@7.0.0: {}
 
   react-dom@18.3.1(react@18.3.1):
     dependencies:

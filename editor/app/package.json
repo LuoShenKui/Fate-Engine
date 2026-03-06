@@ -12,9 +12,12 @@
     "check:visual:update": "node tools/visual_regression.mjs --update-baseline"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1"
+    "@types/react-dom": "^18.3.1",
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.54.2",
+    "pngjs": "^7.0.0",
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "react": "^18.3.1",
