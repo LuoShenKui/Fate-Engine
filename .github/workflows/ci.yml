@@ -66,7 +66,11 @@ jobs:
           cmake --build build --config Release
           pnpm --dir editor/app run typecheck
           pnpm --dir editor/app run build
-          make check-perf-scenes
+          New-Item -ItemType Directory -Path artifacts/perf -Force | Out-Null
+          Get-ChildItem fixtures/perf/*.json | ForEach-Object {
+            $name = $_.BaseName
+            python tools/check_perf_budget.py --metrics $_.FullName --report-json "artifacts/perf/${name}_report.json"
+          }
 
       - name: Upload perf budget reports
         if: runner.os == 'Linux'
