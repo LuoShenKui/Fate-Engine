@@ -108,6 +108,10 @@ const run = async () => {
     server.close();
   }
 
+  if (!failed && !updateBaseline) {
+    console.log('[visual] visual baseline passed');
+  }
+
   if (failed) process.exit(1);
 };
 
