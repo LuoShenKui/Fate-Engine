@@ -1,0 +1,14 @@
+{
+  "mesh": [
+    "builtin:door.mesh.default",
+    "builtin:ladder.mesh.default",
+    "builtin:switch.mesh.default",
+    "builtin:container.mesh.default"
+  ],
+  "audio": [
+    "builtin:door.sfx.default"
+  ],
+  "script": [
+    "builtin:door.logic.default"
+  ]
+}
