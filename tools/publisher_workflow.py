@@ -8,6 +8,7 @@
 - package: 打包为 .fateblock
 - publish: 本地发布并生成可分享标识
 - install: 安装到另一个项目目录
+- install-from-lockfile: 按 lockfile 安装到项目
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import re
 import shutil
 import tarfile
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_DIR = ROOT / "packages"
@@ -29,6 +31,7 @@ ENGINE_COMPAT_PATTERN = re.compile(r"^(>=|<=|>|<|=)?[0-9]+\.[0-9]+\.[0-9]+$")
 SUPPORTED_CONTRACT_VERSIONS = {"0.1"}
 DEFAULT_ENGINE_VERSION = "0.1.0"
 PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
+SUPPORTED_INSTALL_EXTENSIONS = (".fateblock", ".tar.gz", ".tgz")
 
 
 def load_json(path: Path) -> dict:
@@ -102,6 +105,11 @@ def read_manifest_from_artifact(artifact: Path) -> tuple[dict, str] | tuple[None
             return None, None
         manifest = json.load(manifest_file)
     return manifest, top
+
+
+def is_supported_artifact(artifact: Path) -> bool:
+    name = artifact.name.lower()
+    return any(name.endswith(ext) for ext in SUPPORTED_INSTALL_EXTENSIONS)
 
 
 def load_target_project_context(target: Path) -> dict:
@@ -577,13 +585,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_install(args: argparse.Namespace) -> int:
-    artifact = ROOT / args.artifact if not Path(args.artifact).is_absolute() else Path(args.artifact)
-    target = ROOT / args.target if not Path(args.target).is_absolute() else Path(args.target)
-    if not artifact.exists():
-        print(f"[ERROR] artifact not found: {artifact}")
-        return 1
-
+def install_with_validations(artifact: Path, target: Path, checksum: str) -> int:
     manifest, top = read_manifest_from_artifact(artifact)
     if manifest is None or top is None:
         return 1
@@ -640,7 +642,6 @@ def cmd_install(args: argparse.Namespace) -> int:
             shutil.rmtree(dest)
         tar.extractall(path=install_root)
 
-    checksum = sha256_file(artifact)
     installed_path = install_root / top
     receipt = {
         "artifact": str(artifact.resolve()),
@@ -654,6 +655,101 @@ def cmd_install(args: argparse.Namespace) -> int:
         display_path = installed_path.resolve()
     print(f"[OK] installed: {display_path}")
     return 0
+
+
+def install_artifact_to_target(artifact: Path, target: Path, expected_checksum: str | None = None) -> int:
+    if not artifact.exists():
+        print(f"[ERROR] artifact not found: {artifact}")
+        return 1
+    if not is_supported_artifact(artifact):
+        allowed = ", ".join(SUPPORTED_INSTALL_EXTENSIONS)
+        print(f"[ERROR] unsupported artifact format: {artifact.name} (supported: {allowed})")
+        return 1
+
+    checksum = sha256_file(artifact)
+    if expected_checksum:
+        normalized_checksum = expected_checksum.removeprefix("sha256:")
+        if checksum != normalized_checksum:
+            print(
+                "[ERROR] checksum mismatch: expected sha256:{expected}, got sha256:{actual}".format(
+                    expected=normalized_checksum,
+                    actual=checksum,
+                )
+            )
+            return 1
+
+    return install_with_validations(artifact, target, checksum)
+
+
+def cmd_install(args: argparse.Namespace) -> int:
+    artifact = ROOT / args.artifact if not Path(args.artifact).is_absolute() else Path(args.artifact)
+    target = ROOT / args.target if not Path(args.target).is_absolute() else Path(args.target)
+    return install_artifact_to_target(artifact, target)
+
+
+def _resolve_file_uri(uri: str) -> Path | None:
+    parsed = urlparse(uri)
+    if parsed.scheme != "file":
+        return None
+
+    if parsed.netloc in {"", "localhost"}:
+        raw_path = unquote(parsed.path)
+    else:
+        # 兼容 file://dist/foo.tar.gz 这类仓库内相对路径写法
+        raw_path = unquote(f"{parsed.netloc}{parsed.path}")
+
+    if not raw_path:
+        return None
+    if raw_path.startswith("/"):
+        candidate = Path(raw_path)
+        if candidate.exists():
+            return candidate
+        raw_path = raw_path.lstrip("/")
+    return ROOT / raw_path
+
+
+def cmd_install_from_lockfile(args: argparse.Namespace) -> int:
+    lockfile_path = ROOT / args.lockfile if not Path(args.lockfile).is_absolute() else Path(args.lockfile)
+    if not lockfile_path.exists():
+        print(f"[ERROR] lockfile not found: {lockfile_path}")
+        return 1
+
+    lockfile = load_json(lockfile_path)
+    entries = lockfile.get("packages")
+    if not isinstance(entries, list):
+        print("[ERROR] invalid lockfile: packages must be a list")
+        return 1
+
+    selected = None
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        package_id = entry.get("package")
+        if isinstance(package_id, str) and package_id == args.package:
+            selected = entry
+            break
+    if selected is None:
+        print(f"[ERROR] package not found in lockfile: {args.package}")
+        return 1
+
+    source = selected.get("source")
+    source_uri = source.get("uri") if isinstance(source, dict) else None
+    if not isinstance(source_uri, str):
+        print(f"[ERROR] lockfile entry missing source.uri: {args.package}")
+        return 1
+
+    artifact_path = _resolve_file_uri(source_uri)
+    if artifact_path is None:
+        print(f"[ERROR] unsupported source.uri (only file://): {source_uri}")
+        return 1
+
+    checksum = selected.get("checksum")
+    if not isinstance(checksum, str) or not checksum.startswith("sha256:"):
+        print(f"[ERROR] lockfile entry missing checksum (sha256:...): {args.package}")
+        return 1
+
+    target = ROOT / args.target if not Path(args.target).is_absolute() else Path(args.target)
+    return install_artifact_to_target(artifact_path, target, expected_checksum=checksum)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -687,10 +783,19 @@ def build_parser() -> argparse.ArgumentParser:
     publish.add_argument("--output", help="输出文件名（位于 dist/）")
     publish.set_defaults(func=cmd_publish)
 
-    install = sub.add_parser("install", help="安装 .fateblock 到项目")
-    install.add_argument("artifact", help=".fateblock 文件路径")
+    install = sub.add_parser("install", help="安装包到项目（支持 .fateblock/.tar.gz/.tgz）")
+    install.add_argument("artifact", help="包文件路径（.fateblock/.tar.gz/.tgz）")
     install.add_argument("target", help="目标项目路径")
     install.set_defaults(func=cmd_install)
+
+    install_from_lockfile = sub.add_parser(
+        "install-from-lockfile",
+        help="按 lockfile 安装指定 package（读取 source.uri + checksum）",
+    )
+    install_from_lockfile.add_argument("lockfile", help="lockfile 路径（如 packages/brick.lock.json）")
+    install_from_lockfile.add_argument("package", help="package id（如 fate.door.basic）")
+    install_from_lockfile.add_argument("target", help="目标项目路径")
+    install_from_lockfile.set_defaults(func=cmd_install_from_lockfile)
 
     return parser
 

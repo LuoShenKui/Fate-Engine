@@ -1,5 +1,22 @@
 # 本地包消费流程（file:// / 目录源）
 
+## 推荐路径（Door Demo）
+
+推荐主流程仅一条：**先发布生成 lockfile，再按 lockfile 安装**。
+
+```bash
+# 1) 回放一致性门禁（只读）
+python3 tools/check_replay_determinism.py --recipe fixtures/replay/fixed_recipe.json --seed 123 --lockfile packages/brick.lock.json
+
+# 2) 发布侧生成分发物与 lockfile（有副作用）
+python3 tools/release_local.py
+
+# 3) 消费侧按 lockfile 安装 Door Demo
+python3 tools/publisher_workflow.py install-from-lockfile packages/brick.lock.json fate.door.basic /path/to/project
+```
+
+> `tools/publisher_workflow.py install ...` 仍可直接安装单个包文件，属于可选/开发者流。
+
 ## 阶段策略（MVP）
 
 - Stage 1 ~ Stage 4：**local-only**，仅允许 `registry.provider=local`，`source.uri` 必须为 `file://`，且 `registry.endpoint` 必须为空。
@@ -35,7 +52,7 @@ python3 tools/release_local.py --dry-run
 
 该模式仅校验流程，不会写入 `dist/`、`publish.json` 或 lockfile。
 
-## 3) 消费侧：导入本地包
+## 3) 消费侧（可选/开发者流）：导入本地包
 
 ### 2.1 file:// 压缩包
 读取 `packages/brick.lock.json` 中的 `source.uri`，例如：
@@ -62,7 +79,7 @@ python3 tools/release_local.py --dry-run
 - `compat.contract` 与引擎支持的 contract 版本匹配；
 - 若不兼容，拒绝安装并提示具体字段。
 
-### 导入前校验顺序（`tools/publisher_workflow.py install`）
+### 导入前校验顺序（`tools/publisher_workflow.py install` / `install-from-lockfile`）
 
 1. **只读解析包元数据**：先读取 `.fateblock` 内 `manifest.json`，不落盘解压；
 2. **引擎兼容校验**：比对 `manifest.engine_compat` 与目标项目 `engine_version`；

@@ -164,7 +164,13 @@ pnpm run dev
 浏览器访问：`http://localhost:5173`
 
 > 说明：编辑器工具栏里的“导入”当前语义是**导入配方（Recipe JSON）**，用于恢复/复现场景装配状态。
-> “积木包导入/安装”走发布与消费流程（`tools/release_local.py`、`tools/publisher_workflow.py install`），不是同一个入口。
+> “积木包导入/安装”走发布与消费流程（`tools/release_local.py`、`tools/publisher_workflow.py install` / `install-from-lockfile`），不是同一个入口。
+
+| 场景 | 对应入口 |
+| --- | --- |
+| 编辑器导入 | Recipe JSON（工具栏“导入”） |
+| 积木包安装（可选/开发者流） | `python3 tools/publisher_workflow.py install <artifact> <target>` |
+| 积木包安装（推荐主流程） | `python3 tools/publisher_workflow.py install-from-lockfile packages/brick.lock.json <package_id> <target>` |
 
 ## 团队操作手册：截图与空白页排查
 - 截图固定流程见：`docs/ScreenshotOperation.md`。
