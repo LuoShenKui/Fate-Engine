@@ -9,7 +9,10 @@
     {
       "capability_id": "interaction.teleport",
       "level": 1,
-      "exposed_params": ["enabled", "cooldown"]
+      "exposed_params": [
+        "enabled",
+        "cooldown"
+      ]
     }
   ],
   "params": {
@@ -19,7 +22,9 @@
       "default": true,
       "mutability": "runtime",
       "visibility": "basic",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     },
     "cooldown": {
       "key": "cooldown",
@@ -27,7 +32,9 @@
       "default": 3,
       "mutability": "runtime",
       "visibility": "advanced",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     }
   },
   "slots": [
@@ -43,5 +50,6 @@
   "state_migration": {
     "entry": "packages/teleport/manifest/README.md#migration",
     "from_previous": "0.0.x -> 1.0.0"
-  }
+  },
+  "package_kind": "product"
 }

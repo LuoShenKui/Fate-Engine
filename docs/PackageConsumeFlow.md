@@ -84,6 +84,19 @@ python3 tools/release_local.py --dry-run
   - id=fate.ai.nav, required=>=1.3.0, current=1.1.0
 ```
 
+
+## 包类型矩阵（package_kind）
+
+`manifest.json` 与 `publish.json` 需同时声明 `package_kind`，仅允许：`product | logic | asset`。
+
+| package_kind | 最小必备文件/结构 | 允许字段（增量） | 导入策略 |
+| --- | --- | --- | --- |
+| `product` | `manifest.json`、`publish.json`、基础目录结构 | 按既有协议字段；不强制脚本/资源目录 | 按通用流程导入，做版本/依赖/契约校验 |
+| `logic` | `manifest.json`、`publish.json`，且 `manifest.slots` 至少一个 `slot_type=script_ref` | 允许声明脚本槽位与脚本 fallback | 导入前校验脚本入口，缺失直接阻断 |
+| `asset` | `manifest.json`、`publish.json`、`assets/` 目录且包含至少一个文件 | 允许扩展资产流水线字段（如 `publish.pipeline`） | 导入前校验资源目录，缺失或为空直接阻断 |
+
+说明：未声明 `package_kind`，或使用未定义/模糊类型（如“逻辑残片”）均视为协议错误并阻断发布/打包。
+
 ## 5) 落到编辑器 registry 的最小映射
 
 建议编辑器侧维护一个本地 registry 索引，字段最小集：

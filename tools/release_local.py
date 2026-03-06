@@ -17,6 +17,7 @@ LOCKFILE = PACKAGES_DIR / "brick.lock.json"
 COMPAT_MATRIX_DEFAULT_REF = "docs/releases/compat_matrix.json"
 LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
 RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
+PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
 
 
 def sha256_file(path: Path) -> str:
@@ -87,8 +88,41 @@ def build_pipeline_summary(plan: dict | None) -> dict | None:
     }
 
 
+def validate_package_kind_and_structure(package_dir: Path, manifest: dict, publish: dict) -> None:
+    manifest_kind = manifest.get("package_kind")
+    publish_kind = publish.get("package_kind")
+
+    if manifest_kind not in PACKAGE_KIND_ALLOWED:
+        raise ValueError(f"{package_dir.name}: manifest.package_kind 缺失或非法（product/logic/asset）")
+    if publish_kind not in PACKAGE_KIND_ALLOWED:
+        raise ValueError(f"{package_dir.name}: publish.package_kind 缺失或非法（product/logic/asset）")
+    if manifest_kind != publish_kind:
+        raise ValueError(f"{package_dir.name}: manifest.package_kind 与 publish.package_kind 不一致")
+
+    if manifest_kind == "asset":
+        assets_dir = package_dir / "assets"
+        if not assets_dir.exists() or not assets_dir.is_dir():
+            raise ValueError(f"{package_dir.name}: asset 包缺少 assets 目录")
+        has_file = any(child.is_file() for child in assets_dir.rglob("*"))
+        if not has_file:
+            raise ValueError(f"{package_dir.name}: asset 包 assets 目录为空")
+
+    if manifest_kind == "logic":
+        slots = manifest.get("slots")
+        has_script_slot = False
+        if isinstance(slots, list):
+            for slot in slots:
+                if isinstance(slot, dict) and slot.get("slot_type") == "script_ref":
+                    has_script_slot = True
+                    break
+        if not has_script_slot:
+            raise ValueError(f"{package_dir.name}: logic 包缺少 script_ref 脚本入口")
+
+
 def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: dict | None = None) -> dict:
+    manifest = load_json(package_dir / "manifest.json")
     publish = load_json(package_dir / "publish.json")
+    validate_package_kind_and_structure(package_dir, manifest, publish)
     lifecycle = publish.get("lifecycle")
     release = publish.get("release")
     compat = publish.get("compat")
@@ -137,6 +171,7 @@ def build_package(package_dir: Path, dry_run: bool = False, pipeline_summary: di
 
     return {
         "package": package_name,
+        "package_kind": publish["package_kind"],
         "version": version,
         "source": publish["source"],
         "checksum": f"sha256:{checksum}",

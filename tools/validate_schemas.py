@@ -23,6 +23,7 @@ REQUIRED_FILES = [
 ]
 REQUIRED_TOP_LEVEL_FIELDS = [
     "id",
+    "package_kind",
     "version",
     "contract_version",
     "engine_compat",
@@ -72,7 +73,8 @@ PACKAGE_CASES = [
     },
 ]
 
-REQUIRED_PUBLISH_FIELDS = ["package", "version", "hash", "license", "compat", "source", "registry", "lifecycle", "release", "announcement_ref"]
+REQUIRED_PUBLISH_FIELDS = ["package", "package_kind", "version", "hash", "license", "compat", "source", "registry", "lifecycle", "release", "announcement_ref"]
+PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
 
@@ -94,6 +96,10 @@ def validate_manifest(manifest: dict) -> list[str]:
 
     if manifest.get("contract_version") != "0.1":
         errors.append('INVALID_CONTRACT_VERSION: expected 0.1')
+
+    package_kind = manifest.get("package_kind")
+    if package_kind not in PACKAGE_KIND_ALLOWED:
+        errors.append("INVALID_PACKAGE_KIND: expected product|logic|asset")
 
     dependencies = manifest.get("dependencies")
     if not isinstance(dependencies, list):
@@ -204,6 +210,12 @@ def validate_publish_metadata(publish: dict, manifest: dict) -> list[str]:
 
     if publish.get("license") != manifest.get("license"):
         errors.append("PUBLISH_LICENSE_MISMATCH_MANIFEST_LICENSE")
+
+    publish_package_kind = publish.get("package_kind")
+    if publish_package_kind not in PACKAGE_KIND_ALLOWED:
+        errors.append("INVALID_PUBLISH_PACKAGE_KIND: expected product|logic|asset")
+    if publish_package_kind != manifest.get("package_kind"):
+        errors.append("PUBLISH_PACKAGE_KIND_MISMATCH_MANIFEST_PACKAGE_KIND")
 
     hash_value = publish.get("hash")
     if not isinstance(hash_value, str) or not SHA256_PATTERN.match(hash_value):

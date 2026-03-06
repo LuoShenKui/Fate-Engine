@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-trigger_zone.md"
+  "announcement_ref": "docs/releases/pending-trigger_zone.md",
+  "package_kind": "product"
 }

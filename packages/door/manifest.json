@@ -132,5 +132,6 @@
       }
     ],
     "notes": "事件声明与 runtime/door_core/src/lib.rs::events 保持一致。OnValidate payload 为 ValidateOutput JSON 字符串。"
-  }
+  },
+  "package_kind": "logic"
 }

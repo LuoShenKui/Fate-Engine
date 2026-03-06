@@ -9,7 +9,10 @@
     {
       "capability_id": "interaction.switch",
       "level": 1,
-      "exposed_params": ["enabled", "active"]
+      "exposed_params": [
+        "enabled",
+        "active"
+      ]
     }
   ],
   "params": {
@@ -19,7 +22,9 @@
       "default": true,
       "mutability": "runtime",
       "visibility": "basic",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     },
     "active": {
       "key": "active",
@@ -27,7 +32,9 @@
       "default": false,
       "mutability": "runtime",
       "visibility": "basic",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     }
   },
   "slots": [
@@ -43,5 +50,6 @@
   "state_migration": {
     "entry": "packages/switch/manifest/README.md#migration",
     "from_previous": "0.0.x -> 1.0.0"
-  }
+  },
+  "package_kind": "product"
 }

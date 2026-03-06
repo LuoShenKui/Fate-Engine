@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-teleport.md"
+  "announcement_ref": "docs/releases/pending-teleport.md",
+  "package_kind": "product"
 }

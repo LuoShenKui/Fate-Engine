@@ -61,5 +61,6 @@
   "state_migration": {
     "entry": "packages/ladder/manifest/README.md#migration",
     "from_previous": "0.0.x -> 1.0.0"
-  }
+  },
+  "package_kind": "product"
 }

@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-door.md"
+  "announcement_ref": "docs/releases/pending-door.md",
+  "package_kind": "logic"
 }

@@ -5,6 +5,7 @@
   "type": "object",
   "required": [
     "package",
+    "package_kind",
     "version",
     "hash",
     "license",
@@ -17,6 +18,10 @@
   ],
   "properties": {
     "package": { "type": "string", "minLength": 1 },
+    "package_kind": {
+      "type": "string",
+      "enum": ["product", "logic", "asset"]
+    },
     "version": {
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"

@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-checkpoint.md"
+  "announcement_ref": "docs/releases/pending-checkpoint.md",
+  "package_kind": "product"
 }
