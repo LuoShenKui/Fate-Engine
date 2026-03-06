@@ -103,6 +103,9 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm --dir editor/app exec playwright install --with-deps chromium
 
+      - name: Build editor bundle for visual regression
+        run: pnpm --dir editor/app run build
+
       - name: Visual baseline check
         shell: bash
         run: |
