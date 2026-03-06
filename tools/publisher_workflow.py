@@ -28,6 +28,7 @@ SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 ENGINE_COMPAT_PATTERN = re.compile(r"^(>=|<=|>|<|=)?[0-9]+\.[0-9]+\.[0-9]+$")
 SUPPORTED_CONTRACT_VERSIONS = {"0.1"}
 DEFAULT_ENGINE_VERSION = "0.1.0"
+PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
 
 
 def load_json(path: Path) -> dict:
@@ -193,6 +194,7 @@ def make_hello_manifest(package_id: str, version: str) -> dict:
     return {
         "id": package_id,
         "version": version,
+        "package_kind": "logic",
         "contract_version": "0.1",
         "engine_compat": ">=0.1.0",
         "license": "MIT",
@@ -230,6 +232,7 @@ def make_hello_publish(package_id: str, version: str, manifest_path: Path) -> di
     return {
         "package": package_id,
         "version": version,
+        "package_kind": "logic",
         "hash": f"sha256:{sha256_file(manifest_path)}",
         "license": "MIT",
         "compat": {"engine": ">=0.1.0", "contract": "0.1", "matrix_ref": "docs/releases/compat_matrix.json"},
@@ -323,6 +326,45 @@ def validate_manifest_for_precheck(package_dir: Path, manifest: dict) -> list[st
     return errors
 
 
+def validate_package_kind_structure(package_dir: Path, manifest: dict, publish: dict | None = None) -> list[str]:
+    errors: list[str] = []
+
+    manifest_kind = manifest.get("package_kind")
+    if manifest_kind not in PACKAGE_KIND_ALLOWED:
+        errors.append("PACKAGE_KIND_INVALID: expected product|logic|asset")
+
+    publish_kind = None
+    if publish is not None:
+        publish_kind = publish.get("package_kind")
+        if publish_kind not in PACKAGE_KIND_ALLOWED:
+            errors.append("PUBLISH_PACKAGE_KIND_INVALID: expected product|logic|asset")
+        if manifest_kind in PACKAGE_KIND_ALLOWED and publish_kind in PACKAGE_KIND_ALLOWED and manifest_kind != publish_kind:
+            errors.append("PACKAGE_KIND_MISMATCH: manifest.package_kind != publish.package_kind")
+
+    kind = manifest_kind if manifest_kind in PACKAGE_KIND_ALLOWED else publish_kind
+    if kind == "asset":
+        assets_dir = package_dir / "assets"
+        if not assets_dir.exists() or not assets_dir.is_dir():
+            errors.append("ASSET_KIND_ASSETS_DIR_MISSING")
+        else:
+            has_file = any(child.is_file() for child in assets_dir.rglob("*"))
+            if not has_file:
+                errors.append("ASSET_KIND_ASSETS_DIR_EMPTY")
+
+    if kind == "logic":
+        slots = manifest.get("slots")
+        has_script_slot = False
+        if isinstance(slots, list):
+            for slot in slots:
+                if isinstance(slot, dict) and slot.get("slot_type") == "script_ref":
+                    has_script_slot = True
+                    break
+        if not has_script_slot:
+            errors.append("LOGIC_KIND_SCRIPT_ENTRY_MISSING: expected slot_type=script_ref")
+
+    return errors
+
+
 def cmd_precheck(args: argparse.Namespace) -> int:
     package_dir = (PACKAGES_DIR / args.package) if not args.package.startswith("packages/") else (ROOT / args.package)
     manifest_path = package_dir / "manifest.json"
@@ -331,7 +373,10 @@ def cmd_precheck(args: argparse.Namespace) -> int:
         return 1
 
     manifest = load_json(manifest_path)
+    publish_path = package_dir / "publish.json"
+    publish = load_json(publish_path) if publish_path.exists() else None
     errors = validate_manifest_for_precheck(package_dir, manifest)
+    errors.extend(validate_package_kind_structure(package_dir, manifest, publish))
     if errors:
         print(f"[ERROR] precheck failed: {package_dir.relative_to(ROOT)}")
         for item in errors:
@@ -348,7 +393,11 @@ def cmd_package(args: argparse.Namespace) -> int:
         print(f"[ERROR] manifest not found: {package_dir / 'manifest.json'}")
         return 1
 
-    precheck_errors = validate_manifest_for_precheck(package_dir, load_json(package_dir / "manifest.json"))
+    manifest = load_json(package_dir / "manifest.json")
+    publish_path = package_dir / "publish.json"
+    publish = load_json(publish_path) if publish_path.exists() else None
+    precheck_errors = validate_manifest_for_precheck(package_dir, manifest)
+    precheck_errors.extend(validate_package_kind_structure(package_dir, manifest, publish))
     if precheck_errors:
         print("[ERROR] package aborted by precheck")
         for item in precheck_errors:
@@ -448,7 +497,11 @@ def cmd_publish(args: argparse.Namespace) -> int:
         print(f"[ERROR] manifest not found: {package_dir / 'manifest.json'}")
         return 1
 
-    precheck_errors = validate_manifest_for_precheck(package_dir, load_json(package_dir / "manifest.json"))
+    manifest = load_json(package_dir / "manifest.json")
+    publish_path = package_dir / "publish.json"
+    publish = load_json(publish_path) if publish_path.exists() else None
+    precheck_errors = validate_manifest_for_precheck(package_dir, manifest)
+    precheck_errors.extend(validate_package_kind_structure(package_dir, manifest, publish))
     if precheck_errors:
         print("[ERROR] publish aborted by precheck")
         for item in precheck_errors:

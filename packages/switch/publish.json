@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-switch.md"
+  "announcement_ref": "docs/releases/pending-switch.md",
+  "package_kind": "product"
 }

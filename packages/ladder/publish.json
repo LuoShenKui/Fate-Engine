@@ -28,5 +28,6 @@
   "release": {
     "channel": "stable"
   },
-  "announcement_ref": "docs/releases/pending-ladder.md"
+  "announcement_ref": "docs/releases/pending-ladder.md",
+  "package_kind": "product"
 }

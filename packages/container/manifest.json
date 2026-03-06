@@ -9,7 +9,11 @@
     {
       "capability_id": "interaction.container",
       "level": 1,
-      "exposed_params": ["enabled", "opened", "capacity"]
+      "exposed_params": [
+        "enabled",
+        "opened",
+        "capacity"
+      ]
     }
   ],
   "params": {
@@ -19,7 +23,9 @@
       "default": true,
       "mutability": "runtime",
       "visibility": "basic",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     },
     "opened": {
       "key": "opened",
@@ -27,7 +33,9 @@
       "default": false,
       "mutability": "runtime",
       "visibility": "basic",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     },
     "capacity": {
       "key": "capacity",
@@ -35,7 +43,9 @@
       "default": 16,
       "mutability": "static",
       "visibility": "advanced",
-      "impact": ["gameplay"]
+      "impact": [
+        "gameplay"
+      ]
     }
   },
   "slots": [
@@ -51,5 +61,6 @@
   "state_migration": {
     "entry": "packages/container/manifest/README.md#migration",
     "from_previous": "0.0.x -> 1.0.0"
-  }
+  },
+  "package_kind": "product"
 }
