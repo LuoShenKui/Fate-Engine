@@ -79,52 +79,19 @@ make check-render-matrix
 分层门禁入口（与 CI 对齐）：
 
 ```bash
-# L1: 协议/schema + runtime 单元
 make check-unit
-
-# L2: runtime + editor 协议适配
 make check-integration
-
-# L3: seed/recipe/lockfile 回放一致性
 make check-replay
-
-# L4: 截图基线比对（按文档流程执行）
 make check-visual
-
-# L5: 多场景性能预算门禁
 make check-perf-scenes
 ```
 
-通过标准：
-
-性能预算准入与例外流程：
-- `Warning`：不阻断 CI，但必须在周报登记并指派负责人跟踪。
-- `Error`：阻断 CI，修复后方可合入。
-- 例外：如需临时放行，必须在 PR 中说明原因、影响范围、回滚/修复计划，并在后续 PR 清理例外。
-- `check-unit`：Schema 校验与 Rust 单元测试均返回 0。
-- `check-integration`：TS 类型检查与构建返回 0。
-- `check-replay`：只读执行 replay 一致性校验（recipe/seed/lockfile），不写发布产物。
-- `check-visual`：优先执行自动截图基线比对；若环境未安装 `playwright` 则会跳过自动比对，并按 `docs/ScreenshotOperation.md` 执行手工流程。
-- `check-perf-scenes`：遍历 `fixtures/perf/*.json` 做场景级预算检查，`warning` 仅告警不阻断，`error` 或输入缺失阻断。
-- `check-perf`：兼容单场景入口（默认 `fixtures/perf/sample_scene_metrics.json`），规则与多场景一致。
+准入项、唯一命令入口、通过阈值与里程碑映射统一维护在：`docs/Editor3DTestReadiness.md`。
 
 诊断入口：
 - 开发态第一入口：`make check-perf`。
 - 诊断数据统一读取报告中的 `items[*].evidence` 字段（字段定义见 `protocol/perf/perf_diagnostic.schema.json`）。
 - 后续接入真实 Profiler / Frame Debugger 时，仅需按该 schema 落盘，CI 判定逻辑保持不变（先标准化数据面，后替换数据源）。
-
-- `check-partition-streaming`：分区流送回放检查通过，且满足“无明显卡顿尖峰”阈值。
-
-分区流送“无明显卡顿尖峰”量化阈值（最小场景）：
-- 切换耗时 `p50 <= 20ms`
-- 切换耗时 `p95 <= 35ms`
-- 切换耗时 `max <= 50ms`
-- 分区往返后状态一致性 `state_consistent = true`
-
-里程碑命令与分层门禁映射：
-- `check-m1` = `check-visual` + `check-perf-scenes` + `fate_demo` 日志断言。
-- `check-m2` = `check-unit` + `check-integration` + 关键 runtime 场景测试。
-- `check-m3` = `check-replay` + `check-unit` + `check-integration`。
 
 发布与门禁职责分离：
 - 只读门禁：`make check-replay`（调用 `tools/check_replay_determinism.py`）。

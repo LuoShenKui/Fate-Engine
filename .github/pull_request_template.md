@@ -2,6 +2,14 @@
 
 - 
 
+## Readiness Checklist
+
+- [ ] 功能（`make check-m1`）
+- [ ] 稳定性（`make check-m2`）
+- [ ] 视觉（`make check-visual`）
+- [ ] 性能（`make check-perf-scenes`）
+- [ ] 回放一致性（`make check-m3`）
+
 ## 自检清单
 
 - [ ] 已运行必要的构建/测试并通过。
