@@ -115,7 +115,7 @@ check-perf-scenes:
 	done
 	@echo "[分层检查] Perf 多场景检查通过"
 
-check-m1:
+check-m1: check-cpp
 	@echo "[里程碑 M1] 聚合检查：visual + perf..."
 	@$(MAKE) check-visual
 	@$(MAKE) check-perf-scenes
