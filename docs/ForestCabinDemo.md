@@ -107,13 +107,14 @@ Season: Fixed Spring
 
 4.1) 分里程碑演示脚本（角色/按键/通过标准）
 
+> M1/M2/M3 的唯一准入口径、阈值关键词与机检命令，统一以 `docs/Editor3DTestReadiness.md` 为准；本节仅保留演示动作，避免多处漂移。
+
 ### M1：真实3D视口可加载 Door 占位并交互
 - 操作角色：演示者 A（编辑器操作者）
 - 操作步骤：
   1. A 启动 Demo（`./build/fate_demo`）并进入默认场景。
   2. A 在视口靠近 Door 占位，按交互键 `E`（若当前输入映射不同，以项目实际交互键为准）。
   3. A 再次按 `E` 触发反向状态切换。
-- 通过标准：终端日志依次出现可识别的交互结果，至少包含 `OnUsed` 与 `OnDenied`（或同等语义）。
 - 机检命令：`make check-m1`
 
 ### M2：碰撞/触发闭环
@@ -121,7 +122,6 @@ Season: Fixed Spring
 - 操作步骤：
   1. A 运行 Door 场景验收测试（含触发区距离、锁定态拒绝、通行阻挡切换）。
   2. B 记录测试输出中的通过结论。
-- 通过标准：`door_scene_acceptance_flow_cover_trigger_lock_and_collision` 与 `trigger_zone_runtime_interact_and_validate_work` 均通过。
 - 机检命令：`make check-m2`
 
 ### M3：可复现场景回放与自动化冒烟
@@ -130,7 +130,6 @@ Season: Fixed Spring
   1. A 执行本地发布脚本，生成/更新 lockfile 与发布元数据。
   2. A 执行 schema + rust + ts 自动化冒烟检查。
   3. A 保留命令输出，作为“同 recipe/seed/lockfile 可复现”的流水线证据。
-- 通过标准：lockfile 更新成功，且全量冒烟检查通过。
 - 机检命令：`make check-m3`
 
 5) 最小实现建议（避免你被细节拖死）
@@ -152,6 +151,8 @@ Season: Fixed Spring
 以后每新增积木都能用这套 demo 做回归测试（防止生态崩）
 
 7) Demo 最小验收
+
+> 通过阈值与关键词统一以 `docs/Editor3DTestReadiness.md` 为准；下列内容仅作为执行示例。
 
 A. 命令执行成功证据（schema/rust/cpp/ts）
 
