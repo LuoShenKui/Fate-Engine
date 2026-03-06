@@ -1,7 +1,7 @@
 {
   "render": {
-    "backend": "none",
-    "feature_tier": "tier0",
-    "fallback_chain": ["none"]
+    "backend": "vulkan",
+    "feature_tier": "tier1",
+    "fallback_chain": ["vulkan", "none"]
   }
 }

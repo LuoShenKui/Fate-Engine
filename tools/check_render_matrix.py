@@ -2,16 +2,43 @@
 """Render capability matrix checker."""
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 ALLOWED_BACKENDS = {"none", "dx12", "vulkan"}
 ALLOWED_TIERS = {"tier0", "tier1"}
+PROBE_BIN = Path("build-render/fate_render_probe")
 
 
 def fail(message: str) -> int:
     print(f"[错误] {message}")
     return 1
+
+
+def probe_backend(backend: str) -> bool:
+    if not PROBE_BIN.exists():
+        print(
+            f"[错误] 后端探测程序不存在: {PROBE_BIN}，请先执行 cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && cmake --build build-render"
+        )
+        return False
+
+    result = subprocess.run(
+        [str(PROBE_BIN), backend],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        stdout = result.stdout.strip()
+        detail = stderr or stdout or f"exit={result.returncode}"
+        print(f"[错误] 后端可用性探测失败: backend={backend}, detail={detail}")
+        return False
+
+    print(f"[检查] 后端可用性探测通过: backend={backend}")
+    return True
 
 
 def main() -> int:
@@ -52,6 +79,14 @@ def main() -> int:
 
     if backend != "none" and backend not in fallback_chain:
         print("[警告] backend 未出现在 fallback_chain 中，将按配置直接尝试 backend 后再按链路回退")
+
+    probed = set()
+    for candidate in [backend, *fallback_chain]:
+        if candidate == "none" or candidate in probed:
+            continue
+        probed.add(candidate)
+        if not probe_backend(candidate):
+            return 1
 
     print("[检查] Render capability matrix 校验通过")
     print(f"[检查] backend={backend}, feature_tier={tier}, fallback_chain={fallback_chain}")
