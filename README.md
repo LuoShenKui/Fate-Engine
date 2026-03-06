@@ -209,6 +209,8 @@ python3 tools/release_local.py
 
 消费流程说明见：`docs/PackageConsumeFlow.md`。
 
+发布者体验与“门积木分层”ToDo 见：`docs/PublisherWorkflowTodo.md`。
+
 
 ## A 项（引擎与运行时稳定性）当前可机检入口
 ```bash
