@@ -26,6 +26,8 @@ PACKAGES_DIR = ROOT / "packages"
 DIST_DIR = ROOT / "dist"
 SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 ENGINE_COMPAT_PATTERN = re.compile(r"^(>=|<=|>|<|=)?[0-9]+\.[0-9]+\.[0-9]+$")
+SUPPORTED_CONTRACT_VERSIONS = {"0.1"}
+DEFAULT_ENGINE_VERSION = "0.1.0"
 
 
 def load_json(path: Path) -> dict:
@@ -43,6 +45,148 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def compare_semver(left: str, right: str) -> int:
+    left_parts = tuple(int(part) for part in left.split("."))
+    right_parts = tuple(int(part) for part in right.split("."))
+    if left_parts < right_parts:
+        return -1
+    if left_parts > right_parts:
+        return 1
+    return 0
+
+
+def parse_version_requirement(raw: str) -> tuple[str, str] | None:
+    match = re.match(r"^(>=|<=|>|<|=)?([0-9]+\.[0-9]+\.[0-9]+)$", raw)
+    if not match:
+        return None
+    return match.group(1) or "=", match.group(2)
+
+
+def version_matches(version: str, requirement: str) -> bool:
+    parsed = parse_version_requirement(requirement)
+    if parsed is None:
+        return False
+    op, req_ver = parsed
+    cmp = compare_semver(version, req_ver)
+    if op == "=":
+        return cmp == 0
+    if op == ">":
+        return cmp > 0
+    if op == ">=":
+        return cmp >= 0
+    if op == "<":
+        return cmp < 0
+    if op == "<=":
+        return cmp <= 0
+    return False
+
+
+def read_manifest_from_artifact(artifact: Path) -> tuple[dict, str] | tuple[None, None]:
+    with tarfile.open(artifact, "r:gz") as tar:
+        members = tar.getmembers()
+        root_dirs = {m.name.split("/", 1)[0] for m in members if m.name}
+        if len(root_dirs) != 1:
+            print("[ERROR] invalid package layout: should contain a single top-level directory")
+            return None, None
+        top = next(iter(root_dirs))
+        manifest_member = next((m for m in members if m.name == f"{top}/manifest.json"), None)
+        if manifest_member is None:
+            print("[ERROR] invalid package layout: manifest.json missing")
+            return None, None
+        manifest_file = tar.extractfile(manifest_member)
+        if manifest_file is None:
+            print("[ERROR] invalid package layout: manifest.json unreadable")
+            return None, None
+        manifest = json.load(manifest_file)
+    return manifest, top
+
+
+def load_target_project_context(target: Path) -> dict:
+    context = {
+        "engine_version": DEFAULT_ENGINE_VERSION,
+        "supported_contract_versions": sorted(SUPPORTED_CONTRACT_VERSIONS),
+        "installed_packages": {},
+    }
+    context_path = target / ".fate" / "project_context.json"
+    if context_path.exists():
+        raw_context = load_json(context_path)
+        engine_version = raw_context.get("engine_version")
+        if isinstance(engine_version, str) and SEMVER_PATTERN.match(engine_version):
+            context["engine_version"] = engine_version
+        contracts = raw_context.get("supported_contract_versions")
+        if isinstance(contracts, list):
+            filtered = [item for item in contracts if isinstance(item, str)]
+            if filtered:
+                context["supported_contract_versions"] = filtered
+
+    install_root = target / ".fate" / "blocks"
+    if install_root.exists():
+        for manifest_path in install_root.glob("*/manifest.json"):
+            manifest = load_json(manifest_path)
+            package_id = manifest.get("id")
+            package_version = manifest.get("version")
+            if isinstance(package_id, str) and isinstance(package_version, str):
+                context["installed_packages"][package_id] = package_version
+    return context
+
+
+def validate_for_install(manifest: dict, target_project_context: dict) -> list[dict]:
+    failures: list[dict] = []
+    engine_compat = manifest.get("engine_compat")
+    engine_version = target_project_context.get("engine_version", DEFAULT_ENGINE_VERSION)
+    if not isinstance(engine_compat, str) or not version_matches(engine_version, engine_compat):
+        failures.append(
+            {
+                "code": "ENGINE_INCOMPATIBLE",
+                "required": engine_compat,
+                "current": engine_version,
+            }
+        )
+
+    contract_version = manifest.get("contract_version")
+    supported_contracts = set(target_project_context.get("supported_contract_versions", []))
+    if not isinstance(contract_version, str) or contract_version not in supported_contracts:
+        failures.append(
+            {
+                "code": "CONTRACT_INCOMPATIBLE",
+                "required": contract_version,
+                "supported": sorted(supported_contracts),
+            }
+        )
+
+    dependencies = manifest.get("dependencies")
+    installed_packages = target_project_context.get("installed_packages", {})
+    if isinstance(dependencies, list):
+        for dep in dependencies:
+            if not isinstance(dep, dict):
+                continue
+            dep_id = dep.get("id")
+            dep_version_req = dep.get("version")
+            if not isinstance(dep_id, str) or not isinstance(dep_version_req, str):
+                continue
+            current_version = installed_packages.get(dep_id)
+            if current_version is None:
+                failures.append(
+                    {
+                        "code": "DEPENDENCY_MISSING",
+                        "package_id": dep_id,
+                        "required": dep_version_req,
+                        "current": None,
+                    }
+                )
+                continue
+            if not version_matches(current_version, dep_version_req):
+                failures.append(
+                    {
+                        "code": "DEPENDENCY_VERSION_CONFLICT",
+                        "package_id": dep_id,
+                        "required": dep_version_req,
+                        "current": current_version,
+                    }
+                )
+    return failures
 
 
 def make_hello_manifest(package_id: str, version: str) -> dict:
@@ -335,29 +479,59 @@ def cmd_install(args: argparse.Namespace) -> int:
         print(f"[ERROR] artifact not found: {artifact}")
         return 1
 
+    manifest, top = read_manifest_from_artifact(artifact)
+    if manifest is None or top is None:
+        return 1
+
+    target_project_context = load_target_project_context(target)
+    failures = validate_for_install(manifest, target_project_context)
+    if failures:
+        print("[ERROR] install blocked by pre-import validation")
+        for failure in failures:
+            print(f"  - {failure['code']}: {json.dumps(failure, ensure_ascii=False, sort_keys=True)}")
+
+        missing_items = [item for item in failures if item["code"] == "DEPENDENCY_MISSING"]
+        conflict_items = [item for item in failures if item["code"] == "DEPENDENCY_VERSION_CONFLICT"]
+        if missing_items:
+            print("[ERROR] 缺失项清单:")
+            for item in missing_items:
+                print(
+                    "  - id={id}, required={required}, current=<none>".format(
+                        id=item["package_id"], required=item["required"]
+                    )
+                )
+        if conflict_items:
+            print("[ERROR] 冲突项清单:")
+            for item in conflict_items:
+                print(
+                    "  - id={id}, required={required}, current={current}".format(
+                        id=item["package_id"], required=item["required"], current=item["current"]
+                    )
+                )
+        return 1
+
     install_root = target / ".fate" / "blocks"
     install_root.mkdir(parents=True, exist_ok=True)
 
     with tarfile.open(artifact, "r:gz") as tar:
-        members = tar.getmembers()
-        root_dirs = {m.name.split("/", 1)[0] for m in members if m.name}
-        if len(root_dirs) != 1:
-            print("[ERROR] invalid package layout: should contain a single top-level directory")
-            return 1
-        top = next(iter(root_dirs))
         dest = install_root / top
         if dest.exists():
             shutil.rmtree(dest)
         tar.extractall(path=install_root)
 
     checksum = sha256_file(artifact)
+    installed_path = install_root / top
     receipt = {
         "artifact": str(artifact.resolve()),
         "checksum": f"sha256:{checksum}",
-        "installed_to": str((install_root / top).resolve()),
+        "installed_to": str(installed_path.resolve()),
     }
     write_json(install_root / f"{top}.install.receipt.json", receipt)
-    print(f"[OK] installed: {(install_root / top).relative_to(ROOT)}")
+    try:
+        display_path = installed_path.relative_to(ROOT)
+    except ValueError:
+        display_path = installed_path.resolve()
+    print(f"[OK] installed: {display_path}")
     return 0
 
 
