@@ -109,6 +109,8 @@ def load_target_project_context(target: Path) -> dict:
         "engine_version": DEFAULT_ENGINE_VERSION,
         "supported_contract_versions": sorted(SUPPORTED_CONTRACT_VERSIONS),
         "installed_packages": {},
+        "builtin_resources": {"mesh": set(), "audio": set(), "script": set()},
+        "builtin_index_source": "",
     }
     context_path = target / ".fate" / "project_context.json"
     if context_path.exists():
@@ -130,6 +132,20 @@ def load_target_project_context(target: Path) -> dict:
             package_version = manifest.get("version")
             if isinstance(package_id, str) and isinstance(package_version, str):
                 context["installed_packages"][package_id] = package_version
+
+    builtin_index_path = target / ".fate" / "builtin_resources.index.json"
+    if not builtin_index_path.exists():
+        builtin_index_path = ROOT / "protocol" / "compliance" / "builtin_resources.index.json"
+    if builtin_index_path.exists():
+        builtin_index = load_json(builtin_index_path)
+        if isinstance(builtin_index, dict):
+            normalized: dict[str, set[str]] = {"mesh": set(), "audio": set(), "script": set()}
+            for kind in normalized:
+                items = builtin_index.get(kind)
+                if isinstance(items, list):
+                    normalized[kind] = {item for item in items if isinstance(item, str)}
+            context["builtin_resources"] = normalized
+            context["builtin_index_source"] = str(builtin_index_path)
     return context
 
 
@@ -185,6 +201,42 @@ def validate_for_install(manifest: dict, target_project_context: dict) -> list[d
                         "package_id": dep_id,
                         "required": dep_version_req,
                         "current": current_version,
+                    }
+                )
+
+    builtin_type_by_slot_type = {
+        "mesh": "mesh",
+        "audio": "audio",
+        "script_ref": "script",
+    }
+    builtin_missing_code_by_type = {
+        "mesh": "BUILTIN_MESH_MISSING",
+        "audio": "BUILTIN_AUDIO_MISSING",
+        "script": "BUILTIN_SCRIPT_MISSING",
+    }
+    builtin_resources = target_project_context.get("builtin_resources", {})
+    builtin_index_source = target_project_context.get("builtin_index_source") or "builtin_resources.index.json"
+    slots = manifest.get("slots")
+    if isinstance(slots, list):
+        for slot in slots:
+            if not isinstance(slot, dict):
+                continue
+            fallback = slot.get("fallback")
+            if not isinstance(fallback, str) or not fallback.startswith("builtin:"):
+                continue
+            slot_type = slot.get("slot_type")
+            expected_type = builtin_type_by_slot_type.get(slot_type)
+            if expected_type is None:
+                continue
+            available_items = builtin_resources.get(expected_type, set())
+            if fallback not in available_items:
+                failures.append(
+                    {
+                        "code": builtin_missing_code_by_type[expected_type],
+                        "slot_id": slot.get("slot_id"),
+                        "fallback": fallback,
+                        "expected_resource_type": expected_type,
+                        "missing_location": builtin_index_source,
                     }
                 )
     return failures
@@ -545,6 +597,11 @@ def cmd_install(args: argparse.Namespace) -> int:
 
         missing_items = [item for item in failures if item["code"] == "DEPENDENCY_MISSING"]
         conflict_items = [item for item in failures if item["code"] == "DEPENDENCY_VERSION_CONFLICT"]
+        builtin_missing_items = [
+            item
+            for item in failures
+            if item["code"] in {"BUILTIN_MESH_MISSING", "BUILTIN_AUDIO_MISSING", "BUILTIN_SCRIPT_MISSING"}
+        ]
         if missing_items:
             print("[ERROR] 缺失项清单:")
             for item in missing_items:
@@ -559,6 +616,17 @@ def cmd_install(args: argparse.Namespace) -> int:
                 print(
                     "  - id={id}, required={required}, current={current}".format(
                         id=item["package_id"], required=item["required"], current=item["current"]
+                    )
+                )
+        if builtin_missing_items:
+            print("[ERROR] 内建资源缺失清单:")
+            for item in builtin_missing_items:
+                print(
+                    "  - slot_id={slot_id}, fallback={fallback}, expected_resource_type={expected_resource_type}, missing_location={missing_location}".format(
+                        slot_id=item.get("slot_id"),
+                        fallback=item.get("fallback"),
+                        expected_resource_type=item.get("expected_resource_type"),
+                        missing_location=item.get("missing_location"),
                     )
                 )
         return 1

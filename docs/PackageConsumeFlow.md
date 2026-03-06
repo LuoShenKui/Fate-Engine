@@ -75,6 +75,9 @@ python3 tools/release_local.py --dry-run
 - `CONTRACT_INCOMPATIBLE`
 - `DEPENDENCY_MISSING`
 - `DEPENDENCY_VERSION_CONFLICT`
+- `BUILTIN_MESH_MISSING`
+- `BUILTIN_AUDIO_MISSING`
+- `BUILTIN_SCRIPT_MISSING`
 
 示例报错：
 
@@ -89,6 +92,26 @@ python3 tools/release_local.py --dry-run
   - id=fate.ai.nav, required=>=1.3.0, current=1.1.0
 ```
 
+### 依赖可见（builtin 资源）
+
+当 `slots[].fallback` 使用 `builtin:*` 时，导入前会根据目标项目的 builtin 索引做可见性检查（优先读取 `<target>/.fate/builtin_resources.index.json`，缺失则回退到仓库内置 `protocol/compliance/builtin_resources.index.json`）。
+
+缺失时会输出带上下文的错误：
+- `slot_id`
+- `fallback`
+- `expected_resource_type`
+- `missing_location`
+
+示例输出：
+
+```text
+[ERROR] install blocked by pre-import validation
+  - BUILTIN_MESH_MISSING: {"code":"BUILTIN_MESH_MISSING","expected_resource_type":"mesh","fallback":"builtin:door.mesh.missing","missing_location":"/workspace/Fate-Engine/protocol/compliance/builtin_resources.index.json","slot_id":"mesh.main"}
+[ERROR] 内建资源缺失清单:
+  - slot_id=mesh.main, fallback=builtin:door.mesh.missing, expected_resource_type=mesh, missing_location=/workspace/Fate-Engine/protocol/compliance/builtin_resources.index.json
+```
+
+最小验证夹具：`packages/door/tests/manifest.invalid.missing_builtin_mesh.json`。
 
 ## 包类型矩阵（package_kind）
 
