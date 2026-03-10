@@ -8,6 +8,8 @@
     "build": "tsc",
     "preview": "python3 -m http.server 5173",
     "start": "pnpm run preview",
+    "check:behavior": "node tools/check_scene_behavior.mjs",
+    "check:routing": "node tools/check_scene_routing.mjs",
     "check:visual": "node tools/visual_regression.mjs",
     "check:visual:update": "node tools/visual_regression.mjs --update-baseline"
   },

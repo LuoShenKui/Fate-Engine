@@ -129,10 +129,12 @@ python3 tools/check_runtime_soak.py --profile 8h
 cmake -S . -B build
 cmake --build build
 
-# 4) TS 类型检查与构建
+# 4) TS 类型检查、构建与 Demo 场景路由/行为检查
 cd editor/app
 pnpm run typecheck
 pnpm run build
+pnpm run check:routing
+pnpm run check:behavior
 ```
 
 </details>
@@ -186,7 +188,7 @@ pnpm run dev
 1. `python3 tools/validate_schemas.py`
 2. `cargo test --manifest-path runtime/door_core/Cargo.toml`
 3. `cmake -S . -B build && cmake --build build && ./build/fate_demo`
-4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build && pnpm run preview`（浏览器访问 `http://localhost:5173`）
+4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build && pnpm run check:routing && pnpm run check:behavior && pnpm run preview`（浏览器访问 `http://localhost:5173`）
 
 ## 如何开始做“门积木”契约（最简）
 1. 在 `protocol/schemas` 先定义 request/response schema。

@@ -151,7 +151,22 @@ export const LadderBrickDefinition: BrickDefinition = {
   id: "ladder",
   name: "Ladder",
   summary: "可上下攀爬",
-  properties: [],
+  properties: [
+    {
+      key: "enabled",
+      label: "Enabled",
+      type: "boolean",
+      defaultValue: true,
+      description: "梯子是否可用",
+    },
+    {
+      key: "has_top_anchor",
+      label: "Top Anchor",
+      type: "boolean",
+      defaultValue: true,
+      description: "顶部锚点是否存在",
+    },
+  ],
   slots: [
     {
       slotId: "mesh",
@@ -181,7 +196,15 @@ export const TriggerZoneBrickDefinition: BrickDefinition = {
   id: "trigger-zone",
   name: "TriggerZone",
   summary: "区域触发器",
-  properties: [],
+  properties: [
+    {
+      key: "enabled",
+      label: "Enabled",
+      type: "boolean",
+      defaultValue: true,
+      description: "触发区是否启用",
+    },
+  ],
   slots: [
     {
       slotId: "vfx-enter",
@@ -212,7 +235,22 @@ export const SwitchBrickDefinition: BrickDefinition = {
   id: "switch",
   name: "Switch",
   summary: "可触发开关",
-  properties: [],
+  properties: [
+    {
+      key: "enabled",
+      label: "Enabled",
+      type: "boolean",
+      defaultValue: true,
+      description: "开关是否可用",
+    },
+    {
+      key: "active",
+      label: "Active",
+      type: "boolean",
+      defaultValue: false,
+      description: "当前是否激活",
+    },
+  ],
   slots: [
     {
       slotId: "mesh",
@@ -331,46 +369,60 @@ export const TeleportBrickDefinition: BrickDefinition = {
 };
 
 export class DoorRuntimeAdapter {
-  private state: DoorState = {
-    enabled: true,
-    locked: false,
-    open: false,
-    has_collision: true,
-    has_trigger: true,
-  };
+  private readonly states = new Map<string, DoorState>();
 
-  interact(actorId: string, entityId: string): DoorBrickEvent {
-    if (!this.state.enabled) {
-      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=disabled` };
+  private getState(entityId: string): DoorState {
+    const cached = this.states.get(entityId);
+    if (cached !== undefined) {
+      return cached;
     }
-    if (this.state.locked) {
-      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=locked` };
-    }
-    this.state.open = !this.state.open;
-    return { event: DOOR_EVENTS.ON_USED, payload: `entity_id=${entityId},actor_id=${actorId},state=${this.state.open ? "Open" : "Closed"}` };
+    const created: DoorState = {
+      enabled: true,
+      locked: false,
+      open: false,
+      has_collision: true,
+      has_trigger: true,
+    };
+    this.states.set(entityId, created);
+    return created;
   }
 
-  setState(key: keyof DoorState, value: boolean): DoorBrickEvent {
-    this.state[key] = value;
-    return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `key=${key},value=${value}` };
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    const state = this.getState(entityId);
+    if (!state.enabled) {
+      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=disabled` };
+    }
+    if (state.locked) {
+      return { event: DOOR_EVENTS.ON_DENIED, payload: `entity_id=${entityId},actor_id=${actorId},reason=locked` };
+    }
+    state.open = !state.open;
+    return { event: DOOR_EVENTS.ON_USED, payload: `entity_id=${entityId},actor_id=${actorId},state=${state.open ? "Open" : "Closed"}` };
+  }
+
+  setState(entityId: string, key: keyof DoorState, value: boolean): DoorBrickEvent {
+    const state = this.getState(entityId);
+    state[key] = value;
+    return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `entity_id=${entityId},key=${key},value=${value}` };
   }
 
 
   syncState(payload: DoorStateSyncPayload): DoorBrickEvent {
-    this.state.locked = payload.state === "Locked";
-    this.state.open = payload.state === "Open";
+    const state = this.getState(payload.entity_id);
+    state.locked = payload.state === "Locked";
+    state.open = payload.state === "Open";
     return { event: DOOR_EVENTS.ON_STATE_CHANGED, payload: `entity_id=${payload.entity_id},state=${payload.state}` };
   }
 
-  validate(doorName: string): ValidateOutput {
+  validate(doorName: string, entityId = doorName): ValidateOutput {
+    const state = this.getState(entityId);
     const issues: string[] = [];
-    if (!this.state.has_collision) {
+    if (!state.has_collision) {
       issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_COLLISION}:DOOR_MISSING_COLLISION`);
     }
-    if (!this.state.has_trigger) {
+    if (!state.has_trigger) {
       issues.push(`Error:${doorName}:${DOOR_VALIDATION_CODES.MISSING_TRIGGER}:DOOR_MISSING_TRIGGER`);
     }
-    if (this.state.locked) {
+    if (state.locked) {
       issues.push(`Warning:${doorName}:${DOOR_VALIDATION_CODES.LOCKED_DEFAULT}:DOOR_LOCKED_BY_DEFAULT`);
     }
     return { issues };
@@ -378,23 +430,35 @@ export class DoorRuntimeAdapter {
 }
 
 export class LadderRuntimeAdapter {
-  private state: LadderState = {
-    enabled: true,
-    occupied: false,
-    has_top_anchor: true,
-  };
+  private readonly states = new Map<string, LadderState>();
 
-  interact(actorId: string, entityId: string): DoorBrickEvent {
-    if (!this.state.enabled) {
-      return { event: "OnDenied", payload: "reason=disabled" };
+  private getState(entityId: string): LadderState {
+    const cached = this.states.get(entityId);
+    if (cached !== undefined) {
+      return cached;
     }
-    this.state.occupied = !this.state.occupied;
-    return { event: "OnUsed", payload: `actor_id=${actorId},occupied=${this.state.occupied}` };
+    const created: LadderState = {
+      enabled: true,
+      occupied: false,
+      has_top_anchor: true,
+    };
+    this.states.set(entityId, created);
+    return created;
   }
 
-  validate(ladderName: string): ValidateOutput {
+  interact(actorId: string, entityId: string): DoorBrickEvent {
+    const state = this.getState(entityId);
+    if (!state.enabled) {
+      return { event: "OnDenied", payload: "reason=disabled" };
+    }
+    state.occupied = !state.occupied;
+    return { event: "OnUsed", payload: `entity_id=${entityId},actor_id=${actorId},occupied=${state.occupied}` };
+  }
+
+  validate(ladderName: string, entityId = ladderName): ValidateOutput {
+    const state = this.getState(entityId);
     const issues: string[] = [];
-    if (!this.state.has_top_anchor) {
+    if (!state.has_top_anchor) {
       issues.push(`Error:${ladderName}:MISSING_TOP_ANCHOR:Ladder 缺少顶部锚点`);
     }
     return { issues };
@@ -426,17 +490,28 @@ export class TriggerZoneRuntimeAdapter {
 }
 
 export class SwitchRuntimeAdapter {
-  private state: SwitchState = {
-    enabled: true,
-    active: false,
-  };
+  private readonly states = new Map<string, SwitchState>();
+
+  private getState(entityId: string): SwitchState {
+    const cached = this.states.get(entityId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const created: SwitchState = {
+      enabled: true,
+      active: false,
+    };
+    this.states.set(entityId, created);
+    return created;
+  }
 
   interact(actorId: string, entityId: string): DoorBrickEvent {
-    if (!this.state.enabled) {
+    const state = this.getState(entityId);
+    if (!state.enabled) {
       return { event: "OnDenied", payload: "reason=disabled" };
     }
-    this.state.active = !this.state.active;
-    return { event: "OnUsed", payload: `actor_id=${actorId},active=${this.state.active}` };
+    state.active = !state.active;
+    return { event: "OnUsed", payload: `entity_id=${entityId},actor_id=${actorId},active=${state.active}` };
   }
 }
 

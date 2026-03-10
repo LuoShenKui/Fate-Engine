@@ -1,0 +1,73 @@
+{
+  "id": "forest_cabin_v0",
+  "name": "Forest Cabin v0",
+  "seed": 123,
+  "nodes": [
+    {
+      "id": "door-1",
+      "type": "door",
+      "transform": {
+        "position": [0, 0, 0],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "trigger-zone-1",
+      "type": "trigger-zone",
+      "transform": {
+        "position": [0, 0, 1.2],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "door-2",
+      "type": "door",
+      "transform": {
+        "position": [3.6, 0, 2.4],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "trigger-zone-2",
+      "type": "trigger-zone",
+      "transform": {
+        "position": [3.6, 0, 3.6],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "switch-1",
+      "type": "switch",
+      "transform": {
+        "position": [2.2, 0, 2.9],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "ladder-1",
+      "type": "ladder",
+      "transform": {
+        "position": [-2.2, 0, -0.8],
+        "rotation": [0, 0, 0]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "trigger-zone-1",
+      "to": "door-1"
+    },
+    {
+      "from": "trigger-zone-2",
+      "to": "door-2"
+    },
+    {
+      "from": "switch-1",
+      "to": "door-2"
+    },
+    {
+      "from": "ladder-1",
+      "to": "door-1"
+    }
+  ]
+}

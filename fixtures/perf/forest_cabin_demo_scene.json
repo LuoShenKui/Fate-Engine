@@ -1,0 +1,57 @@
+{
+  "scene": "forest_cabin_demo_scene",
+  "build": "editor-demo-baseline",
+  "source": "manual_capture",
+  "captured_at": "2026-03-11T15:00:00Z",
+  "metrics": {
+    "frame_time_cpu_ms": 11.6,
+    "frame_time_gpu_ms": 12.4,
+    "draw_calls": 2475,
+    "material_count": 176,
+    "shadow_distance": 96
+  },
+  "evidence": {
+    "frame_time_cpu_ms": {
+      "frame_id": 128,
+      "render_pass": "main_scene",
+      "brick_type": "demo.forest_cabin",
+      "brick_id": "forest_cabin_v0",
+      "cpu_frame_ms": 11.6,
+      "gpu_frame_ms": 12.4,
+      "draw_calls": 2475,
+      "material_count": 176
+    },
+    "frame_time_gpu_ms": {
+      "frame_id": 128,
+      "render_pass": "main_scene",
+      "brick_type": "demo.forest_cabin",
+      "brick_id": "forest_cabin_v0",
+      "cpu_frame_ms": 11.6,
+      "gpu_frame_ms": 12.4,
+      "draw_calls": 2475,
+      "material_count": 176
+    },
+    "draw_calls": {
+      "frame_id": 128,
+      "render_pass": "main_scene",
+      "brick_type": "demo.forest_cabin",
+      "brick_id": "forest_cabin_v0",
+      "draw_calls": 2475,
+      "material_count": 176
+    },
+    "material_count": {
+      "frame_id": 128,
+      "render_pass": "main_scene",
+      "brick_type": "demo.forest_cabin",
+      "brick_id": "forest_cabin_v0",
+      "draw_calls": 2475,
+      "material_count": 176
+    },
+    "shadow_distance": {
+      "frame_id": 128,
+      "render_pass": "shadow_setup",
+      "brick_type": "demo.forest_cabin",
+      "brick_id": "forest_cabin_v0"
+    }
+  }
+}

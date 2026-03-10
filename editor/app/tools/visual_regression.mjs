@@ -3,13 +3,15 @@ import http from 'node:http';
 import path from 'node:path';
 import process from 'node:process';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
-const pixelmatch = require('pixelmatch');
+const pixelmatchModule = require('pixelmatch');
+const pixelmatch = pixelmatchModule.default ?? pixelmatchModule;
 const { PNG } = require('pngjs');
 
-const appDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const baselineDir = path.join(appDir, 'tests', 'visual-baseline');
 const currentDir = path.join(appDir, 'tests', 'visual-current');
 const diffDir = path.join(appDir, 'tests', 'visual-diff');
@@ -21,6 +23,10 @@ const port = 5173;
 const scenarios = [
   { name: 'default', query: '' },
   { name: 'door-lock-unlock', query: '?visualScenario=door-lock-unlock' },
+  { name: 'ladder-door-link', query: '?visualScenario=ladder-door-link' },
+  { name: 'switch-door-link', query: '?visualScenario=switch-door-link' },
+  { name: 'trigger-zone-door-link', query: '?visualScenario=trigger-zone-door-link' },
+  { name: 'trigger-zone-door-2-link', query: '?visualScenario=trigger-zone-door-2-link' },
   { name: 'validation-levels', query: '?visualScenario=validation-levels' },
 ];
 

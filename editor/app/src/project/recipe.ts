@@ -21,8 +21,48 @@ export type EditorRecipeV0 = {
   }>;
 };
 
+import { createDefaultEditorDemoEdges, createDefaultEditorDemoNodes, DEFAULT_EDITOR_DEMO_SEED } from "../workflow/demoScene";
+
 const RECIPE_VERSION = "0";
 const DEFAULT_LOCAL_STORAGE_KEY = "fate-engine.editor.recipe.v0";
+
+export const createDefaultEditorDemoRecipe = (): EditorRecipeV0 => ({
+  version: RECIPE_VERSION,
+  nodes: createDefaultEditorDemoNodes().map((node) => ({
+    ...node,
+    brickId: node.type === "door" ? "fate.door.basic" : node.type === "trigger-zone" ? "fate.trigger_zone.basic" : "",
+  })),
+  edges: createDefaultEditorDemoEdges(),
+  params: {
+    selected_brick: "door",
+    fields: [],
+    locked: false,
+  },
+  slot_bindings: {
+    mesh: "asset://mesh/default-door",
+  },
+  seed: DEFAULT_EDITOR_DEMO_SEED,
+  lockfile: {
+    packages: [
+      {
+        id: "fate.door.basic",
+        version: "0.1.1",
+        hash: "sha256-door-demo-placeholder",
+      },
+      {
+        id: "fate.trigger_zone.basic",
+        version: "0.1.0",
+        hash: "sha256-trigger-zone-demo-placeholder",
+      },
+    ],
+  },
+  package_lock: {
+    packages: {
+      editor: "0.1.0",
+    },
+  },
+  suppress: [],
+});
 
 const ensureObject = (value: unknown): Record<string, unknown> => {
   if (typeof value === "object" && value !== null && !Array.isArray(value)) {

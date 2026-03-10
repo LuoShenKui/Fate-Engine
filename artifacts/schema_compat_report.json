@@ -1,0 +1,12 @@
+{
+  "baseline_dir": "protocol/schemas",
+  "current_dir": "protocol/schemas",
+  "docs_root": "docs/protocol-migrations",
+  "summary": {
+    "total": 0,
+    "error": 0,
+    "warn": 0,
+    "changed_schemas": []
+  },
+  "findings": []
+}

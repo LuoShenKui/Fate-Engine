@@ -4,6 +4,10 @@
 
 - `default.png`
 - `door-lock-unlock.png`
+- `ladder-door-link.png`
+- `switch-door-link.png`
+- `trigger-zone-door-link.png`
+- `trigger-zone-door-2-link.png`
 - `validation-levels.png`
 
 更新命令：

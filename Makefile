@@ -38,8 +38,8 @@ check-cpp:
 	@echo "[检查] C++ 编译通过"
 
 check-ts:
-	@echo "[检查] TS 类型检查与构建中..."
-	@cd editor/app && pnpm run typecheck && pnpm run build
+	@echo "[检查] TS 类型检查、构建与场景路由检查中..."
+	@cd editor/app && pnpm run typecheck && pnpm run build && pnpm run check:routing && pnpm run check:behavior
 	@echo "[检查] TS 类型检查与构建通过"
 
 check-stability:

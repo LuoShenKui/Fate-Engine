@@ -120,12 +120,12 @@ export class DoorProtocolAdapter {
     return JSON.stringify(response);
   }
 
-  setState(key: keyof DoorState, value: boolean): DoorBrickEvent {
-    return this.door.setState(key, value);
+  setState(entityId: string, key: keyof DoorState, value: boolean): DoorBrickEvent {
+    return this.door.setState(entityId, key, value);
   }
 
-  validate(doorName: string): ValidateOutput {
-    return this.door.validate(doorName);
+  validate(doorName: string, entityId?: string): ValidateOutput {
+    return this.door.validate(doorName, entityId);
   }
 
   syncState(payload: DoorStateSyncPayload): DoorBrickEvent {

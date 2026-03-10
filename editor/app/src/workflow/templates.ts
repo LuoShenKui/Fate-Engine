@@ -1,4 +1,6 @@
-export type WorkflowTemplateId = "warehouse_gate_v0" | "small_house_v0" | "warehouse_zone_v0";
+import { createDefaultEditorDemoEdges, createDefaultEditorDemoNodes, DEFAULT_EDITOR_DEMO_SCENE_ID, DEFAULT_EDITOR_DEMO_SCENE_NAME } from "./demoScene";
+
+export type WorkflowTemplateId = "forest_cabin_v0" | "warehouse_gate_v0" | "small_house_v0" | "warehouse_zone_v0";
 
 export type WorkflowTemplateNode = {
   id: string;
@@ -20,7 +22,25 @@ export type WorkflowTemplate = {
   edges: WorkflowTemplateEdge[];
 };
 
+const toWorkflowTemplateNodes = (): WorkflowTemplateNode[] =>
+  createDefaultEditorDemoNodes().map((node) => ({
+    id: node.id,
+    type: node.type ?? "unknown",
+  }));
+
+const toWorkflowTemplateEdges = (): WorkflowTemplateEdge[] =>
+  createDefaultEditorDemoEdges().map((edge) => ({
+    from: edge.from,
+    to: edge.to,
+  }));
+
 const templates: Record<WorkflowTemplateId, WorkflowTemplate> = {
+  forest_cabin_v0: {
+    id: "forest_cabin_v0",
+    name: DEFAULT_EDITOR_DEMO_SCENE_NAME,
+    nodes: toWorkflowTemplateNodes(),
+    edges: toWorkflowTemplateEdges(),
+  },
   warehouse_gate_v0: {
     id: "warehouse_gate_v0",
     name: "Warehouse Gate v0",

@@ -27,11 +27,43 @@ type DoorVisualEntity = {
   };
 };
 
+type TriggerZoneVisualEntity = {
+  id: string;
+  kind: "trigger-zone";
+  transform: Required<CanvasTransform>;
+  volume: {
+    size: [number, number, number];
+  };
+};
+
+type GenericVisualEntity = {
+  id: string;
+  kind: "generic";
+  transform: Required<CanvasTransform>;
+  size: [number, number, number];
+  color: [number, number, number, number];
+};
+
+type SwitchVisualEntity = {
+  id: string;
+  kind: "switch";
+  transform: Required<CanvasTransform>;
+  size: [number, number, number];
+};
+
+type LadderVisualEntity = {
+  id: string;
+  kind: "ladder";
+  transform: Required<CanvasTransform>;
+  size: [number, number, number];
+};
+
 type GraphCanvasPanelProps = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   onChange: (next: { nodes: CanvasNode[]; edges: CanvasEdge[] }) => void;
   onInteract?: (nodeId: string) => void;
+  onTriggerZoneStateChange?: (zoneId: string, occupied: boolean) => void;
   onDoorPositionsChange?: (next: Record<string, [number, number, number]>) => void;
   onActorPositionChange?: (position: [number, number, number]) => void;
 };
@@ -65,6 +97,49 @@ const toDoorEntity = (node: CanvasNode, index: number): DoorVisualEntity => ({
     shape: "box",
     size: [1, 2, 0.25],
   },
+});
+
+const toTriggerZoneEntity = (node: CanvasNode, index: number): TriggerZoneVisualEntity => ({
+  id: node.id,
+  kind: "trigger-zone",
+  transform: {
+    position: node.transform?.position ?? [0, 0, index === 0 ? 1.2 : index * 1.4],
+    rotation: node.transform?.rotation ?? defaultTransform.rotation,
+  },
+  volume: {
+    size: [2.4, 0.05, 1.8],
+  },
+});
+
+const toGenericEntity = (node: CanvasNode, index: number): GenericVisualEntity => ({
+  id: node.id,
+  kind: "generic",
+  transform: {
+    position: node.transform?.position ?? [index * 1.4 - 1.4, 0, -2.5],
+    rotation: node.transform?.rotation ?? defaultTransform.rotation,
+  },
+  size: [0.3, 0.7, 0.3],
+  color: [0.49, 0.52, 0.56, 1],
+});
+
+const toSwitchEntity = (node: CanvasNode): SwitchVisualEntity => ({
+  id: node.id,
+  kind: "switch",
+  transform: {
+    position: node.transform?.position ?? [2.2, 0, 2.9],
+    rotation: node.transform?.rotation ?? defaultTransform.rotation,
+  },
+  size: [0.34, 0.5, 0.34],
+});
+
+const toLadderEntity = (node: CanvasNode): LadderVisualEntity => ({
+  id: node.id,
+  kind: "ladder",
+  transform: {
+    position: node.transform?.position ?? [-2.2, 0, -0.8],
+    rotation: node.transform?.rotation ?? defaultTransform.rotation,
+  },
+  size: [0.42, 2.2, 0.18],
 });
 
 const mat4Identity = (): Mat4 => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
@@ -125,16 +200,35 @@ const compileShader = (gl: WebGLRenderingContext, type: number, source: string):
   return shader;
 };
 
-export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, onDoorPositionsChange, onActorPositionChange }: GraphCanvasPanelProps): JSX.Element {
+export default function GraphCanvasPanel({
+  nodes,
+  edges,
+  onChange,
+  onInteract,
+  onTriggerZoneStateChange,
+  onDoorPositionsChange,
+  onActorPositionChange,
+}: GraphCanvasPanelProps): JSX.Element {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraRef = useRef<CameraState>({ yaw: 0.6, pitch: 0.4, distance: 9 });
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const doorAnimRef = useRef<Record<string, { current: number; target: number }>>({});
+  const activeTriggerIdsRef = useRef<Set<string>>(new Set());
   const actorRef = useRef<Vec3>([0, 0, 2]);
   const inputRef = useRef({ forward: false, back: false, left: false, right: false });
 
   const doorEntities = useMemo(() => nodes.filter((node) => node.type === "door").map(toDoorEntity), [nodes]);
+  const triggerZoneEntities = useMemo(
+    () => nodes.filter((node) => node.type === "trigger-zone").map(toTriggerZoneEntity),
+    [nodes],
+  );
+  const switchEntities = useMemo(() => nodes.filter((node) => node.type === "switch").map(toSwitchEntity), [nodes]);
+  const ladderEntities = useMemo(() => nodes.filter((node) => node.type === "ladder").map(toLadderEntity), [nodes]);
+  const genericEntities = useMemo(
+    () => nodes.filter((node) => node.type !== "door" && node.type !== "trigger-zone" && node.type !== "switch" && node.type !== "ladder").map(toGenericEntity),
+    [nodes],
+  );
 
   useEffect(() => {
     const nextPositions: Record<string, [number, number, number]> = {};
@@ -374,8 +468,42 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
         drawBox(viewProj, mat4Multiply(mat4Translate(pos[0], 1.2, pos[2]), mat4Scale(0.95, 1.2, 0.95)), [0.21, 0.5, 0.29, 1]);
       });
 
-      const inTrigger = Math.abs(actorRef.current[0]) <= 1.2 && actorRef.current[2] > 0.1 && actorRef.current[2] < 1.8;
-      drawBox(viewProj, mat4Multiply(mat4Translate(0, 0.03, 0.95), mat4Scale(2.4, 0.02, 1.8)), inTrigger ? [0.25, 0.76, 0.43, 0.35] : [0.96, 0.6, 0.24, 0.18]);
+      const activeTriggerIds = new Set(
+        triggerZoneEntities
+          .filter((zone) => {
+            const half: Vec3 = [zone.volume.size[0] * 0.5, 0.7, zone.volume.size[2] * 0.5];
+            return collidesWithAabb(actorRef.current, [zone.transform.position[0], 0.45, zone.transform.position[2]], half);
+          })
+          .map((zone) => zone.id),
+      );
+      const previousActiveTriggerIds = activeTriggerIdsRef.current;
+      triggerZoneEntities.forEach((zone) => {
+        const wasActive = previousActiveTriggerIds.has(zone.id);
+        const isActive = activeTriggerIds.has(zone.id);
+        if (wasActive !== isActive) {
+          onTriggerZoneStateChange?.(zone.id, isActive);
+        }
+      });
+      activeTriggerIdsRef.current = activeTriggerIds;
+      triggerZoneEntities.forEach((zone) => {
+        const isActive = activeTriggerIds.has(zone.id);
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(zone.transform.position[0], 0.03, zone.transform.position[2]),
+            mat4Scale(zone.volume.size[0], 0.02, zone.volume.size[2]),
+          ),
+          isActive ? [0.25, 0.76, 0.43, 0.35] : [0.96, 0.6, 0.24, 0.18],
+        );
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(zone.transform.position[0], 0.45, zone.transform.position[2]),
+            mat4Scale(zone.volume.size[0], 0.9, zone.volume.size[2]),
+          ),
+          isActive ? [0.28, 0.72, 0.42, 0.08] : [0.94, 0.64, 0.26, 0.05],
+        );
+      });
 
       drawBox(viewProj, mat4Multiply(mat4Translate(actorRef.current[0], 0.45, actorRef.current[2]), mat4Scale(0.35, 0.9, 0.35)), [0.16, 0.71, 0.35, 1]);
 
@@ -406,11 +534,56 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
         drawBox(viewProj, gizmo, [1, 0.48, 0.45, 0.18]);
       });
 
-      nodes
-        .filter((node) => node.type !== "door")
-        .forEach((_, index) => {
-          drawBox(viewProj, mat4Multiply(mat4Translate(index * 1.4, 0.35, -2.5), mat4Scale(0.18, 0.18, 0.18)), [0.49, 0.52, 0.56, 1]);
-        });
+      switchEntities.forEach((entity) => {
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 0.25, entity.transform.position[2]),
+            mat4Scale(entity.size[0], entity.size[1], entity.size[2]),
+          ),
+          [0.95, 0.78, 0.24, 1],
+        );
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 0.55, entity.transform.position[2]),
+            mat4Scale(0.12, 0.18, 0.12),
+          ),
+          [0.44, 0.24, 0.16, 1],
+        );
+      });
+
+      ladderEntities.forEach((entity) => {
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 1.1, entity.transform.position[2]),
+            mat4Scale(entity.size[0], entity.size[1], entity.size[2]),
+          ),
+          [0.72, 0.58, 0.32, 1],
+        );
+        for (let rung = 0; rung < 5; rung += 1) {
+          drawBox(
+            viewProj,
+            mat4Multiply(
+              mat4Translate(entity.transform.position[0], 0.35 + rung * 0.36, entity.transform.position[2]),
+              mat4Scale(entity.size[0] * 0.9, 0.06, entity.size[2] * 1.6),
+            ),
+            [0.58, 0.44, 0.22, 1],
+          );
+        }
+      });
+
+      genericEntities.forEach((entity) => {
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 0.35, entity.transform.position[2]),
+            mat4Scale(entity.size[0], entity.size[1], entity.size[2]),
+          ),
+          entity.color,
+        );
+      });
 
       raf = window.requestAnimationFrame(render);
     };
@@ -422,7 +595,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
       gl.deleteBuffer(ebo);
       gl.deleteProgram(program);
     };
-  }, [doorEntities, nodes]);
+  }, [doorEntities, genericEntities, ladderEntities, nodes, onTriggerZoneStateChange, switchEntities, triggerZoneEntities]);
 
   const onPointerDown = (event: { clientX: number; clientY: number }): void => {
     pointerRef.current = { x: event.clientX, y: event.clientY };
@@ -517,6 +690,70 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
       anim.target = anim.target > 0.1 ? 0 : 1;
       doorAnimRef.current[hitDoor.id] = anim;
       onInteract?.(hitDoor.id);
+      return;
+    }
+
+    const hitSwitch = switchEntities.find((entity) => {
+      const center: Vec3 = [entity.transform.position[0], 0.25, entity.transform.position[2]];
+      const half: Vec3 = [entity.size[0] * 0.5, entity.size[1] * 0.5, entity.size[2] * 0.5];
+      const min: Vec3 = [center[0] - half[0], center[1] - half[1], center[2] - half[2]];
+      const max: Vec3 = [center[0] + half[0], center[1] + half[1], center[2] + half[2]];
+
+      let tMin = -Infinity;
+      let tMax = Infinity;
+      const origin: Vec3 = [eye[0], eye[1], eye[2]];
+      const ray: Vec3 = [dir[0], dir[1], dir[2]];
+
+      for (let i = 0; i < 3; i += 1) {
+        if (Math.abs(ray[i]) < 1e-5) {
+          if (origin[i] < min[i] || origin[i] > max[i]) {
+            return false;
+          }
+          continue;
+        }
+        const t1 = (min[i] - origin[i]) / ray[i];
+        const t2 = (max[i] - origin[i]) / ray[i];
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+      }
+
+      return tMax >= Math.max(0, tMin);
+    });
+
+    if (hitSwitch !== undefined) {
+      onInteract?.(hitSwitch.id);
+      return;
+    }
+
+    const hitLadder = ladderEntities.find((entity) => {
+      const center: Vec3 = [entity.transform.position[0], 1.1, entity.transform.position[2]];
+      const half: Vec3 = [entity.size[0] * 0.5, entity.size[1] * 0.5, entity.size[2] * 0.5];
+      const min: Vec3 = [center[0] - half[0], center[1] - half[1], center[2] - half[2]];
+      const max: Vec3 = [center[0] + half[0], center[1] + half[1], center[2] + half[2]];
+
+      let tMin = -Infinity;
+      let tMax = Infinity;
+      const origin: Vec3 = [eye[0], eye[1], eye[2]];
+      const ray: Vec3 = [dir[0], dir[1], dir[2]];
+
+      for (let i = 0; i < 3; i += 1) {
+        if (Math.abs(ray[i]) < 1e-5) {
+          if (origin[i] < min[i] || origin[i] > max[i]) {
+            return false;
+          }
+          continue;
+        }
+        const t1 = (min[i] - origin[i]) / ray[i];
+        const t2 = (max[i] - origin[i]) / ray[i];
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+      }
+
+      return tMax >= Math.max(0, tMin);
+    });
+
+    if (hitLadder !== undefined) {
+      onInteract?.(hitLadder.id);
     }
   };
 
@@ -579,7 +816,7 @@ export default function GraphCanvasPanel({ nodes, edges, onChange, onInteract, o
           onWheel={onWheel}
           onClick={onCanvasClick}
         />
-        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放；穿过门前触发区后点击门体，可在小屋场景测试开关门和阻挡。</div>
+        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放；当前默认场景包含两扇门和两个触发区，可测试每个 TriggerZone 是否只驱动对应 Door。</div>
 
         <details>
           <summary style={{ cursor: "pointer", marginBottom: "8px" }}>调试列表（节点/连线）</summary>
