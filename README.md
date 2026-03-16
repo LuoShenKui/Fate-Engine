@@ -17,19 +17,21 @@
 ## 新目录职责说明
 - `runtime/`：运行时相关核心模块（当前包含 `door_core` Rust crate）。
 - `editor/`：编辑器相关应用与前端工程（当前 `editor/app`）。
-- `protocol/`：协议层定义与契约文件预留目录。
+- `protocol/`：协议层定义与共享契约（schema、共享常量契约、性能/合规协议文件）。
 - `packages/`：可分发积木包（当前包含 `door`，保留 `manifest/demo/tests` 结构）。
 - `tools/`：工程工具脚本与辅助程序预留目录。
 - `render/`：渲染模块预留目录（可选启用）。
 
 
 ## 协议开发流程（重要）
-1. **先修改 `protocol/schemas/*.json`**，明确协议契约。
-2. 运行 `python3 tools/validate_schemas.py`，确保 schema 基础校验通过。
-3. 运行 `python3 tools/check_schema_compat.py --baseline-dir <基线目录> --current-dir protocol/schemas`，检查兼容性破坏项并生成 JSON 报告。
-4. 若 `protocol/schemas` 有变更，必须补充迁移文档：`docs/protocol-migrations/<schema-name>/<version>.md`，文档必须包含“版本 / 影响面 / 回滚策略”段落。
-5. 再修改 Runtime 与 Editor 的编解码适配层实现。
-6. 提交前检查新增错误文案是否为英文。
+1. **先修改 `protocol/schemas/*.json`**，明确协议结构。
+2. 若协议类型/错误码/版本常量有变化，同时修改 `protocol/contracts/*.json` 作为共享源码契约。
+3. 运行 `python3 tools/validate_schemas.py`，确保 schema 基础校验通过。
+4. 运行 `python3 tools/check_protocol_contract.py`，确保 schema / TS / Rust 协议常量一致。
+5. 运行 `python3 tools/check_schema_compat.py --baseline-dir <基线目录> --current-dir protocol/schemas`，检查兼容性破坏项并生成 JSON 报告。
+6. 若 `protocol/schemas` 有变更，必须补充迁移文档：`docs/protocol-migrations/<schema-name>/<version>.md`，文档必须包含“版本 / 影响面 / 回滚策略”段落。
+7. 再修改 Runtime 与 Editor 的编解码适配层实现。
+8. 提交前检查新增错误文案是否为英文。
 
 失败示例（高风险破坏）：
 ```bash
@@ -101,10 +103,10 @@ make check-perf-scenes
 如果你本地打开后是空白、不清楚先执行什么，可直接使用一键启动脚本：
 
 ```bash
-# 全链路：schema + rust + cpp + editor preview
+# 全链路：schema + rust + cpp + editor desktop
 bash tools/start_test.sh all
 
-# 仅编辑器链路（自动 install/typecheck/build/preview）
+# 仅编辑器链路（自动 install/typecheck/build/tauri:dev）
 bash tools/start_test.sh editor
 ```
 
@@ -112,8 +114,9 @@ bash tools/start_test.sh editor
 <summary>展开查看各子检查与原始命令</summary>
 
 ```bash
-# 1) Schema 校验
+# 1) Schema / 协议契约校验
 python3 tools/validate_schemas.py
+python3 tools/check_protocol_contract.py
 
 # 2) Rust package 自动化测试（OnUsed/OnDenied + 校验器分级）
 cargo test --manifest-path runtime/door_core/Cargo.toml
@@ -125,7 +128,7 @@ python3 tools/check_runtime_stability.py
 python3 tools/check_runtime_soak.py --profile 2h
 python3 tools/check_runtime_soak.py --profile 8h
 
-# 3) C++ 包装层与 manifest 基础编译校验（仅构建，不运行 demo）
+# 3) C++ demo core 与入口编译校验
 cmake -S . -B build
 cmake --build build
 
@@ -144,7 +147,7 @@ pnpm run check:behavior
 cargo test --manifest-path runtime/door_core/Cargo.toml
 ```
 
-## TS UI 本地预览（固定步骤）
+## Editor 桌面端本地开发（固定步骤）
 ```bash
 # 1) 安装依赖
 cd editor/app
@@ -153,17 +156,26 @@ pnpm install
 # 2) 基础语法与类型检查
 pnpm run typecheck
 
-# 3) 构建产物（index.html 对应 ./dist/main.js）
+# 3) 前端本地构建（Vite）
 pnpm run build
 
-# 4) 启动本地预览服务（轻量静态服务）
+# 4) 启动桌面开发环境（Tauri + Vite）
+pnpm run tauri:dev
+
+# 5) 构建桌面应用（当前平台）
+pnpm run tauri:build
+
+# 可选：仅启动前端开发服务器
 pnpm run preview
 
-# 可选：一条命令完成构建 + 启动
+# 可选：仅启动前端开发服务器（热更新）
 pnpm run dev
 ```
 
-浏览器访问：`http://localhost:5173`
+说明：
+- `pnpm run dev` / `pnpm run preview` 仅用于前端调试。
+- 编辑器主链路现在是 `Tauri` 桌面端，不再依赖 `http.server` 或 `esm.sh`。
+- 当前桌面目标平台：`macOS`、`Windows`。
 
 > 说明：编辑器工具栏里的“导入”当前语义是**导入配方（Recipe JSON）**，用于恢复/复现场景装配状态。
 > “积木包导入/安装”走发布与消费流程（`tools/release_local.py`、`tools/publisher_workflow.py install` / `install-from-lockfile`），不是同一个入口。
@@ -187,8 +199,8 @@ pnpm run dev
 建议按以下顺序执行冒烟测试：
 1. `python3 tools/validate_schemas.py`
 2. `cargo test --manifest-path runtime/door_core/Cargo.toml`
-3. `cmake -S . -B build && cmake --build build && ./build/fate_demo`
-4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build && pnpm run check:routing && pnpm run check:behavior && pnpm run preview`（浏览器访问 `http://localhost:5173`）
+3. `cmake -S . -B build && cmake --build build && ctest --test-dir build -R fate_demo_smoke --output-on-failure && ./build/fate_demo`
+4. `cd editor/app && pnpm install && pnpm run typecheck && pnpm run build && pnpm run check:routing && pnpm run check:behavior && pnpm run tauri:build`
 
 ## 如何开始做“门积木”契约（最简）
 1. 在 `protocol/schemas` 先定义 request/response schema。
@@ -240,7 +252,7 @@ python3 tools/release_local.py
 
 ## A 项（引擎与运行时稳定性）当前可机检入口
 ```bash
-# 快速门禁（PR 必跑）
+# 快速门禁（当前为手动触发）
 make check-stability
 
 # 夜间长稳（nightly）

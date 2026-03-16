@@ -1,0 +1,10 @@
+{
+  "protocol_version": "1.0",
+  "request_type": "door.interact.request",
+  "response_type": "door.interact.response",
+  "error_codes": [
+    "INVALID_PROTOCOL_VERSION",
+    "INVALID_REQUEST_TYPE",
+    "INVALID_REQUEST_PAYLOAD"
+  ]
+}

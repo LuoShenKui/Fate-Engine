@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Fate Editor",
+  "version": "0.1.0",
+  "identifier": "com.fateengine.editor",
+  "build": {
+    "beforeDevCommand": "pnpm run dev -- --host 127.0.0.1 --port 1420 --strictPort",
+    "beforeBuildCommand": "pnpm run build",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Fate Editor",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 1100,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": "all"
+  }
+}

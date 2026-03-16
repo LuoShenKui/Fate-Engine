@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n/I18nProvider";
 
 export type CanvasTransform = {
@@ -6,10 +6,17 @@ export type CanvasTransform = {
   rotation?: [number, number, number];
 };
 
+export type CanvasNodeMeta = {
+  grantedAbilityPackageIds?: string[];
+  compositeParentId?: string;
+  patrolRoutePoints?: Array<[number, number, number]>;
+};
+
 export type CanvasNode = {
   id: string;
   type?: string;
   transform?: CanvasTransform;
+  meta?: CanvasNodeMeta;
 };
 
 export type CanvasEdge = {
@@ -58,14 +65,28 @@ type LadderVisualEntity = {
   size: [number, number, number];
 };
 
+type EnemyVisualEntity = {
+  id: string;
+  kind: "enemy";
+  transform: Required<CanvasTransform>;
+  size: [number, number, number];
+  patrolRoutePoints: Array<[number, number, number]>;
+};
+
 type GraphCanvasPanelProps = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   onChange: (next: { nodes: CanvasNode[]; edges: CanvasEdge[] }) => void;
+  resolveNodeKind?: (nodeType?: string) => "door" | "switch" | "ladder" | "trigger-zone" | "enemy" | "generic";
+  defaultNodeType?: string;
+  onSelectNode?: (nodeId: string) => void;
   onInteract?: (nodeId: string) => void;
   onTriggerZoneStateChange?: (zoneId: string, occupied: boolean) => void;
   onDoorPositionsChange?: (next: Record<string, [number, number, number]>) => void;
   onActorPositionChange?: (position: [number, number, number]) => void;
+  onDropBrick?: (brickId: string, position?: [number, number, number]) => void;
+  actorLabel?: string;
+  activeAbilityNames?: string[];
 };
 
 type CameraState = { yaw: number; pitch: number; distance: number };
@@ -142,6 +163,22 @@ const toLadderEntity = (node: CanvasNode): LadderVisualEntity => ({
   size: [0.42, 2.2, 0.18],
 });
 
+const toEnemyEntity = (node: CanvasNode, index: number): EnemyVisualEntity => ({
+  id: node.id,
+  kind: "enemy",
+  transform: {
+    position: node.transform?.position ?? [index * 1.2 - 0.8, 0, 2.4],
+    rotation: node.transform?.rotation ?? defaultTransform.rotation,
+  },
+  size: [0.48, 1.2, 0.48],
+  patrolRoutePoints: node.meta?.patrolRoutePoints ?? [
+    [node.transform?.position?.[0] ?? 0, 0, (node.transform?.position?.[2] ?? 2.4) - 1.2],
+    [node.transform?.position?.[0] ?? 0, 0, (node.transform?.position?.[2] ?? 2.4) + 1.2],
+  ],
+});
+
+const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
 const mat4Identity = (): Mat4 => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const mat4Multiply = (a: Mat4, b: Mat4): Mat4 => {
   const out = new Float32Array(16);
@@ -163,6 +200,8 @@ const vec3Normalize = (v: Vec3): Vec3 => {
 };
 const vec3Cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const vec3Sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const vec3Add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const vec3Scale = (v: Vec3, scalar: number): Vec3 => [v[0] * scalar, v[1] * scalar, v[2] * scalar];
 const mat4LookAt = (eye: Vec3, center: Vec3, up: Vec3): Mat4 => {
   const z = vec3Normalize(vec3Sub(eye, center));
   const x = vec3Normalize(vec3Cross(up, z));
@@ -204,10 +243,16 @@ export default function GraphCanvasPanel({
   nodes,
   edges,
   onChange,
+  resolveNodeKind,
+  defaultNodeType,
+  onSelectNode,
   onInteract,
   onTriggerZoneStateChange,
   onDoorPositionsChange,
   onActorPositionChange,
+  onDropBrick,
+  actorLabel,
+  activeAbilityNames,
 }: GraphCanvasPanelProps): JSX.Element {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -217,17 +262,21 @@ export default function GraphCanvasPanel({
   const activeTriggerIdsRef = useRef<Set<string>>(new Set());
   const actorRef = useRef<Vec3>([0, 0, 2]);
   const inputRef = useRef({ forward: false, back: false, left: false, right: false });
+  const [dragActive, setDragActive] = useState(false);
+  const toKind = (nodeType?: string): "door" | "switch" | "ladder" | "trigger-zone" | "enemy" | "generic" =>
+    resolveNodeKind?.(nodeType) ?? (nodeType === "door" || nodeType === "switch" || nodeType === "ladder" || nodeType === "trigger-zone" || nodeType === "enemy" ? nodeType : "generic");
 
-  const doorEntities = useMemo(() => nodes.filter((node) => node.type === "door").map(toDoorEntity), [nodes]);
+  const doorEntities = useMemo(() => nodes.filter((node) => toKind(node.type) === "door").map(toDoorEntity), [nodes, resolveNodeKind]);
   const triggerZoneEntities = useMemo(
-    () => nodes.filter((node) => node.type === "trigger-zone").map(toTriggerZoneEntity),
-    [nodes],
+    () => nodes.filter((node) => toKind(node.type) === "trigger-zone").map(toTriggerZoneEntity),
+    [nodes, resolveNodeKind],
   );
-  const switchEntities = useMemo(() => nodes.filter((node) => node.type === "switch").map(toSwitchEntity), [nodes]);
-  const ladderEntities = useMemo(() => nodes.filter((node) => node.type === "ladder").map(toLadderEntity), [nodes]);
+  const switchEntities = useMemo(() => nodes.filter((node) => toKind(node.type) === "switch").map(toSwitchEntity), [nodes, resolveNodeKind]);
+  const ladderEntities = useMemo(() => nodes.filter((node) => toKind(node.type) === "ladder").map(toLadderEntity), [nodes, resolveNodeKind]);
+  const enemyEntities = useMemo(() => nodes.filter((node) => toKind(node.type) === "enemy").map(toEnemyEntity), [nodes, resolveNodeKind]);
   const genericEntities = useMemo(
-    () => nodes.filter((node) => node.type !== "door" && node.type !== "trigger-zone" && node.type !== "switch" && node.type !== "ladder").map(toGenericEntity),
-    [nodes],
+    () => nodes.filter((node) => toKind(node.type) === "generic").map(toGenericEntity),
+    [nodes, resolveNodeKind],
   );
 
   useEffect(() => {
@@ -574,6 +623,48 @@ export default function GraphCanvasPanel({
         }
       });
 
+      enemyEntities.forEach((entity) => {
+        entity.patrolRoutePoints.forEach((point) => {
+          drawBox(
+            viewProj,
+            mat4Multiply(mat4Translate(point[0], 0.08, point[2]), mat4Scale(0.22, 0.04, 0.22)),
+            [0.95, 0.78, 0.26, 0.95],
+          );
+        });
+        if (entity.patrolRoutePoints.length >= 2) {
+          const [start, end] = entity.patrolRoutePoints;
+          const mid: Vec3 = [(start[0] + end[0]) * 0.5, 0.05, (start[2] + end[2]) * 0.5];
+          const dx = end[0] - start[0];
+          const dz = end[2] - start[2];
+          const distance = Math.max(0.1, Math.hypot(dx, dz));
+          const angle = Math.atan2(dx, dz);
+          drawBox(
+            viewProj,
+            mat4Multiply(
+              mat4Translate(mid[0], mid[1], mid[2]),
+              mat4Multiply(mat4RotateY(angle), mat4Scale(0.08, 0.03, distance)),
+            ),
+            [0.9, 0.72, 0.18, 0.7],
+          );
+        }
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 0.6, entity.transform.position[2]),
+            mat4Scale(entity.size[0], entity.size[1], entity.size[2]),
+          ),
+          [0.76, 0.31, 0.28, 1],
+        );
+        drawBox(
+          viewProj,
+          mat4Multiply(
+            mat4Translate(entity.transform.position[0], 1.18, entity.transform.position[2]),
+            mat4Scale(0.34, 0.32, 0.34),
+          ),
+          [0.45, 0.18, 0.16, 1],
+        );
+      });
+
       genericEntities.forEach((entity) => {
         drawBox(
           viewProj,
@@ -595,7 +686,7 @@ export default function GraphCanvasPanel({
       gl.deleteBuffer(ebo);
       gl.deleteProgram(program);
     };
-  }, [doorEntities, genericEntities, ladderEntities, nodes, onTriggerZoneStateChange, switchEntities, triggerZoneEntities]);
+  }, [doorEntities, enemyEntities, genericEntities, ladderEntities, nodes, onTriggerZoneStateChange, switchEntities, triggerZoneEntities]);
 
   const onPointerDown = (event: { clientX: number; clientY: number }): void => {
     pointerRef.current = { x: event.clientX, y: event.clientY };
@@ -686,6 +777,7 @@ export default function GraphCanvasPanel({
     });
 
     if (hitDoor !== undefined) {
+      onSelectNode?.(hitDoor.id);
       const anim = doorAnimRef.current[hitDoor.id] ?? { current: 0, target: 0 };
       anim.target = anim.target > 0.1 ? 0 : 1;
       doorAnimRef.current[hitDoor.id] = anim;
@@ -721,6 +813,7 @@ export default function GraphCanvasPanel({
     });
 
     if (hitSwitch !== undefined) {
+      onSelectNode?.(hitSwitch.id);
       onInteract?.(hitSwitch.id);
       return;
     }
@@ -753,6 +846,7 @@ export default function GraphCanvasPanel({
     });
 
     if (hitLadder !== undefined) {
+      onSelectNode?.(hitLadder.id);
       onInteract?.(hitLadder.id);
     }
   };
@@ -760,7 +854,7 @@ export default function GraphCanvasPanel({
   const onAddNode = (): void => {
     const nextId = `node-${Date.now()}`;
     onChange({
-      nodes: [...nodes, { id: nextId, type: "door" }],
+      nodes: [...nodes, { id: nextId, type: defaultNodeType ?? "door" }],
       edges,
     });
   };
@@ -790,53 +884,163 @@ export default function GraphCanvasPanel({
     });
   };
 
+  const onCanvasDragOver = (event: React.DragEvent<HTMLCanvasElement>): void => {
+    if (event.dataTransfer.types.includes("application/x-fate-brick-id")) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      setDragActive(true);
+    }
+  };
+
+  const onCanvasDrop = (event: React.DragEvent<HTMLCanvasElement>): void => {
+    const brickId = event.dataTransfer.getData("application/x-fate-brick-id");
+    if (brickId.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    setDragActive(false);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const camera = cameraRef.current;
+    const target: Vec3 = [0, 1, 0];
+    const eye: Vec3 = [
+      target[0] + Math.sin(camera.yaw) * Math.cos(camera.pitch) * camera.distance,
+      target[1] + Math.sin(camera.pitch) * camera.distance,
+      target[2] + Math.cos(camera.yaw) * Math.cos(camera.pitch) * camera.distance,
+    ];
+    const ndcX = clamp(((event.clientX - bounds.left) / Math.max(1, bounds.width)) * 2 - 1, -1, 1);
+    const ndcY = clamp(-(((event.clientY - bounds.top) / Math.max(1, bounds.height)) * 2 - 1), -1, 1);
+    const forward = vec3Normalize(vec3Sub(target, eye));
+    const right = vec3Normalize(vec3Cross(forward, [0, 1, 0]));
+    const up = vec3Normalize(vec3Cross(right, forward));
+    const fov = (55 * Math.PI) / 180;
+    const aspect = bounds.width / Math.max(1, bounds.height);
+    const ray = vec3Normalize(
+      vec3Add(
+        forward,
+        vec3Add(
+          vec3Scale(right, ndcX * Math.tan(fov / 2) * aspect),
+          vec3Scale(up, ndcY * Math.tan(fov / 2)),
+        ),
+      ),
+    );
+    const rayScale = Math.abs(ray[1]) < 1e-5 ? 0 : -eye[1] / ray[1];
+    const hitPoint: Vec3 =
+      rayScale > 0
+        ? vec3Add(eye, vec3Scale(ray, rayScale))
+        : [clamp(ndcX * 6, -5.5, 5.5), 0, clamp(-ndcY * 6, -5.5, 5.5)];
+    onDropBrick?.(brickId, [clamp(hitPoint[0], -5.5, 5.5), 0, clamp(hitPoint[2], -5.5, 5.5)]);
+  };
+
+  const onCanvasDragLeave = (): void => {
+    setDragActive(false);
+  };
+
   return (
     <div>
-      <h2>{t("panel.graphCanvas.title")}</h2>
       <div
         style={{
           height: "100%",
           minHeight: "320px",
-          border: "1px dashed #8c959f",
-          borderRadius: "6px",
-          padding: "12px",
-          color: "#24292f",
+          border: "1px solid #273240",
+          borderRadius: "12px",
+          padding: "10px",
+          color: "#dfe8f2",
           display: "grid",
-          gridTemplateRows: "1fr auto",
-          gap: "12px",
+          gridTemplateRows: "auto 1fr auto",
+          gap: "10px",
+          background: "linear-gradient(180deg, rgba(29, 36, 47, 0.98) 0%, rgba(22, 28, 38, 0.98) 100%)",
         }}
       >
-        <canvas
-          ref={canvasRef}
-          style={{ minHeight: "320px", width: "100%", border: "1px solid #d0d7de", borderRadius: "6px", touchAction: "none" }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
-          onWheel={onWheel}
-          onClick={onCanvasClick}
-        />
-        <div style={{ fontSize: "12px", color: "#57606a" }}>W/A/S/D 移动角色，鼠标拖拽旋转视角，滚轮缩放；当前默认场景包含两扇门和两个触发区，可测试每个 TriggerZone 是否只驱动对应 Door。</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", padding: "6px 4px 0" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ padding: "4px 8px", borderRadius: "999px", background: "#253241", border: "1px solid #3d4a5b", fontSize: "11px", color: "#dce6f2" }}>Perspective</span>
+            <span style={{ padding: "4px 8px", borderRadius: "999px", background: "#253241", border: "1px solid #3d4a5b", fontSize: "11px", color: "#dce6f2" }}>Lit</span>
+            <span style={{ padding: "4px 8px", borderRadius: "999px", background: "#253241", border: "1px solid #3d4a5b", fontSize: "11px", color: "#dce6f2" }}>Playtest Ready</span>
+          </div>
+          <span style={{ fontSize: "11px", color: "#97a9bd" }}>{t("panel.graphCanvas.title")}</span>
+        </div>
+        <div style={{ position: "relative" }}>
+          <canvas
+            ref={canvasRef}
+            style={{ minHeight: "320px", width: "100%", border: dragActive ? "1px solid #5f8bc2" : "1px solid #2f3b4c", borderRadius: "8px", touchAction: "none" }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+            onWheel={onWheel}
+            onClick={onCanvasClick}
+            onDragOver={onCanvasDragOver}
+            onDragLeave={onCanvasDragLeave}
+            onDrop={onCanvasDrop}
+          />
+          {dragActive ? (
+            <div
+              style={{
+                position: "absolute",
+                inset: "12px",
+                borderRadius: "10px",
+                border: "1px dashed #2553a4",
+                background: "rgba(40, 67, 104, 0.78)",
+                display: "grid",
+                placeItems: "center",
+                pointerEvents: "none",
+                color: "#dbeeff",
+                fontSize: "13px",
+                fontWeight: 700,
+              }}
+            >
+              {t("panel.graphCanvas.dropHint")}
+            </div>
+          ) : null}
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              display: "grid",
+              gap: "4px",
+              padding: "10px 12px",
+              borderRadius: "10px",
+              background: "rgba(22, 30, 40, 0.88)",
+              border: "1px solid #3a4657",
+              color: "#dfe8f2",
+              fontSize: "12px",
+              pointerEvents: "none",
+            }}
+          >
+            <strong>{actorLabel ?? t("panel.graphCanvas.actorDefault")}</strong>
+            <div>{t("panel.graphCanvas.actorPosition", { x: actorRef.current[0].toFixed(1), z: actorRef.current[2].toFixed(1) })}</div>
+            <div>
+              {activeAbilityNames !== undefined && activeAbilityNames.length > 0
+                ? t("panel.graphCanvas.actorAbilities", { abilities: activeAbilityNames.join(", ") })
+                : t("panel.graphCanvas.actorAbilitiesEmpty")}
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: "12px", color: "#9db0c5" }}>{t("panel.graphCanvas.guide")}</div>
 
         <details>
-          <summary style={{ cursor: "pointer", marginBottom: "8px" }}>调试列表（节点/连线）</summary>
+          <summary style={{ cursor: "pointer", marginBottom: "8px", color: "#dce6f2" }}>调试列表（节点/连线）</summary>
           <div style={{ width: "100%", display: "grid", gap: "12px" }}>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button type="button" onClick={onAddNode}>
+              <button type="button" onClick={onAddNode} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid #445264", background: "#273240", color: "#d9e3ef" }}>
                 + 节点
               </button>
-              <button type="button" onClick={onAddEdge} disabled={nodes.length < 2}>
+              <button type="button" onClick={onAddEdge} disabled={nodes.length < 2} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid #445264", background: nodes.length < 2 ? "#1c2430" : "#273240", color: "#d9e3ef" }}>
                 + 连线
               </button>
             </div>
 
             <div>
-              <strong>节点</strong>
-              <ul style={{ margin: "8px 0 0", paddingLeft: "18px" }}>
+              <strong style={{ color: "#f3f7fb" }}>节点</strong>
+              <ul style={{ margin: "8px 0 0", paddingLeft: "18px", color: "#b8c6d4" }}>
                 {nodes.map((node) => (
                   <li key={node.id} style={{ marginBottom: "4px" }}>
-                    <code>{node.id}</code> <span>({node.type ?? "unknown"})</span>{" "}
-                    <button type="button" onClick={() => onDeleteNode(node.id)}>
+                    <button type="button" onClick={() => onSelectNode?.(node.id)} style={{ border: "none", background: "transparent", padding: 0, fontFamily: "monospace", color: "#1c4e9a", cursor: "pointer" }}>
+                      {node.id}
+                    </button>{" "}
+                    <span>({node.type ?? "unknown"})</span>{" "}
+                    <button type="button" onClick={() => onDeleteNode(node.id)} style={{ padding: "2px 8px", borderRadius: "8px", border: "1px solid #7a6241", background: "#534325", color: "#ffefc9" }}>
                       删除
                     </button>
                   </li>
@@ -845,14 +1049,14 @@ export default function GraphCanvasPanel({
             </div>
 
             <div>
-              <strong>连线</strong>
-              <ul style={{ margin: "8px 0 0", paddingLeft: "18px" }}>
+              <strong style={{ color: "#f3f7fb" }}>连线</strong>
+              <ul style={{ margin: "8px 0 0", paddingLeft: "18px", color: "#b8c6d4" }}>
                 {edges.map((edge, index) => (
                   <li key={`${edge.from}-${edge.to}-${index}`} style={{ marginBottom: "4px" }}>
                     <code>
                       {edge.from} -&gt; {edge.to}
                     </code>{" "}
-                    <button type="button" onClick={() => onDeleteEdge(index)}>
+                    <button type="button" onClick={() => onDeleteEdge(index)} style={{ padding: "2px 8px", borderRadius: "8px", border: "1px solid #7a6241", background: "#534325", color: "#ffefc9" }}>
                       删除
                     </button>
                   </li>

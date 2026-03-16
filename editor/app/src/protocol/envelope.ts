@@ -3,6 +3,14 @@
  * 后续可在此扩展事件连线与多协议编解码。
  */
 import { DoorRuntimeAdapter, type AdapterMode, type DoorBrickEvent, type DoorState, type DoorStateSyncPayload, type ValidateOutput } from "../domain/door";
+import {
+  DOOR_INTERACT_REQUEST_TYPE,
+  DOOR_INTERACT_RESPONSE_TYPE,
+  INVALID_PROTOCOL_VERSION,
+  INVALID_REQUEST_PAYLOAD,
+  INVALID_REQUEST_TYPE,
+  PROTOCOL_VERSION,
+} from "./contract";
 
 export type ProtocolError = {
   code: string;
@@ -41,7 +49,7 @@ export class DoorProtocolAdapter {
   private buildErrorEnvelope(requestId: string, code: string, message: string, details: unknown): Envelope<Record<string, never>> {
     return {
       protocol_version: "1.0",
-      type: "door.interact.response",
+      type: DOOR_INTERACT_RESPONSE_TYPE,
       request_id: requestId,
       payload: {},
       error: {
@@ -58,7 +66,7 @@ export class DoorProtocolAdapter {
       parsedRequest = JSON.parse(rawRequest);
     } catch {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_JSON", "INVALID_JSON_PAYLOAD", {
+        this.buildErrorEnvelope("", INVALID_REQUEST_PAYLOAD, "INVALID_JSON_PAYLOAD", {
           raw: rawRequest,
         }),
       );
@@ -66,7 +74,7 @@ export class DoorProtocolAdapter {
 
     if (typeof parsedRequest !== "object" || parsedRequest === null) {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_REQUEST", "REQUEST_MUST_BE_OBJECT", {
+        this.buildErrorEnvelope("", INVALID_REQUEST_PAYLOAD, "REQUEST_MUST_BE_OBJECT", {
           field: "root",
         }),
       );
@@ -75,10 +83,19 @@ export class DoorProtocolAdapter {
     const request = parsedRequest as Partial<Envelope<DoorInteractRequestPayload>>;
     const requestId = typeof request.request_id === "string" ? request.request_id : "";
 
-    if (request.type !== "door.interact.request") {
+    if (request.protocol_version !== PROTOCOL_VERSION) {
       return JSON.stringify(
-        this.buildErrorEnvelope(requestId, "INVALID_TYPE", "INVALID_REQUEST_TYPE", {
-          expected: "door.interact.request",
+        this.buildErrorEnvelope(requestId, INVALID_PROTOCOL_VERSION, "INVALID_PROTOCOL_VERSION", {
+          expected: PROTOCOL_VERSION,
+          actual: request.protocol_version,
+        }),
+      );
+    }
+
+    if (request.type !== DOOR_INTERACT_REQUEST_TYPE) {
+      return JSON.stringify(
+        this.buildErrorEnvelope(requestId, INVALID_REQUEST_TYPE, "INVALID_REQUEST_TYPE", {
+          expected: DOOR_INTERACT_REQUEST_TYPE,
           actual: request.type,
         }),
       );
@@ -86,7 +103,7 @@ export class DoorProtocolAdapter {
 
     if (typeof request.request_id !== "string" || request.request_id.trim() === "") {
       return JSON.stringify(
-        this.buildErrorEnvelope("", "INVALID_REQUEST_ID", "REQUEST_ID_MUST_BE_NON_EMPTY_STRING", {
+        this.buildErrorEnvelope("", INVALID_REQUEST_PAYLOAD, "REQUEST_ID_MUST_BE_NON_EMPTY_STRING", {
           field: "request_id",
         }),
       );
@@ -101,7 +118,7 @@ export class DoorProtocolAdapter {
       request.payload.entity_id.trim() === ""
     ) {
       return JSON.stringify(
-        this.buildErrorEnvelope(request.request_id, "INVALID_ACTOR_ID", "ACTOR_ID_MUST_BE_NON_EMPTY_STRING", {
+        this.buildErrorEnvelope(request.request_id, INVALID_REQUEST_PAYLOAD, "ACTOR_ID_MUST_BE_NON_EMPTY_STRING", {
           field: "payload.actor_id/payload.entity_id",
         }),
       );
@@ -109,8 +126,8 @@ export class DoorProtocolAdapter {
 
     const event = this.door.interact(request.payload.actor_id, request.payload.entity_id);
     const response: Envelope<DoorInteractResponsePayload> = {
-      protocol_version: "1.0",
-      type: "door.interact.response",
+      protocol_version: PROTOCOL_VERSION,
+      type: DOOR_INTERACT_RESPONSE_TYPE,
       request_id: request.request_id,
       payload: {
         event: event.event,

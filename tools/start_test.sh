@@ -12,8 +12,8 @@ print_usage() {
   bash tools/start_test.sh [all|editor|cpp|rust|schema]
 
 说明:
-  all    : 执行 schema/rust/cpp/editor 检查，并启动 editor 预览（默认）
-  editor : 执行 editor 依赖安装 + typecheck + build + preview
+  all    : 执行 schema/rust/cpp/editor 检查，并启动 editor 桌面开发环境（默认）
+  editor : 执行 editor 依赖安装 + typecheck + build + tauri:dev
   cpp    : 编译并运行 C++ demo
   rust   : 运行 Rust 测试
   schema : 运行 schema 校验
@@ -38,13 +38,16 @@ run_cpp() {
 }
 
 run_editor() {
-  echo "[4/4] Editor 安装依赖、类型检查、构建并启动预览..."
+  echo "[4/4] Editor 安装依赖、类型检查、构建并启动 Tauri 桌面环境..."
   cd "$EDITOR_DIR"
-  pnpm install
+  if [[ ! -x "$EDITOR_DIR/node_modules/.bin/tsc" ]]; then
+    echo "[提示] 检测到 editor 依赖未就绪，执行 pnpm install --frozen-lockfile..."
+    pnpm install --frozen-lockfile
+  fi
   pnpm run typecheck
   pnpm run build
-  echo "[完成] 正在启动预览：http://localhost:5173"
-  pnpm run preview -- --host 0.0.0.0 --port 5173
+  echo "[完成] 正在启动 Tauri 开发环境"
+  pnpm run tauri:dev
 }
 
 case "$mode" in

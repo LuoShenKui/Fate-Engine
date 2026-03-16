@@ -1,0 +1,7 @@
+export const PROTOCOL_VERSION = "1.0";
+export const DOOR_INTERACT_REQUEST_TYPE = "door.interact.request";
+export const DOOR_INTERACT_RESPONSE_TYPE = "door.interact.response";
+
+export const INVALID_PROTOCOL_VERSION = "INVALID_PROTOCOL_VERSION";
+export const INVALID_REQUEST_TYPE = "INVALID_REQUEST_TYPE";
+export const INVALID_REQUEST_PAYLOAD = "INVALID_REQUEST_PAYLOAD";

@@ -1,5 +1,6 @@
 editor/app/dist/*
 editor/app/node_modules/*
+editor/app/src-tauri/target/*
 dist/*
 editor/app/tests/visual-current/*
 editor/app/tests/visual-diff/*
