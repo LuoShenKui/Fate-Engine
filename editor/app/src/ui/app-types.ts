@@ -1,7 +1,8 @@
 import type { BrickDefinition } from "../domain/brick";
+import type { BrickTags } from "./brick-tags";
 
 export type RuntimeEventItem = {
-  source: "door" | "switch" | "ladder" | "trigger-zone" | "link" | "adapter" | "ability";
+  source: "door" | "switch" | "ladder" | "trigger-zone" | "link" | "adapter" | "ability" | "camera";
   text: string;
 };
 
@@ -52,4 +53,5 @@ export type BrickCatalogEntry = BrickDefinition & {
   compositeEdges: CompositeEdgeSpec[];
   compositeParamGroups: CompositeParamGroup[];
   grantedAbilityPackageIds: string[];
+  tags: BrickTags;
 };

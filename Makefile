@@ -1,9 +1,13 @@
 RENDER_BUILD_CONFIG ?= Release
 
-.PHONY: check check-schema check-rust check-cpp check-ts check-compliance \
+.PHONY: check check-schema check-rust check-cpp check-ts check-compliance check-interaction-contract check-publisher-p0 check-publisher-p1 \
 	check-unit check-integration check-replay check-visual check-perf check-perf-scenes check-stability \
-	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 \
+	check-soak-2h check-soak-8h check-partition-streaming check-m1 check-m2 check-m3 tauri-dev \
 	check-render-matrix check-render-backend-init release-local
+
+tauri-dev:
+	@echo "[editor] starting tauri dev shell..."
+	@pnpm --dir editor/app run tauri:dev
 
 check:
 	@echo "[检查] 开始执行全量检查：schema -> rust -> cpp -> ts -> perf"
@@ -24,8 +28,14 @@ check-schema:
 	@echo "[检查] Schema 校验中..."
 	@python3 tools/validate_schemas.py
 	@python3 tools/check_protocol_contract.py
+	@python3 tools/check_interaction_contract.py
 	@python3 tools/check_schema_compat.py 		--baseline-dir "$${SCHEMA_BASELINE_DIR:-protocol/schemas}" 		--current-dir "$${SCHEMA_CURRENT_DIR:-protocol/schemas}" 		--docs-root "$${SCHEMA_MIGRATION_DOCS_DIR:-docs/protocol-migrations}" 		--report-json "$${SCHEMA_COMPAT_REPORT_JSON:-artifacts/schema_compat_report.json}"
 	@echo "[检查] Schema 校验通过"
+
+check-interaction-contract:
+	@echo "[检查] 高频交互契约校验中..."
+	@python3 tools/check_interaction_contract.py
+	@echo "[检查] 高频交互契约校验通过"
 
 check-rust:
 	@echo "[检查] Rust 测试中..."
@@ -42,6 +52,16 @@ check-ts:
 	@echo "[检查] TS 类型检查、构建与场景路由检查中..."
 	@cd editor/app && pnpm run typecheck && pnpm run build && pnpm run check:routing && pnpm run check:behavior
 	@echo "[检查] TS 类型检查与构建通过"
+
+check-publisher-p0:
+	@echo "[检查] 发布者 P0 主路径检查中..."
+	@python3 tools/check_publisher_p0.py
+	@echo "[检查] 发布者 P0 主路径通过"
+
+check-publisher-p1:
+	@echo "[检查] 发布者 P1 主路径检查中..."
+	@python3 tools/check_publisher_p1.py
+	@echo "[检查] 发布者 P1 主路径通过"
 
 check-stability:
 	@echo "[检查] 运行时稳定性基线检查中..."

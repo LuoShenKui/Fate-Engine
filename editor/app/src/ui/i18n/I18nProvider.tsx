@@ -24,7 +24,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 function getInitialLocale(): Locale {
   const storedLocale = window.localStorage.getItem(STORAGE_KEY);
-  return storedLocale === "en-US" ? "en-US" : "zh-CN";
+  return storedLocale === "zh-CN" ? "zh-CN" : "en-US";
 }
 
 export function I18nProvider(props: { children: ReactNode }): JSX.Element {

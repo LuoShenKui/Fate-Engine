@@ -63,6 +63,8 @@ python3 tools/release_local.py --dry-run
 1. 解析 `file://` URI 到本地路径；
 2. 对 tar.gz 计算 sha256，必须与 lockfile 的 `checksum` 一致；
 3. 解压并读取其中 `manifest.json`，校验 `id/version/license` 与 lockfile 一致。
+4. 若目标项目已安装同 `package id` 的旧版本，安装器会输出版本迁移提示（upgrade/downgrade）并把旧版本移动到项目本地 `.fate/trash/`。
+5. 若 lockfile 中带有 `announcement_ref`，安装器会输出 release note 路径，便于升级前阅读变更说明。
 
 ### 2.2 目录源（开发态）
 开发态允许 `publish.json.source.type=dir` 且 `source.uri=file://packages/<brick>`。
@@ -95,6 +97,8 @@ python3 tools/release_local.py --dry-run
 - `BUILTIN_MESH_MISSING`
 - `BUILTIN_AUDIO_MISSING`
 - `BUILTIN_SCRIPT_MISSING`
+
+当缺依赖发生在 `install-from-lockfile` 路径时，错误输出会额外给出可执行命令提示，直接指向应安装的依赖包。
 
 示例报错：
 
@@ -198,6 +202,25 @@ python3 tools/check_replay_matrix.py --matrix fixtures/replay/matrix_cases.json 
 3. 使用同一份 DCC 资源清单、同一份策略配置，通过 `tools/build_asset_pipeline_plan.py` 重新生成 plan；
 4. 对比新 plan 的 `plan_id` 与发布记录是否一致，一致则可认定输入与策略可复现；
 5. 若要回滚，优先选择 lockfile 中历史版本 + 对应 `plan_id` 完整匹配的发布条目。
+
+## 7.1) 快速回滚（项目安装历史）
+
+安装器会在目标项目下维护：
+
+- `.fate/install_registry.json`：当前版本与历史安装记录
+- `.fate/blocks/*.install.receipt.json`：单次安装 receipt（含 artifact/checksum/license/announcement_ref）
+
+快速回滚命令：
+
+```bash
+python3 tools/publisher_workflow.py rollback fate.door.basic /path/to/project
+```
+
+可选：指定历史版本回滚：
+
+```bash
+python3 tools/publisher_workflow.py rollback fate.door.basic /path/to/project --to-version 0.1.0
+```
 
 ## 8) 依赖合规违规处理流程
 

@@ -2,6 +2,7 @@ import type { BrickDefinition } from "../domain/brick";
 import { listBrickDefinitions } from "../domain/registry";
 import type { InstallReportItem } from "./InstallReportPanel";
 import { BUILTIN_SCENE_CATEGORY, DEFAULT_ACTOR_TYPE } from "./app-constants";
+import { emptyBrickTags } from "./brick-tags";
 import type { BrickCatalogEntry } from "./app-types";
 
 export const toCatalogEntry = (definition: BrickDefinition, source: "builtin" | "imported", overrides?: Partial<BrickCatalogEntry>): BrickCatalogEntry => ({
@@ -22,6 +23,7 @@ export const toCatalogEntry = (definition: BrickDefinition, source: "builtin" | 
   compositeEdges: overrides?.compositeEdges ?? [],
   compositeParamGroups: overrides?.compositeParamGroups ?? [],
   grantedAbilityPackageIds: overrides?.grantedAbilityPackageIds ?? [],
+  tags: overrides?.tags ?? emptyBrickTags(),
 });
 
 export const builtinCatalogEntries: BrickCatalogEntry[] = [
@@ -51,6 +53,7 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
       license: "Proprietary",
       compat: "editor>=0.1.0",
       category: "enemy",
+      tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["forest", "combat"], interactionTags: ["combat", "patrol"] },
     },
   ),
   toCatalogEntry(
@@ -76,6 +79,7 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
       compat: "editor>=0.1.0",
       category: "ability",
       supportedActorTypes: [DEFAULT_ACTOR_TYPE],
+      tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["sports"], interactionTags: ["ability-grant", "actor-bound"] },
     },
   ),
   toCatalogEntry(
@@ -105,6 +109,7 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
       compositeEdges: [{ from: "court-zone", to: "court-door" }],
       compositeParamGroups: [{ key: "court", label: "Court Setup", values: { theme: "basketball", grantOnEnter: true } }],
       grantedAbilityPackageIds: ["fate.basketball-ability"],
+      tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["sports"], interactionTags: ["composite", "ability-grant"] },
     },
   ),
   toCatalogEntry(
@@ -137,6 +142,7 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
         { from: "inside-switch", to: "front-door" },
       ],
       compositeParamGroups: [{ key: "house", label: "House Setup", values: { theme: "cabin", autoOpenOnEnter: true } }],
+      tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["forest", "cabin"], interactionTags: ["door", "switch", "composite"] },
     },
   ),
   toCatalogEntry(
@@ -170,6 +176,7 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
         { from: "control-switch", to: "loading-gate" },
       ],
       compositeParamGroups: [{ key: "warehouse", label: "Warehouse Setup", values: { theme: "warehouse", requiresRouteTrigger: true } }],
+      tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["industrial"], interactionTags: ["door", "ladder", "switch", "zone"] },
     },
   ),
 ];

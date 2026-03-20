@@ -1,7 +1,3 @@
-/**
- * UI 模块：页面渲染与交互绑定。
- * 后续可在此接入积木列表/属性面板，并与协议事件连线联动。
- */
 import { useEffect, useMemo, useState } from "react";
 import type { BrickDefinition } from "../domain/brick";
 import { DoorSceneComponent } from "../runtime/doorScene";
@@ -16,7 +12,6 @@ import { DoorProtocolAdapter } from "../protocol/envelope";
 import { getBrickDefinition } from "../domain/registry";
 import { type BatchValidationStats } from "../workflow/validation";
 import AssetLibraryPanel, { type AssetLibraryItem } from "./AssetLibraryPanel";
-import BrickPalettePanel, { type BrickPaletteItem } from "./BrickPalettePanel";
 import BrickLibraryPanel, { type BrickLibraryItem } from "./BrickLibraryPanel";
 import BrickDetailsPanel from "./BrickDetailsPanel";
 import DebugToolbar from "./DebugToolbar";
@@ -24,9 +19,12 @@ import EditorLayout from "./EditorLayout";
 import GraphCanvasPanel, { type CanvasEdge, type CanvasNode } from "./GraphCanvasPanel";
 import { useI18n } from "./i18n/I18nProvider";
 import InstallReportPanel, { type InstallReportItem } from "./InstallReportPanel";
+import LeftWorkspacePanel from "./LeftWorkspacePanel";
 import PropertyInspectorPanel, { type CompositeOverrideGroup, type PropertyField, type PropertyValue } from "./PropertyInspectorPanel";
+import { getScenePreviewUri } from "./preview-art";
 import SceneSamplesPanel, { type SceneSampleItem } from "./SceneSamplesPanel";
-import ValidationPanel, { type ValidationItem } from "./ValidationPanel";
+import { type ValidationItem } from "./ValidationPanel";
+import AppValidationDock from "./AppValidationDock";
 import {
   BUILTIN_SCENE_CATEGORY,
   DEFAULT_ACTOR_TYPE,
@@ -42,14 +40,17 @@ import { loadImportedBrickHistoryFromStorage, loadImportedBricksFromStorage } fr
 import { buildResolvedPropertyFields, toPropertyFields } from "./app-property-helpers";
 import { getBrickPreviewSrc, getReadinessSummary, resolveRuntimeKind } from "./app-scene";
 import type { AbilityGrantState, AssetRegistryItem, BrickCatalogEntry, RuntimeEventItem } from "./app-types";
-import { renderDockSection } from "./app-chrome";
+import { dockHeaderButtonStyle, renderDockSection } from "./app-chrome";
 import { buildSceneSampleItems, createAppLibraryActions } from "./app-library-actions";
 import { createAppRuntimeActions } from "./app-runtime-actions";
 import { createAppPropertyActions } from "./app-property-actions";
 import { renderAppRightPanel } from "./app-right-panel";
 import { applyVisualScenarioPreset } from "./app-visual-scenarios";
+import { buildWorldLabels } from "./app-world-labels";
 import { buildActiveAbilityNames, buildBusinessValidationItems, buildSelectedCompositeGroups, buildSelectedEnemyBehaviorSummary } from "./app-view-models";
-
+import { areBrickTagsCompatible } from "./brick-tags";
+import { defaultHiddenPanels, toggleHiddenPanel, toggleMaximizedPanel, type WorkspacePanelKey } from "./editor-layout-state";
+import { useBuiltinBrickRuntime } from "./use-builtin-brick-runtime";
 export default function App(): JSX.Element {
   const visualScenario = new URLSearchParams(window.location.search).get("visualScenario");
   const [adapterMode, setAdapterMode] = useState<AdapterMode>("demo");
@@ -74,16 +75,6 @@ export default function App(): JSX.Element {
     () => [...builtinCatalogEntries.filter((entry) => !importedBricks.some((imported) => imported.id === entry.id)), ...importedBricks],
     [importedBricks],
   );
-  const paletteItems: BrickPaletteItem[] = useMemo(
-    () =>
-      catalogEntries.map((definition) => ({
-        id: definition.id,
-        name: definition.name,
-        summary: definition.summary,
-        category: definition.category,
-      })),
-    [catalogEntries],
-  );
   const brickLibraryItems: BrickLibraryItem[] = useMemo(
     () =>
       catalogEntries.map((entry) => ({
@@ -104,17 +95,17 @@ export default function App(): JSX.Element {
       })),
     [catalogEntries, importedBrickHistory],
   );
-  const recommendedBrickIds = useMemo(
-    () => DEFAULT_RECOMMENDED_BRICK_IDS.filter((id) => catalogEntries.some((entry) => entry.id === id)),
-    [catalogEntries],
-  );
-  const sceneSampleItems = useMemo<SceneSampleItem[]>(() => buildSceneSampleItems(), []);
-  const [selectedSampleId, setSelectedSampleId] = useState("");
-  const highlightedBrickIds = useMemo(
-    () => sceneSampleItems.find((item) => item.id === selectedSampleId)?.relatedBrickIds ?? [],
-    [sceneSampleItems, selectedSampleId],
-  );
-  const [selectedBrick, setSelectedBrick] = useState(builtinCatalogEntries[0]?.id ?? "none");
+  const sceneSampleItems = useMemo<SceneSampleItem[]>(() => [{ id: "template:forest_cabin_v0", name: "森林小屋 Demo", summary: "唯一主 Demo。以后新增积木都集中在这个 Demo 里做装配和 3D 测试。", kind: "template", relatedBrickIds: catalogEntries.map((entry) => entry.id), previewSrc: getScenePreviewUri("森林小屋 Demo", "template") }], [catalogEntries]); const [selectedSampleId, setSelectedSampleId] = useState("template:forest_cabin_v0");
+  const highlightedBrickIds = useMemo(() => sceneSampleItems.find((item) => item.id === selectedSampleId)?.relatedBrickIds ?? [], [sceneSampleItems, selectedSampleId]);
+  const [selectedBrick, setSelectedBrick] = useState(defaultNodes.find((node) => node.type !== "door")?.type ?? builtinCatalogEntries[0]?.id ?? "none");
+  const recommendedBrickIds = useMemo(() => {
+    const selectedEntry = catalogEntries.find((entry) => entry.id === selectedBrick);
+    return DEFAULT_RECOMMENDED_BRICK_IDS.filter((id) => {
+      const candidate = catalogEntries.find((entry) => entry.id === id);
+      if (candidate === undefined) return false;
+      return selectedEntry === undefined ? true : areBrickTagsCompatible(selectedEntry.tags, candidate.tags);
+    });
+  }, [catalogEntries, selectedBrick]);
   const [fieldDraftsByBrickId, setFieldDraftsByBrickId] = useState<Record<string, PropertyField[]>>(
     Object.fromEntries(builtinCatalogEntries.map((item) => [item.id, toPropertyFields(item)])),
   );
@@ -127,27 +118,24 @@ export default function App(): JSX.Element {
   const [batchStatsDiff, setBatchStatsDiff] = useState<BatchValidationStats>({ totalErrors: 0, totalWarnings: 0 });
   const [batchEntries, setBatchEntries] = useState<Array<{ recipeId: string; items: ValidationItem[] }>>([]);
   const [playMode, setPlayMode] = useState(false);
+  const [playtestFullscreen, setPlaytestFullscreen] = useState(false);
+  const [hiddenPanels, setHiddenPanels] = useState(defaultHiddenPanels());
+  const [validationExpanded, setValidationExpanded] = useState(false);
+  const [maximizedPanel, setMaximizedPanel] = useState<WorkspacePanelKey | undefined>(undefined);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState<"install" | "details" | "inspector">("install");
   const [activeEntityId, setActiveEntityId] = useState("door-1");
-  const [selectedSceneNodeId, setSelectedSceneNodeId] = useState(defaultNodes[0]?.id ?? "door-1");
+  const [selectedSceneNodeId, setSelectedSceneNodeId] = useState(defaultNodes.find((node) => node.type !== "door")?.id ?? defaultNodes[0]?.id ?? "door-1");
   const [actorPosition, setActorPosition] = useState<[number, number, number]>([0, 0, 2]);
   const [doorPositions, setDoorPositions] = useState<Record<string, [number, number, number]>>({});
   const [grantedAbilities, setGrantedAbilities] = useState<AbilityGrantState[]>([]);
   const [equippedAbilityPackageIds, setEquippedAbilityPackageIds] = useState<string[]>([]);
   const [assetRegistry, setAssetRegistry] = useState<AssetRegistryItem[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState("");
-  const assetLibraryItems: AssetLibraryItem[] = useMemo(
-    () => assetRegistry.map((item) => ({ id: item.id, name: item.name, assetRef: item.assetRef, slotHints: item.slotHints })),
-    [assetRegistry],
-  );
-
-  const pushWorkspaceNotice = (item: ValidationItem): void => {
-    setWorkspaceNotices((prev) => [...prev.slice(-5), item]);
-  };
-
+  const assetLibraryItems: AssetLibraryItem[] = useMemo(() => assetRegistry.map((item) => ({ id: item.id, name: item.name, assetRef: item.assetRef, slotHints: item.slotHints })), [assetRegistry]);
+  const worldLabels = useMemo(() => buildWorldLabels({ nodes, catalogEntries, slotBindings, assetRegistry }), [assetRegistry, catalogEntries, nodes, slotBindings]);
+  const pushWorkspaceNotice = (item: ValidationItem): void => setWorkspaceNotices((prev) => [...prev.slice(-5), item]);
   const getEntryByPackageOrId = (packageIdOrBrickId: string): BrickCatalogEntry | undefined =>
     catalogEntries.find((entry) => entry.packageId === packageIdOrBrickId || entry.id === packageIdOrBrickId);
-
   const {
     applyRecipe,
     getRecipe,
@@ -156,6 +144,7 @@ export default function App(): JSX.Element {
     onToggleAdapterMode,
     onToggleLock,
     onTriggerZoneStateChange,
+    syncGrantedAbilitiesForSource,
     renderBatchValidate,
     lockStatusText,
   } = createAppRuntimeActions({
@@ -214,7 +203,6 @@ export default function App(): JSX.Element {
     setRequestSeq,
     pushWorkspaceNotice,
   });
-
   const {
     onBindAssetToSelectedSlot,
     onBindAssetToSlot,
@@ -241,11 +229,9 @@ export default function App(): JSX.Element {
     setCompositeOverridesByBrickId,
     pushWorkspaceNotice,
   });
-
   useEffect(() => {
     document.title = t("app.title");
   }, [t]);
-
   useEffect(() => {
     try {
       window.localStorage.setItem(IMPORTED_BRICKS_STORAGE_KEY, JSON.stringify(importedBricks));
@@ -253,7 +239,6 @@ export default function App(): JSX.Element {
       // Ignore storage failures.
     }
   }, [importedBricks]);
-
   useEffect(() => {
     try {
       window.localStorage.setItem(IMPORTED_BRICK_HISTORY_STORAGE_KEY, JSON.stringify(importedBrickHistory));
@@ -261,7 +246,6 @@ export default function App(): JSX.Element {
       // Ignore storage failures.
     }
   }, [importedBrickHistory]);
-
   useEffect(() => {
     setFieldDraftsByNodeId((prev) => {
       const validNodeIds = new Set(nodes.map((node) => node.id));
@@ -274,7 +258,6 @@ export default function App(): JSX.Element {
       return Object.keys(next).length === Object.keys(prev).length ? prev : next;
     });
   }, [nodes]);
-
   useEffect(() => {
     setValidationItems((prev) => {
       if (prev.length === 1 && prev[0]?.level === "Info") {
@@ -285,7 +268,9 @@ export default function App(): JSX.Element {
       return prev;
     });
   }, [t]);
-
+  useEffect(() => {
+    if (!hiddenPanels.validation && (events.some((event) => event.source !== "camera") || protocolErrors.length > 0)) setValidationExpanded(true);
+  }, [events, hiddenPanels.validation, protocolErrors.length]);
   useEffect(() => {
     applyVisualScenarioPreset({
       visualScenario,
@@ -298,7 +283,7 @@ export default function App(): JSX.Element {
       setBatchStatsDiff,
     });
   }, [visualScenario]);
-
+  useBuiltinBrickRuntime({ playMode, actorPosition, nodes, catalogEntries, sceneDoorMap, onInteract, syncGrantedAbilitiesForSource });
   const {
     addBrickToScene,
     onApplyTemplate,
@@ -309,6 +294,7 @@ export default function App(): JSX.Element {
     onInspectInstallReportBrick,
     onLoad,
     onOpenSampleScene,
+    onOpenBlankScene,
     onOpenSceneSample,
     onQuickPreviewBrick,
     onRemoveImportedBrick,
@@ -346,7 +332,6 @@ export default function App(): JSX.Element {
     setSelectedSceneNodeId,
     setGrantedAbilities,
   });
-
   const selectedBrickDefinition = catalogEntries.find((entry) => entry.id === selectedBrick) ?? getBrickDefinition(selectedBrick);
   const selectedCatalogEntry = catalogEntries.find((entry) => entry.id === selectedBrick);
   const selectedSceneNode = nodes.find((node) => node.id === selectedSceneNodeId);
@@ -369,7 +354,12 @@ export default function App(): JSX.Element {
   const selectedAbilityEquipped = selectedCatalogEntry !== undefined && equippedAbilityPackageIds.includes(selectedCatalogEntry.packageId);
   const businessValidationItems: ValidationItem[] = buildBusinessValidationItems(workspaceNotices, validationItems, activeAbilityNames, events, (key, params) => t(key as Parameters<typeof t>[0], params));
   const protocolValidationItems: ValidationItem[] = protocolErrors.slice(-3);
-
+  const maximizeAction = (panel: WorkspacePanelKey): JSX.Element => (
+    <button type="button" onClick={() => setMaximizedPanel((prev) => toggleMaximizedPanel(prev, panel))} style={dockHeaderButtonStyle}>
+      {maximizedPanel === panel ? "restore" : "maximize"}
+    </button>
+  );
+  const viewportActions = <><button type="button" onClick={() => { const next = !playtestFullscreen; setPlayMode(next); setPlaytestFullscreen(next); }} style={dockHeaderButtonStyle}>{playtestFullscreen ? "exit test" : "test"}</button>{maximizeAction("center")}</>;
   return (
     <EditorLayout
       top={
@@ -380,24 +370,28 @@ export default function App(): JSX.Element {
           onTogglePlayMode={() => setPlayMode((prev) => !prev)}
           onToggleLock={onToggleLock}
           onImport={onImport}
-          onImportBrick={() => {
-            onImportBrick();
-          }}
+          onImportBrick={() => onImportBrick()}
           onExport={onExport}
           onSave={onSave}
           onLoad={onLoad}
           onApplyTemplate={onApplyTemplate}
           adapterMode={adapterMode}
           onToggleAdapterMode={onToggleAdapterMode}
+          hiddenPanels={hiddenPanels}
+          onTogglePanel={(panel) => setHiddenPanels((prev) => toggleHiddenPanel(prev, panel))}
+          playtestFullscreen={playtestFullscreen}
+          onTogglePlaytestFullscreen={() => { const next = !playtestFullscreen; setPlayMode(next); setPlaytestFullscreen(next); }}
           lockStatusText={lockStatusText}
           appTitle={t("app.title")}
         />
       }
-      left={
-        <div style={{ display: "grid", gap: "12px" }}>
-          {renderDockSection(
-            "Brick Registry",
-            `${brickLibraryItems.length} packages`,
+      left={playtestFullscreen ? undefined : (
+        <LeftWorkspacePanel
+          hiddenPanels={hiddenPanels}
+          brickCount={brickLibraryItems.length}
+          assetCount={assetLibraryItems.length}
+          maximizeAction={maximizeAction("left")}
+          brickLibrary={
             <BrickLibraryPanel
               items={brickLibraryItems}
               selectedId={selectedBrick}
@@ -413,25 +407,12 @@ export default function App(): JSX.Element {
               onRemoveBrick={onRemoveImportedBrick}
               onRollbackBrick={onRollbackImportedBrick}
               onExportLockfile={onExportInstalledLockfile}
-            />,
-          )}
-          {renderDockSection(
-            "Palette",
-            `${paletteItems.length} ready`,
-            <BrickPalettePanel items={paletteItems} selectedId={selectedBrick} recentIds={recentBrickIds} highlightedIds={highlightedBrickIds} onSelect={(id) => setSelectedBrick(id)} onAddToScene={addBrickToScene} />,
-          )}
-          {renderDockSection(
-            "Samples",
-            `${sceneSampleItems.length} scenes`,
-            <SceneSamplesPanel items={sceneSampleItems} selectedId={selectedSampleId} onOpenSample={onOpenSceneSample} />,
-          )}
-          {renderDockSection(
-            "Assets",
-            `${assetLibraryItems.length} imported`,
-            <AssetLibraryPanel items={assetLibraryItems} selectedSlotId={selectedSlotId} onBindAsset={onBindAssetToSelectedSlot} />,
-          )}
-        </div>
-      }
+              onOpenBlankScene={onOpenBlankScene}
+            />
+          }
+          assetLibrary={<AssetLibraryPanel items={assetLibraryItems} selectedSlotId={selectedSlotId} onBindAsset={onBindAssetToSelectedSlot} />}
+        />
+      )}
       center={
         renderDockSection(
           "Viewport",
@@ -444,6 +425,7 @@ export default function App(): JSX.Element {
             onDropBrick={addBrickToScene}
             actorLabel="player_1 / humanoid"
             activeAbilityNames={activeAbilityNames}
+            worldLabels={worldLabels}
             onChange={(next) => {
               setNodes(next.nodes);
               setEdges(next.edges);
@@ -453,10 +435,14 @@ export default function App(): JSX.Element {
             onDoorPositionsChange={setDoorPositions}
             onActorPositionChange={setActorPosition}
             onInteract={(nodeId) => onInteract(nodeId)}
+            onViewportEvent={(text) => setEvents((prev) => [...prev, { source: "camera", text }])}
+            playtestFullscreen={playtestFullscreen}
+            onExitPlaytestFullscreen={() => { setPlayMode(false); setPlaytestFullscreen(false); }}
           />,
+          viewportActions,
         )
       }
-      right={renderAppRightPanel({
+      right={playtestFullscreen || hiddenPanels.inspector ? undefined : renderAppRightPanel({
         t: (key, params) => t(key as Parameters<typeof t>[0], params),
         activeRightPanelTab,
         setActiveRightPanelTab,
@@ -493,8 +479,13 @@ export default function App(): JSX.Element {
         previewSrc: getBrickPreviewSrc(selectedCatalogEntry),
         onToggleActorAbility: selectedCatalogEntry?.category === "ability" ? () => onToggleActorAbility(selectedCatalogEntry.id) : undefined,
         category: selectedCatalogEntry?.category ?? BUILTIN_SCENE_CATEGORY,
+        tags: selectedCatalogEntry?.tags,
+        maximized: maximizedPanel === "right",
+        onToggleMaximize: () => setMaximizedPanel((prev) => toggleMaximizedPanel(prev, "right")),
       })}
-      bottom={<ValidationPanel items={businessValidationItems} businessItems={businessValidationItems} protocolItems={protocolValidationItems} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} />}
+      bottom={<AppValidationDock hidden={playtestFullscreen || (hiddenPanels.validation && !validationExpanded)} expanded={validationExpanded} items={businessValidationItems} protocolItems={protocolValidationItems} batchEntries={batchEntries} batchStatsDiff={batchStatsDiff} onToggleExpanded={() => setValidationExpanded((prev) => !prev)} onClose={() => { setValidationExpanded(false); setHiddenPanels((prev) => ({ ...prev, validation: true })); }} maximized={maximizedPanel === "bottom"} onToggleMaximize={() => setMaximizedPanel((prev) => toggleMaximizedPanel(prev, "bottom"))} />}
+      fullscreenCenter={playtestFullscreen}
+      maximizedPanel={playtestFullscreen ? "center" : maximizedPanel}
     />
   );
 }

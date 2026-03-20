@@ -26,6 +26,7 @@ import {
 import { toPropertyFields } from "./app-property-helpers";
 import {
   applySlotFallbackBindings,
+  buildForestCabinDemoScene,
   buildCompositeSceneInsertion,
   buildQuickPreviewScene,
   createSceneNodeId,
@@ -35,6 +36,7 @@ import {
 import type { CanvasNode, CanvasEdge } from "./GraphCanvasPanel";
 import type { InstallReportItem } from "./InstallReportPanel";
 import type { PropertyField } from "./PropertyInspectorPanel";
+import { getBrickPreviewUri, getScenePreviewUri } from "./preview-art";
 import type { SceneSampleItem } from "./SceneSamplesPanel";
 import type { AbilityGrantState, BrickCatalogEntry } from "./app-types";
 import type { ValidationItem } from "./ValidationPanel";
@@ -48,7 +50,7 @@ export const buildSceneSampleItems = (): SceneSampleItem[] => [
     summary: `${template.nodes.length} nodes / ${template.edges.length} edges`,
     kind: "template" as const,
     relatedBrickIds: [...new Set(template.nodes.map((node) => node.type).filter((type): type is string => typeof type === "string"))],
-    previewSrc: template.id === "forest_cabin_v0" ? "/tests/visual-baseline/default.png" : undefined,
+    previewSrc: getScenePreviewUri(template.name, "template"),
   })),
   {
     id: "preview:basketball-court",
@@ -56,7 +58,7 @@ export const buildSceneSampleItems = (): SceneSampleItem[] => [
     summary: "Open the composite court preview with ability grant behavior.",
     kind: "preview" as const,
     relatedBrickIds: ["basketball-court", "basketball-ability", "door", "trigger-zone"],
-    previewSrc: "/tests/visual-baseline/trigger-zone-door-link.png",
+    previewSrc: getScenePreviewUri("Basketball Court", "preview"),
   },
   {
     id: "preview:patrol-guard",
@@ -64,7 +66,7 @@ export const buildSceneSampleItems = (): SceneSampleItem[] => [
     summary: "Open the enemy template preview with patrol guard defaults.",
     kind: "preview" as const,
     relatedBrickIds: ["patrol-guard", "trigger-zone"],
-    previewSrc: "/tests/visual-baseline/default.png",
+    previewSrc: getBrickPreviewUri({ id: "patrol-guard", name: "Patrol Guard", category: "enemy" }),
   },
 ];
 
@@ -207,14 +209,24 @@ export const createAppLibraryActions = ({
   const onApplyTemplate = (): void => {
     const baseRecipe = createDefaultEditorDemoRecipe();
     const assembled = assembleWorkflowTemplate("forest_cabin_v0");
-    applyRecipe({ ...baseRecipe, nodes: assembled.nodes as CanvasNode[], edges: assembled.edges as CanvasEdge[], params: { ...baseRecipe.params, selected_brick: "door" } });
+    const forestDemo = buildForestCabinDemoScene(assembled.nodes as CanvasNode[], assembled.edges as CanvasEdge[], catalogEntries);
+    applyRecipe({ ...baseRecipe, nodes: forestDemo.nodes, edges: forestDemo.edges, params: { ...baseRecipe.params, selected_brick: forestDemo.nodes.find((node) => node.type !== "door")?.type ?? forestDemo.nodes[0]?.type ?? "door" } });
     window.alert(t("template.applied"));
+  };
+
+  const onOpenBlankScene = (): void => {
+    const baseRecipe = createDefaultEditorDemoRecipe();
+    applyRecipe({ ...baseRecipe, nodes: [], edges: [], params: { ...baseRecipe.params, selected_brick: selectedBrick } });
+    setSelectedSceneNodeId("");
+    setGrantedAbilities([]);
+    pushWorkspaceNotice({ level: "Info", message: "Blank scene ready." });
   };
 
   const onApplyWorkflowTemplate = (templateId: WorkflowTemplateId): void => {
     const baseRecipe = createDefaultEditorDemoRecipe();
     const assembled = assembleWorkflowTemplate(templateId);
-    applyRecipe({ ...baseRecipe, nodes: assembled.nodes as CanvasNode[], edges: assembled.edges as CanvasEdge[], params: { ...baseRecipe.params, selected_brick: assembled.nodes[0]?.type ?? "door" } });
+    const nextScene = templateId === "forest_cabin_v0" ? buildForestCabinDemoScene(assembled.nodes as CanvasNode[], assembled.edges as CanvasEdge[], catalogEntries) : { nodes: assembled.nodes as CanvasNode[], edges: assembled.edges as CanvasEdge[] };
+    applyRecipe({ ...baseRecipe, nodes: nextScene.nodes, edges: nextScene.edges, params: { ...baseRecipe.params, selected_brick: nextScene.nodes[0]?.type ?? "door" } });
     pushWorkspaceNotice({ level: "Info", message: t("template.applied") });
   };
 
@@ -430,6 +442,7 @@ export const createAppLibraryActions = ({
     onQuickPreviewBrick,
     onExport,
     onApplyTemplate,
+    onOpenBlankScene,
     onApplyWorkflowTemplate,
     onOpenSampleScene,
     onOpenSceneSample,

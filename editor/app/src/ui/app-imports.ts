@@ -2,6 +2,7 @@ import type { BrickPort, BrickPropertySchema, BrickSlotSchema } from "../domain/
 import type { CompositeChildSpec, CompositeEdgeSpec, CompositeParamGroup, BrickCatalogEntry } from "./app-types";
 import { DEFAULT_ACTOR_TYPE, EDITOR_ENGINE_VERSION, IMPORTED_BRICKS_STORAGE_KEY, IMPORTED_BRICK_HISTORY_STORAGE_KEY } from "./app-constants";
 import { inferRuntimeKindFromPackageId, normalizeDependencyVersion, parseDependencyList, parseDependencyRequirement, toCatalogEntry, versionMatches } from "./app-catalog";
+import { parseBrickTags } from "./brick-tags";
 
 export const parseBrickProperties = (value: unknown): BrickPropertySchema[] => {
   if (!Array.isArray(value)) return [];
@@ -121,6 +122,7 @@ export const toImportedBrickFromManifest = (raw: unknown): BrickCatalogEntry | n
     compositeEdges,
     compositeParamGroups,
     grantedAbilityPackageIds,
+    tags: parseBrickTags(manifest.tags ?? manifest.metadata),
   });
 };
 
@@ -147,6 +149,7 @@ export const toImportedBrickFromPackageRecord = (raw: unknown): BrickCatalogEntr
     compositeEdges: parseCompositeEdges(record.composite_edges),
     compositeParamGroups: parseCompositeParamGroups(record.composite_param_groups),
     grantedAbilityPackageIds: parseGrantedAbilityPackageIds(record.granted_ability_packages),
+    tags: parseBrickTags(record.tags ?? record.metadata),
   });
 };
 
@@ -167,7 +170,7 @@ export const detectImportSourceType = (json: string): "manifest" | "packages" | 
 
 export const exportInstalledBrickLockfile = (entries: BrickCatalogEntry[]): string =>
   JSON.stringify({
-    lockfile: { packages: entries.map((entry) => ({ package: entry.packageId, version: entry.version, license: entry.license, compat: entry.compat, dependencies: entry.dependencies, manifest: { id: entry.id, name: entry.name, summary: entry.summary, version: entry.version, license: entry.license, compat: entry.compat, category: entry.category, runtime_kind: entry.runtimeKind, supported_actor_types: entry.supportedActorTypes, granted_ability_packages: entry.grantedAbilityPackageIds, dependencies: entry.dependencies, properties: entry.properties, slots: entry.slots, ports: entry.ports, composite_children: entry.compositeChildren, composite_edges: entry.compositeEdges, composite_param_groups: entry.compositeParamGroups } })) },
+    lockfile: { packages: entries.map((entry) => ({ package: entry.packageId, version: entry.version, license: entry.license, compat: entry.compat, dependencies: entry.dependencies, manifest: { id: entry.id, name: entry.name, summary: entry.summary, version: entry.version, license: entry.license, compat: entry.compat, category: entry.category, runtime_kind: entry.runtimeKind, supported_actor_types: entry.supportedActorTypes, granted_ability_packages: entry.grantedAbilityPackageIds, dependencies: entry.dependencies, properties: entry.properties, slots: entry.slots, ports: entry.ports, composite_children: entry.compositeChildren, composite_edges: entry.compositeEdges, composite_param_groups: entry.compositeParamGroups, tags: entry.tags } })) },
     package_lock: { packages: entries.reduce<Record<string, string>>((acc, entry) => ({ ...acc, [entry.packageId]: entry.version }), {}) },
   }, null, 2);
 
@@ -281,7 +284,7 @@ export const assessImportedEntries = (entries: BrickCatalogEntry[], installedEnt
 export const extractDependencyIdFromIssue = (detail: string): string | null => /DEPENDENCY_(?:MISSING|VERSION_CONFLICT):\s*([A-Za-z0-9._-]+)/.exec(detail)?.[1] ?? null;
 
 export const serializeInstalledBricks = (entries: BrickCatalogEntry[]): Record<string, unknown>[] =>
-  entries.map((entry) => ({ id: entry.id, name: entry.name, summary: entry.summary, packageId: entry.packageId, version: entry.version, license: entry.license, dependencies: entry.dependencies, compat: entry.compat, contractVersion: entry.contractVersion, supportedActorTypes: entry.supportedActorTypes, category: entry.category, source: entry.source, installState: entry.installState, importIssues: entry.importIssues, runtimeKind: entry.runtimeKind, properties: entry.properties, slots: entry.slots, ports: entry.ports, compositeChildren: entry.compositeChildren, compositeEdges: entry.compositeEdges, compositeParamGroups: entry.compositeParamGroups, grantedAbilityPackageIds: entry.grantedAbilityPackageIds }));
+  entries.map((entry) => ({ id: entry.id, name: entry.name, summary: entry.summary, packageId: entry.packageId, version: entry.version, license: entry.license, dependencies: entry.dependencies, compat: entry.compat, contractVersion: entry.contractVersion, supportedActorTypes: entry.supportedActorTypes, category: entry.category, source: entry.source, installState: entry.installState, importIssues: entry.importIssues, runtimeKind: entry.runtimeKind, properties: entry.properties, slots: entry.slots, ports: entry.ports, compositeChildren: entry.compositeChildren, compositeEdges: entry.compositeEdges, compositeParamGroups: entry.compositeParamGroups, grantedAbilityPackageIds: entry.grantedAbilityPackageIds, tags: entry.tags }));
 
 export const deserializeInstalledBricks = (value: unknown): BrickCatalogEntry[] => {
   if (!Array.isArray(value)) return [];
@@ -301,6 +304,7 @@ export const deserializeInstalledBricks = (value: unknown): BrickCatalogEntry[] 
     compositeEdges: parseCompositeEdges(record.compositeEdges),
     compositeParamGroups: parseCompositeParamGroups(record.compositeParamGroups),
     grantedAbilityPackageIds: parseGrantedAbilityPackageIds(record.grantedAbilityPackageIds),
+    tags: parseBrickTags(record.tags),
   }));
 };
 
@@ -320,5 +324,6 @@ export const createDependencyCandidateEntry = (dependencyId: string, requirement
     installState: "ready",
     importIssues: [],
     runtimeKind,
+    tags: template.tags,
   });
 };

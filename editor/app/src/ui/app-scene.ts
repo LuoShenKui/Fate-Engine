@@ -2,6 +2,8 @@ import type { EditorRecipeV0 } from "../project/recipe";
 import type { CanvasEdge, CanvasNode } from "./GraphCanvasPanel";
 import type { BrickCatalogEntry } from "./app-types";
 import { DEFAULT_ACTOR_TYPE, DEFAULT_TRIGGER_DISTANCE, EDITOR_ENGINE_VERSION, SCENE_LAYOUT_COLUMNS } from "./app-constants";
+import { getForestDemoPlacement } from "./forest-demo-layout";
+import { getBrickPreviewUri } from "./preview-art";
 
 export const parseAssetRegistry = (value: unknown) => {
   if (!Array.isArray(value)) {
@@ -59,16 +61,68 @@ export const buildQuickPreviewScene = (
   grantedAbilityPackageIds: string[] = [],
 ): { nodes: CanvasNode[]; edges: CanvasEdge[] } => {
   if (category === "ability") {
-    return { nodes: [{ id: "ability-zone-preview", type: "trigger-zone", transform: { position: [-1.2, 0, 1.6], rotation: [0, 0, 0] }, meta: { grantedAbilityPackageIds: [brickId] } }, { id: "door-preview", type: "door", transform: { position: [1.2, 0, 1.6], rotation: [0, 0, 0] } }], edges: [{ from: "ability-zone-preview", to: "door-preview" }] };
+    return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [0, 0, 1.6], rotation: [0, 0, 0] }, meta: { grantedAbilityPackageIds: [brickId] } }], edges: [] };
   }
   if (category === "enemy") {
     return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [0, 0, 1.8], rotation: [0, 0, 0] }, meta: { patrolRoutePoints: getEnemyPatrolRoutePoints("route_guard_a", [0, 0, 1.8]) } }, { id: "patrol-zone-preview", type: "trigger-zone", transform: { position: [1.8, 0, 1.8], rotation: [0, 0, 0] } }], edges: [] };
   }
   if (runtimeKind === "door") return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [0, 0, 1.4], rotation: [0, 0, 0] } }], edges: [] };
   if (runtimeKind === "switch" || runtimeKind === "ladder" || runtimeKind === "trigger-zone") {
-    return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [-1.2, 0, 1.6], rotation: [0, 0, 0] }, meta: grantedAbilityPackageIds.length > 0 ? { grantedAbilityPackageIds } : undefined }, { id: "door-preview", type: "door", transform: { position: [1.2, 0, 1.6], rotation: [0, 0, 0] } }], edges: [{ from: `${brickId}-preview`, to: "door-preview" }] };
+    return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [0, 0, 1.6], rotation: [0, 0, 0] }, meta: grantedAbilityPackageIds.length > 0 ? { grantedAbilityPackageIds } : undefined }], edges: [] };
   }
   return { nodes: [{ id: `${brickId}-preview`, type: brickId, transform: { position: [0, 0, 1.8], rotation: [0, 0, 0] } }], edges: [] };
+};
+
+const offsetPreviewScene = (
+  scene: { nodes: CanvasNode[]; edges: CanvasEdge[] },
+  prefix: string,
+  targetOrigin: [number, number, number],
+): { nodes: CanvasNode[]; edges: CanvasEdge[] } => {
+  const sourceOrigin = scene.nodes[0]?.transform?.position ?? [0, 0, 0];
+  const idMap = new Map<string, string>();
+  const nodes = scene.nodes.map((node) => {
+    const nextId = `${prefix}-${node.id}`;
+    idMap.set(node.id, nextId);
+    const position = node.transform?.position ?? sourceOrigin;
+    return {
+      ...node,
+      id: nextId,
+      transform: {
+        position: [
+          targetOrigin[0] + (position[0] - sourceOrigin[0]),
+          targetOrigin[1] + (position[1] - sourceOrigin[1]),
+          targetOrigin[2] + (position[2] - sourceOrigin[2]),
+        ] as [number, number, number],
+        rotation: node.transform?.rotation ?? [0, 0, 0],
+      },
+    };
+  });
+  const edges = scene.edges.map((edge) => ({ from: idMap.get(edge.from) ?? edge.from, to: idMap.get(edge.to) ?? edge.to }));
+  return { nodes, edges };
+};
+
+const buildForestDemoModule = (
+  entry: BrickCatalogEntry,
+  index: number,
+  catalog: BrickCatalogEntry[],
+): { nodes: CanvasNode[]; edges: CanvasEdge[] } => {
+  const origin = getForestDemoPlacement(entry, index);
+  if (entry.category === "composite" && entry.compositeChildren.length > 0) {
+    return buildCompositeSceneInsertion(entry, [], catalog, origin);
+  }
+  const previewScene = buildQuickPreviewScene(entry.id, entry.runtimeKind, entry.category, entry.grantedAbilityPackageIds);
+  return offsetPreviewScene(previewScene, `demo-${entry.id}`, origin);
+};
+
+export const buildForestCabinDemoScene = (baseNodes: CanvasNode[], baseEdges: CanvasEdge[], catalog: BrickCatalogEntry[]): { nodes: CanvasNode[]; edges: CanvasEdge[] } => {
+  const existingTypes = new Set(baseNodes.map((node) => node.type).filter((value): value is string => typeof value === "string"));
+  const appendedModules = catalog
+    .filter((entry) => !existingTypes.has(entry.id))
+    .map((entry, index) => buildForestDemoModule(entry, index, catalog));
+  return {
+    nodes: [...baseNodes, ...appendedModules.flatMap((module) => module.nodes)],
+    edges: [...baseEdges, ...appendedModules.flatMap((module) => module.edges)],
+  };
 };
 
 export const buildCompositeSceneInsertion = (entry: BrickCatalogEntry, existingNodes: CanvasNode[], catalog: BrickCatalogEntry[], position?: [number, number, number]): { nodes: CanvasNode[]; edges: CanvasEdge[] } => {
@@ -88,12 +142,7 @@ export const buildCompositeSceneInsertion = (entry: BrickCatalogEntry, existingN
 
 export const getBrickPreviewSrc = (entry?: BrickCatalogEntry): string | undefined => {
   if (entry === undefined) return undefined;
-  if (entry.id === "basketball-court" || entry.runtimeKind === "trigger-zone" || entry.category === "ability") return "/tests/visual-baseline/trigger-zone-door-link.png";
-  if (entry.id === "small-house" || entry.id === "warehouse-zone" || entry.id === "patrol-guard" || entry.category === "composite") return "/tests/visual-baseline/default.png";
-  if (entry.runtimeKind === "ladder") return "/tests/visual-baseline/ladder-door-link.png";
-  if (entry.runtimeKind === "switch") return "/tests/visual-baseline/switch-door-link.png";
-  if (entry.runtimeKind === "door") return "/tests/visual-baseline/door-lock-unlock.png";
-  return undefined;
+  return getBrickPreviewUri({ id: entry.id, name: entry.name, category: entry.category });
 };
 
 export const getReadinessSummary = (entry: BrickCatalogEntry | undefined, t: (key: string, params?: Record<string, string>) => string): Array<{ label: string; tone: "ready" | "warning" | "blocked" }> => {

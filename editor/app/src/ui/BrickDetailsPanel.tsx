@@ -1,4 +1,6 @@
 import type { BrickPort, BrickSlotSchema } from "../domain/brick";
+import type { BrickTags } from "./brick-tags";
+import { formatBrickTags } from "./brick-tags";
 import { useI18n } from "./i18n/I18nProvider";
 
 type BrickDetailsPanelProps = {
@@ -24,6 +26,7 @@ type BrickDetailsPanelProps = {
   actorType?: string;
   abilityEquipped?: boolean;
   onToggleActorAbility?: () => void;
+  tags?: BrickTags;
   slots: BrickSlotSchema[];
   ports: BrickPort[];
 };
@@ -132,6 +135,20 @@ export default function BrickDetailsPanel(props: BrickDetailsPanelProps): JSX.El
           </ul>
         )}
       </div>
+
+      {(props.tags !== undefined && formatBrickTags(props.tags).length > 0) ? (
+        <div style={cardStyle}>
+          <strong style={{ fontSize: "13px", color: "#f3f7fb" }}>Tags</strong>
+          <div style={{ display: "grid", gap: "8px", fontSize: "12px", color: "#c6d2df" }}>
+            {formatBrickTags(props.tags).map((group) => (
+              <div key={group.label}>
+                <strong>{group.label}</strong>
+                <div>{group.values.join(", ")}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {(props.grantedAbilityPackageIds ?? []).length > 0 || props.category === "ability" ? (
         <div style={cardStyle}>

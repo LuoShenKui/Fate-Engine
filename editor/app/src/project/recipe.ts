@@ -34,7 +34,7 @@ export const createDefaultEditorDemoRecipe = (): EditorRecipeV0 => ({
   })),
   edges: createDefaultEditorDemoEdges(),
   params: {
-    selected_brick: "door",
+    selected_brick: "switch",
     fields: [],
     locked: false,
   },

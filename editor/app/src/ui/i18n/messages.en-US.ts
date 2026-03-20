@@ -18,8 +18,8 @@ const enUSMessages = {
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
-  "panel.brickPalette.title": "Brick Palette",
-  "panel.brickPalette.summary": "{count} brick types ready to assemble",
+  "panel.brickPalette.title": "Quick Place",
+  "panel.brickPalette.summary": "Pick installed bricks and place them into the scene quickly",
   "panel.brickPalette.add": "Add to Scene",
   "panel.brickPalette.recentTitle": "Recent",
   "panel.brickPalette.categoryTitle": "{category}",
@@ -216,6 +216,7 @@ const enUSMessages = {
   "validation.eventSource.link": "Link",
   "validation.eventSource.adapter": "Adapter",
   "validation.eventSource.ability": "Ability",
+  "validation.eventSource.camera": "Viewport",
   "validation.level.Error": "Error",
   "validation.level.Warning": "Warning",
   "validation.level.Info": "Info",

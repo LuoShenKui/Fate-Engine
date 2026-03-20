@@ -1,12 +1,15 @@
+import { ueGhostButton, uePanelSurface, ueShellColors } from "./ue-shell-theme";
+
 export const dockSectionStyle = {
   display: "grid",
-  gap: "10px",
+  gridTemplateRows: "auto minmax(0, 1fr)",
+  gap: "6px",
+  height: "100%",
   padding: "0",
-  borderRadius: "12px",
-  border: "1px solid #d8dee8",
-  background: "#ffffff",
-  boxShadow: "none",
+  borderRadius: "6px",
+  ...uePanelSurface,
   overflow: "hidden",
+  minHeight: 0,
 } as const;
 
 const dockHeaderStyle = {
@@ -14,41 +17,52 @@ const dockHeaderStyle = {
   justifyContent: "space-between",
   gap: "10px",
   alignItems: "center",
-  padding: "10px 12px",
-  borderBottom: "1px solid #e1e6ee",
-  background: "#f7f9fc",
+  padding: "6px 8px",
+  borderBottom: `1px solid ${ueShellColors.border}`,
+  background: ueShellColors.panelMuted,
 } as const;
 
 const dockTitleStyle = {
-  fontSize: "12px",
-  fontWeight: 800,
+  fontSize: "11px",
+  fontWeight: 700,
   letterSpacing: "0.08em",
-  color: "#31475e",
+  color: ueShellColors.textMuted,
   textTransform: "uppercase",
 } as const;
 
 const dockMetaStyle = {
-  fontSize: "11px",
-  color: "#6a7d92",
+  fontSize: "10px",
+  color: ueShellColors.textMuted,
 } as const;
 
-export const renderDockSection = (title: string, meta: string, body: JSX.Element): JSX.Element => (
+export const renderDockSection = (title: string, meta: string, body: JSX.Element, actions?: JSX.Element): JSX.Element => (
   <section style={dockSectionStyle}>
     <div style={dockHeaderStyle}>
-      <span style={dockTitleStyle}>{title}</span>
-      <span style={dockMetaStyle}>{meta}</span>
+      <div style={{ display: "flex", gap: "10px", alignItems: "center", minWidth: 0 }}>
+        <span style={dockTitleStyle}>{title}</span>
+        <span style={dockMetaStyle}>{meta}</span>
+      </div>
+      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+        {actions}
+      </div>
     </div>
-    <div style={{ padding: "12px" }}>{body}</div>
+    <div style={{ padding: "8px", overflow: "hidden", display: "grid", gridTemplateRows: "minmax(0, 1fr)", minHeight: 0, height: "100%", background: ueShellColors.panel }}>{body}</div>
   </section>
 );
+
+export const dockHeaderButtonStyle = {
+  padding: "3px 8px",
+  ...ueGhostButton,
+  fontSize: "10px",
+} as const;
 
 export const rightTabButtonStyle = (active: boolean) =>
   ({
     padding: "6px 10px",
     borderRadius: "8px",
-    border: "1px solid transparent",
-    background: active ? "#eef3f9" : "transparent",
-    color: active ? "#203247" : "#607286",
+    border: `1px solid ${active ? ueShellColors.accentMuted : "transparent"}`,
+    background: active ? "#332913" : "transparent",
+    color: active ? "#f6d58a" : ueShellColors.textMuted,
     fontWeight: active ? 700 : 600,
     cursor: "pointer",
     boxShadow: "none",

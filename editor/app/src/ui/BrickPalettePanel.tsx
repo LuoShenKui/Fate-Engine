@@ -1,4 +1,5 @@
 import { useI18n } from "./i18n/I18nProvider";
+import { getBrickPreviewUri } from "./preview-art";
 
 export type BrickPaletteItem = {
   id: string;
@@ -45,41 +46,9 @@ export default function BrickPalettePanel(props: BrickPalettePanelProps): JSX.El
     }
     return { background: "linear-gradient(135deg, #eaf1fb 0%, #8aa7cc 100%)", label: "BRICK" };
   };
-  const getBrickPreviewSrc = (item: BrickPaletteItem): string | undefined => {
-    if (item.id === "basketball-court") {
-      return "/tests/visual-baseline/trigger-zone-door-link.png";
-    }
-    if (item.id === "small-house" || item.id === "warehouse-zone") {
-      return "/tests/visual-baseline/default.png";
-    }
-    if (item.id === "patrol-guard") {
-      return "/tests/visual-baseline/default.png";
-    }
-    if (item.id === "basketball-ability" || item.category === "ability") {
-      return "/tests/visual-baseline/trigger-zone-door-link.png";
-    }
-    if (item.id.includes("ladder") || item.category === "ladder") {
-      return "/tests/visual-baseline/ladder-door-link.png";
-    }
-    if (item.id.includes("switch") || item.category === "switch") {
-      return "/tests/visual-baseline/switch-door-link.png";
-    }
-    if (item.id.includes("trigger-zone") || item.category === "trigger-zone") {
-      return "/tests/visual-baseline/trigger-zone-door-link.png";
-    }
-    if (item.id.includes("door")) {
-      return "/tests/visual-baseline/door-lock-unlock.png";
-    }
-    if (item.category === "composite") {
-      return "/tests/visual-baseline/default.png";
-    }
-    return undefined;
-  };
   const createBrickPreviewUri = (item: BrickPaletteItem): string => {
-    const realPreview = getBrickPreviewSrc(item);
-    if (typeof realPreview === "string") {
-      return realPreview;
-    }
+    const realPreview = getBrickPreviewUri({ id: item.id, name: item.name, category: item.category });
+    if (typeof realPreview === "string") return realPreview;
     const accent = getBrickAccent(item.category);
     const safeName = item.name.slice(0, 20);
     const safeCategory = item.category.slice(0, 18);

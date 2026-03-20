@@ -1,53 +1,78 @@
+import { uePanelSurface, ueShellColors } from "./ue-shell-theme";
+
 type EditorLayoutProps = {
-  left: JSX.Element;
+  left?: JSX.Element;
   center: JSX.Element;
-  right: JSX.Element;
-  bottom: JSX.Element;
+  right?: JSX.Element;
+  bottom?: JSX.Element;
   top?: JSX.Element;
+  fullscreenCenter?: boolean;
+  maximizedPanel?: "left" | "center" | "right" | "bottom";
 };
 
 const frameStyle = {
   display: "grid",
   gridTemplateRows: "auto 1fr auto",
-  gap: "12px",
+  gap: "10px",
   height: "100vh",
-  padding: "14px",
+  padding: "10px",
   boxSizing: "border-box",
-  background: "#ffffff",
-} as const;
-
-const mainStyle = {
-  display: "grid",
-  gridTemplateColumns: "300px minmax(0, 1fr) 360px",
-  gap: "12px",
-  minHeight: 0,
+  background: ueShellColors.frame,
 } as const;
 
 const panelStyle = {
-  border: "1px solid #d7dee8",
-  borderRadius: "14px",
-  padding: "14px",
-  overflow: "auto",
-  background: "#fbfcfe",
-  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
+  ...uePanelSurface,
+  borderRadius: "10px",
+  padding: "10px",
+  overflow: "hidden",
 } as const;
 
 const bottomPanelStyle = {
   ...panelStyle,
-  padding: "12px 14px",
-  background: "#fbfcfe",
+  padding: "8px 10px",
+  background: ueShellColors.frameRaised,
 } as const;
 
 export default function EditorLayout(props: EditorLayoutProps): JSX.Element {
+  const activeMaximizedPanel = props.maximizedPanel;
+
+  if ((activeMaximizedPanel === "left" && props.left !== undefined) || activeMaximizedPanel === "center" || (activeMaximizedPanel === "right" && props.right !== undefined)) {
+    const panel = activeMaximizedPanel === "left" ? props.left : activeMaximizedPanel === "right" ? props.right : props.center;
+    return (
+      <div style={{ ...frameStyle, gridTemplateRows: "1fr", padding: "0", gap: "0" }}>
+        <section style={{ ...panelStyle, borderRadius: "0", padding: "10px", display: "grid", minHeight: 0 }}>
+          {panel}
+        </section>
+      </div>
+    );
+  }
+
+  if (activeMaximizedPanel === "bottom" && props.bottom !== undefined) {
+    return (
+      <div style={frameStyle}>
+        {props.top ?? null}
+        <section style={{ ...bottomPanelStyle, minHeight: 0, display: "grid" }}>{props.bottom}</section>
+      </div>
+    );
+  }
+
+  const resolvedLeft = activeMaximizedPanel === undefined || activeMaximizedPanel === "left" ? props.left : undefined;
+  const resolvedCenter = activeMaximizedPanel === undefined ? props.center : undefined;
+  const resolvedRight = activeMaximizedPanel === undefined || activeMaximizedPanel === "right" ? props.right : undefined;
+  const panels = [resolvedLeft, resolvedCenter, resolvedRight].filter((panel): panel is JSX.Element => panel !== undefined);
+  const columns = props.fullscreenCenter ? "minmax(0, 1fr)" : panels.length === 3 ? "280px minmax(0, 1fr) 340px" : panels.length === 2 ? "280px minmax(0, 1fr)" : "minmax(0, 1fr)";
+
   return (
     <div style={frameStyle}>
       {props.top ?? null}
-      <div style={mainStyle}>
-        <section style={panelStyle}>{props.left}</section>
-        <section style={panelStyle}>{props.center}</section>
-        <section style={panelStyle}>{props.right}</section>
+      <div style={{ display: "grid", gridTemplateColumns: columns, gap: "12px", minHeight: 0 }}>
+        {panels.map((panel, index) => (
+          <section key={index} style={{ ...panelStyle, display: "grid", minHeight: 0 }}>
+            {panel}
+          </section>
+        ))}
       </div>
-      <section style={bottomPanelStyle}>{props.bottom}</section>
+      {props.bottom !== undefined && activeMaximizedPanel === undefined ? <section style={bottomPanelStyle}>{props.bottom}</section> : null}
     </div>
   );
 }

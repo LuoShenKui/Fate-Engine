@@ -9,6 +9,7 @@
 - publish: 本地发布并生成可分享标识
 - install: 安装到另一个项目目录
 - install-from-lockfile: 按 lockfile 安装到项目
+- rollback: 回滚到项目中该 package 的上一已安装版本
 """
 
 from __future__ import annotations
@@ -18,10 +19,19 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import re
-import shutil
 import tarfile
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+
+from publisher_project_state import (
+    append_install_history,
+    iter_installed_package_dirs,
+    find_rollback_record,
+    load_json as load_json_file,
+    load_install_registry,
+    move_path_to_local_trash,
+    write_json as write_json_file,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_DIR = ROOT / "packages"
@@ -35,12 +45,11 @@ SUPPORTED_INSTALL_EXTENSIONS = (".fateblock", ".tar.gz", ".tgz")
 
 
 def load_json(path: Path) -> dict:
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    return load_json_file(path)
 
 
 def write_json(path: Path, data: dict) -> None:
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_json_file(path, data)
 
 
 def sha256_file(path: Path) -> str:
@@ -85,6 +94,23 @@ def version_matches(version: str, requirement: str) -> bool:
     if op == "<=":
         return cmp <= 0
     return False
+
+
+def summarize_version_transition(current_version: str | None, target_version: str) -> str | None:
+    if not isinstance(current_version, str) or current_version == target_version:
+        return None
+    cmp = compare_semver(target_version, current_version)
+    current_parts = tuple(int(part) for part in current_version.split("."))
+    target_parts = tuple(int(part) for part in target_version.split("."))
+    if cmp < 0:
+        return f"downgrade {current_version} -> {target_version}（适用于快速回滚）"
+    if target_parts[0] != current_parts[0]:
+        return f"major upgrade {current_version} -> {target_version}（高风险）"
+    if target_parts[0] == 0 and target_parts[1] != current_parts[1]:
+        return f"pre-1.0 minor change {current_version} -> {target_version}（可能包含破坏性变更）"
+    if target_parts[1] != current_parts[1]:
+        return f"minor upgrade {current_version} -> {target_version}"
+    return f"patch upgrade {current_version} -> {target_version}"
 
 
 def read_manifest_from_artifact(artifact: Path) -> tuple[dict, str] | tuple[None, None]:
@@ -155,6 +181,13 @@ def load_target_project_context(target: Path) -> dict:
             context["builtin_resources"] = normalized
             context["builtin_index_source"] = str(builtin_index_path)
     return context
+
+
+def find_installed_package_version(target: Path, package_id: str) -> str | None:
+    for _path, manifest in iter_installed_package_dirs(target):
+        if manifest.get("id") == package_id and isinstance(manifest.get("version"), str):
+            return manifest["version"]
+    return None
 
 
 def validate_for_install(manifest: dict, target_project_context: dict) -> list[dict]:
@@ -250,7 +283,7 @@ def validate_for_install(manifest: dict, target_project_context: dict) -> list[d
     return failures
 
 
-def make_hello_manifest(package_id: str, version: str) -> dict:
+def make_hello_manifest(package_id: str, package_dir_name: str, version: str) -> dict:
     return {
         "id": package_id,
         "version": version,
@@ -282,7 +315,7 @@ def make_hello_manifest(package_id: str, version: str) -> dict:
         "defaults": {"enabled": True},
         "state_version": "1.0.0",
         "state_migration": {
-            "entry": "packages/{name}/manifest/README.md#migration".format(name=package_id.split(".")[-1]),
+            "entry": f"packages/{package_dir_name}/manifest/README.md#migration",
             "from_previous": "none -> 1.0.0: 初始化 message 参数。",
         },
     }
@@ -320,7 +353,7 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
     (package_dir / "assets").mkdir(parents=True, exist_ok=False)
     (package_dir / "tests").mkdir(parents=True, exist_ok=False)
 
-    manifest = make_hello_manifest(package_id, args.version)
+    manifest = make_hello_manifest(package_id, args.name, args.version)
     write_json(package_dir / "manifest.json", manifest)
 
     publish = make_hello_publish(package_id, args.version, package_dir / "manifest.json")
@@ -585,10 +618,42 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
-def install_with_validations(artifact: Path, target: Path, checksum: str) -> int:
+def install_with_validations(
+    artifact: Path,
+    target: Path,
+    checksum: str,
+    expected_entry: dict | None = None,
+    lockfile_hint: str | None = None,
+    action: str = "install",
+) -> int:
     manifest, top = read_manifest_from_artifact(artifact)
     if manifest is None or top is None:
         return 1
+
+    package_id = manifest.get("id")
+    package_version = manifest.get("version")
+    package_license = manifest.get("license")
+    if not isinstance(package_id, str) or not isinstance(package_version, str):
+        print("[ERROR] invalid manifest: id/version missing")
+        return 1
+
+    if expected_entry is not None:
+        expected_package = expected_entry.get("package")
+        expected_version = expected_entry.get("version")
+        expected_license = expected_entry.get("license")
+        lifecycle_status = expected_entry.get("lifecycle", {}).get("status")
+        if lifecycle_status == "revoked":
+            print(f"[ERROR] install blocked: package revoked in lockfile ({expected_package}@{expected_version})")
+            return 1
+        if isinstance(expected_package, str) and expected_package != package_id:
+            print(f"[ERROR] manifest id mismatch: expected {expected_package}, got {package_id}")
+            return 1
+        if isinstance(expected_version, str) and expected_version != package_version:
+            print(f"[ERROR] manifest version mismatch: expected {expected_version}, got {package_version}")
+            return 1
+        if isinstance(expected_license, str) and expected_license != package_license:
+            print(f"[ERROR] manifest license mismatch: expected {expected_license}, got {package_license}")
+            return 1
 
     target_project_context = load_target_project_context(target)
     failures = validate_for_install(manifest, target_project_context)
@@ -612,6 +677,14 @@ def install_with_validations(artifact: Path, target: Path, checksum: str) -> int
                         id=item["package_id"], required=item["required"]
                     )
                 )
+                if lockfile_hint:
+                    print(
+                        "    hint: python3 tools/publisher_workflow.py install-from-lockfile {lockfile} {id} {target}".format(
+                            lockfile=lockfile_hint,
+                            id=item["package_id"],
+                            target=target,
+                        )
+                    )
         if conflict_items:
             print("[ERROR] 冲突项清单:")
             for item in conflict_items:
@@ -633,22 +706,49 @@ def install_with_validations(artifact: Path, target: Path, checksum: str) -> int
                 )
         return 1
 
+    current_version = find_installed_package_version(target, package_id)
+    transition = summarize_version_transition(current_version, package_version)
+    if transition is not None:
+        print(f"[WARN] version transition: {transition}")
+    if expected_entry is not None:
+        release_channel = expected_entry.get("release", {}).get("channel")
+        lifecycle_status = expected_entry.get("lifecycle", {}).get("status")
+        announcement_ref = expected_entry.get("announcement_ref")
+        if release_channel == "canary":
+            print("[WARN] release channel=canary，建议仅在验证环境安装")
+        if lifecycle_status == "deprecated":
+            print("[WARN] lifecycle=deprecated，建议尽快迁移到更高版本")
+        if isinstance(announcement_ref, str) and announcement_ref:
+            print(f"[INFO] release note: {announcement_ref}")
+
     install_root = target / ".fate" / "blocks"
     install_root.mkdir(parents=True, exist_ok=True)
 
+    for installed_dir, installed_manifest in iter_installed_package_dirs(target):
+        if installed_manifest.get("id") == package_id:
+            move_path_to_local_trash(target, installed_dir)
+
     with tarfile.open(artifact, "r:gz") as tar:
-        dest = install_root / top
-        if dest.exists():
-            shutil.rmtree(dest)
         tar.extractall(path=install_root)
 
     installed_path = install_root / top
     receipt = {
+        "package": package_id,
+        "version": package_version,
+        "license": package_license,
         "artifact": str(artifact.resolve()),
         "checksum": f"sha256:{checksum}",
         "installed_to": str(installed_path.resolve()),
+        "action": action,
     }
+    if expected_entry is not None:
+        receipt["compat"] = expected_entry.get("compat")
+        receipt["release"] = expected_entry.get("release")
+        receipt["lifecycle"] = expected_entry.get("lifecycle")
+        receipt["announcement_ref"] = expected_entry.get("announcement_ref")
+        receipt["registry"] = expected_entry.get("registry")
     write_json(install_root / f"{top}.install.receipt.json", receipt)
+    append_install_history(target, package_id, receipt)
     try:
         display_path = installed_path.relative_to(ROOT)
     except ValueError:
@@ -657,7 +757,14 @@ def install_with_validations(artifact: Path, target: Path, checksum: str) -> int
     return 0
 
 
-def install_artifact_to_target(artifact: Path, target: Path, expected_checksum: str | None = None) -> int:
+def install_artifact_to_target(
+    artifact: Path,
+    target: Path,
+    expected_checksum: str | None = None,
+    expected_entry: dict | None = None,
+    lockfile_hint: str | None = None,
+    action: str = "install",
+) -> int:
     if not artifact.exists():
         print(f"[ERROR] artifact not found: {artifact}")
         return 1
@@ -678,7 +785,14 @@ def install_artifact_to_target(artifact: Path, target: Path, expected_checksum: 
             )
             return 1
 
-    return install_with_validations(artifact, target, checksum)
+    return install_with_validations(
+        artifact,
+        target,
+        checksum,
+        expected_entry=expected_entry,
+        lockfile_hint=lockfile_hint,
+        action=action,
+    )
 
 
 def cmd_install(args: argparse.Namespace) -> int:
@@ -749,7 +863,52 @@ def cmd_install_from_lockfile(args: argparse.Namespace) -> int:
         return 1
 
     target = ROOT / args.target if not Path(args.target).is_absolute() else Path(args.target)
-    return install_artifact_to_target(artifact_path, target, expected_checksum=checksum)
+    return install_artifact_to_target(
+        artifact_path,
+        target,
+        expected_checksum=checksum,
+        expected_entry=selected,
+        lockfile_hint=str(lockfile_path),
+        action="install-from-lockfile",
+    )
+
+
+def cmd_rollback(args: argparse.Namespace) -> int:
+    target = ROOT / args.target if not Path(args.target).is_absolute() else Path(args.target)
+    rollback_record = find_rollback_record(target, args.package, version=args.to_version)
+    if rollback_record is None:
+        if args.to_version:
+            print(f"[ERROR] rollback target not found: {args.package}@{args.to_version}")
+        else:
+            print(f"[ERROR] rollback history missing: {args.package}")
+        return 1
+
+    artifact = Path(rollback_record.get("artifact", ""))
+    checksum = rollback_record.get("checksum")
+    if not artifact.exists():
+        print(f"[ERROR] rollback artifact not found: {artifact}")
+        return 1
+    if not isinstance(checksum, str) or not checksum.startswith("sha256:"):
+        print(f"[ERROR] rollback checksum missing: {args.package}")
+        return 1
+
+    expected_entry = {
+        "package": rollback_record.get("package"),
+        "version": rollback_record.get("version"),
+        "license": rollback_record.get("license"),
+        "compat": rollback_record.get("compat"),
+        "release": rollback_record.get("release"),
+        "lifecycle": rollback_record.get("lifecycle"),
+        "announcement_ref": rollback_record.get("announcement_ref"),
+        "registry": rollback_record.get("registry"),
+    }
+    return install_artifact_to_target(
+        artifact,
+        target,
+        expected_checksum=checksum,
+        expected_entry=expected_entry,
+        action="rollback",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -796,6 +955,12 @@ def build_parser() -> argparse.ArgumentParser:
     install_from_lockfile.add_argument("package", help="package id（如 fate.door.basic）")
     install_from_lockfile.add_argument("target", help="目标项目路径")
     install_from_lockfile.set_defaults(func=cmd_install_from_lockfile)
+
+    rollback = sub.add_parser("rollback", help="回滚到项目中该 package 的上一已安装版本")
+    rollback.add_argument("package", help="package id（如 fate.door.basic）")
+    rollback.add_argument("target", help="目标项目路径")
+    rollback.add_argument("--to-version", help="可选：指定回滚到某个历史版本")
+    rollback.set_defaults(func=cmd_rollback)
 
     return parser
 

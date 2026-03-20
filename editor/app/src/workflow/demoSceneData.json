@@ -7,15 +7,7 @@
       "id": "door-1",
       "type": "door",
       "transform": {
-        "position": [0, 0, 0],
-        "rotation": [0, 0, 0]
-      }
-    },
-    {
-      "id": "trigger-zone-1",
-      "type": "trigger-zone",
-      "transform": {
-        "position": [0, 0, 1.2],
+        "position": [0, 0, 2.8],
         "rotation": [0, 0, 0]
       }
     },
@@ -23,15 +15,7 @@
       "id": "door-2",
       "type": "door",
       "transform": {
-        "position": [3.6, 0, 2.4],
-        "rotation": [0, 0, 0]
-      }
-    },
-    {
-      "id": "trigger-zone-2",
-      "type": "trigger-zone",
-      "transform": {
-        "position": [3.6, 0, 3.6],
+        "position": [4.2, 0, -2.5],
         "rotation": [0, 0, 0]
       }
     },
@@ -39,7 +23,7 @@
       "id": "switch-1",
       "type": "switch",
       "transform": {
-        "position": [2.2, 0, 2.9],
+        "position": [5.8, 0, -6.2],
         "rotation": [0, 0, 0]
       }
     },
@@ -47,20 +31,50 @@
       "id": "ladder-1",
       "type": "ladder",
       "transform": {
-        "position": [-2.2, 0, -0.8],
+        "position": [-5.2, 0, -6.2],
         "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "container-1",
+      "type": "container",
+      "transform": {
+        "position": [-8.6, 0, 7.8],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "checkpoint-1",
+      "type": "checkpoint",
+      "transform": {
+        "position": [-3.1, 0, 7.8],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "teleport-1",
+      "type": "teleport",
+      "transform": {
+        "position": [2.4, 0, 7.8],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "patrol-guard-1",
+      "type": "patrol-guard",
+      "transform": {
+        "position": [7.9, 0, 7.8],
+        "rotation": [0, 0, 0]
+      },
+      "meta": {
+        "patrolRoutePoints": [
+          [6.3, 0, 7],
+          [9.5, 0, 8.6]
+        ]
       }
     }
   ],
   "edges": [
-    {
-      "from": "trigger-zone-1",
-      "to": "door-1"
-    },
-    {
-      "from": "trigger-zone-2",
-      "to": "door-2"
-    },
     {
       "from": "switch-1",
       "to": "door-2"

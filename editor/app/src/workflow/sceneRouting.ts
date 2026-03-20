@@ -1,10 +1,11 @@
 import type { CanvasEdge, CanvasNode } from "../ui/GraphCanvasPanel";
+import { DOOR_LINK_ACTIONS, type DoorLinkAction } from "./interactionContract";
 
 export type DoorSyncState = "Closed" | "Open" | "Locked";
 
 export type TriggerZoneDoorAction = {
   doorId: string;
-  action: "open_on_enter" | "close_on_exit";
+  action: DoorLinkAction;
   shouldToggle: boolean;
   previousState: DoorSyncState;
 };
@@ -22,7 +23,7 @@ export const planTriggerZoneDoorActions = (
 ): TriggerZoneDoorAction[] =>
   linkedDoorIds.map((doorId) => {
     const previousState = getDoorState(doorId);
-    const action = occupied ? "open_on_enter" : "close_on_exit";
+    const action = occupied ? DOOR_LINK_ACTIONS[0] : DOOR_LINK_ACTIONS[1];
     const shouldToggle = occupied ? previousState !== "Open" : previousState === "Open";
     return {
       doorId,

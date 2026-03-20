@@ -1,4 +1,8 @@
 import { useI18n, type Locale } from "./i18n/I18nProvider";
+import ToolbarMenu from "./ToolbarMenu";
+import type { EditorPanelKey, HiddenPanels } from "./editor-layout-state";
+import { ueGhostButton, ueShellColors } from "./ue-shell-theme";
+import appLogo from "../../../../Logo.png";
 
 type DebugToolbarProps = {
   locked: boolean;
@@ -14,6 +18,10 @@ type DebugToolbarProps = {
   onSave: () => void;
   onLoad: () => void;
   onApplyTemplate: () => void;
+  hiddenPanels: HiddenPanels;
+  onTogglePanel: (panel: EditorPanelKey) => void;
+  playtestFullscreen: boolean;
+  onTogglePlaytestFullscreen: () => void;
   lockStatusText: string;
   appTitle: string;
 };
@@ -21,147 +29,88 @@ type DebugToolbarProps = {
 export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
   const { locale, switchLocale, t } = useI18n();
   const nextLocale: Locale = locale === "zh-CN" ? "en-US" : "zh-CN";
-  const shellStyle = {
-    display: "grid",
-    gap: "10px",
-    padding: "6px 2px 2px",
-  } as const;
-  const toolbarStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    alignItems: "center",
-    padding: "8px 10px",
-    borderRadius: "12px",
-    border: "1px solid #dde3eb",
-    background: "#ffffff",
-    color: "#1f2f43",
-  } as const;
-  const appTitleStyle = {
-    display: "grid",
-    gap: "2px",
-  } as const;
-  const menuRowStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    flexWrap: "wrap",
-  } as const;
-  const menuStyle = {
-    position: "relative",
-  } as const;
-  const summaryStyle = {
-    listStyle: "none",
-    cursor: "pointer",
-    padding: "6px 10px",
-    borderRadius: "8px",
-    color: "#2c3f55",
-    fontSize: "13px",
-    fontWeight: 700,
-    border: "1px solid transparent",
-  } as const;
-  const menuPanelStyle = {
-    position: "absolute",
-    top: "calc(100% + 6px)",
-    left: 0,
-    minWidth: "176px",
-    padding: "6px",
-    borderRadius: "10px",
-    border: "1px solid #dbe2eb",
-    background: "#ffffff",
-    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.12)",
-    zIndex: 20,
-  } as const;
-  const menuItemStyle = {
-    padding: "8px 10px",
-    borderRadius: "8px",
-    color: "#304255",
-    fontSize: "13px",
-    cursor: "pointer",
-  } as const;
-  const statusPillStyle = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "4px 8px",
-    borderRadius: "999px",
-    background: "#f3f6fa",
-    border: "1px solid #dbe2eb",
-    color: "#5b6c80",
-    fontSize: "11px",
-  } as const;
-  const localeStyle = {
-    padding: "6px 10px",
-    borderRadius: "8px",
-    border: "1px solid #d9e0ea",
-    background: "#ffffff",
-    color: "#2f4257",
-    cursor: "pointer",
-    fontWeight: 600,
-  } as const;
+  const isEnglish = locale === "en-US";
 
-  const renderMenuItem = (label: string, action: () => void): JSX.Element => (
-    <div
-      role="menuitem"
-      tabIndex={0}
-      style={menuItemStyle}
-      onClick={action}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          action();
-        }
-      }}
-    >
-      {label}
-    </div>
-  );
+  const panelToggleLabel = (panel: EditorPanelKey, zhLabel: string, enLabel: string): string =>
+    props.hiddenPanels[panel] ? (isEnglish ? `Show ${enLabel}` : `显示${zhLabel}`) : isEnglish ? `Hide ${enLabel}` : `隐藏${zhLabel}`;
 
   return (
-    <div style={shellStyle}>
-      <section style={toolbarStyle}>
+    <div style={{ display: "grid", gap: "6px", padding: "2px 0 0" }}>
+      <section
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "12px",
+          alignItems: "center",
+          padding: "5px 8px",
+          borderRadius: "6px",
+          border: "1px solid #2d343d",
+          background: "#1d2229",
+          color: "#d7e0eb",
+        }}
+      >
         <div style={{ display: "flex", gap: "18px", alignItems: "center", minWidth: 0 }}>
-          <div style={appTitleStyle}>
-            <strong data-testid="editor-page-ready" style={{ display: "block", fontSize: "18px", letterSpacing: "0.01em", lineHeight: 1.1 }}>{props.appTitle}</strong>
-            <div style={{ fontSize: "11px", color: "#6f7f92", maxWidth: "30ch" }}>{t("toolbar.subtitle")}</div>
+          <div style={{ display: "grid", gap: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <img src={appLogo} alt="Fate Editor Logo" style={{ width: "18px", height: "18px", borderRadius: "4px", objectFit: "cover", border: "1px solid #39424d", background: "#fff" }} />
+              <strong data-testid="editor-page-ready" style={{ display: "block", fontSize: "12px", letterSpacing: "0.01em", lineHeight: 1.1, color: "#f3f6f9" }}>
+                {props.appTitle}
+              </strong>
+            </div>
+            <div style={{ fontSize: "9px", color: "#8c9aa9", maxWidth: "32ch", paddingLeft: "28px" }}>{t("toolbar.subtitle")}</div>
           </div>
-          <div style={menuRowStyle}>
-            <details style={menuStyle}>
-              <summary style={summaryStyle}>文件</summary>
-              <div role="menu" style={menuPanelStyle}>
-                {renderMenuItem(t("toolbar.import"), props.onImport)}
-                {renderMenuItem(t("toolbar.export"), props.onExport)}
-                {renderMenuItem(t("toolbar.save"), props.onSave)}
-                {renderMenuItem(t("toolbar.load"), props.onLoad)}
-              </div>
-            </details>
-            <details style={menuStyle}>
-              <summary style={summaryStyle}>积木</summary>
-              <div role="menu" style={menuPanelStyle}>
-                {renderMenuItem(t("toolbar.importBrick"), props.onImportBrick)}
-              </div>
-            </details>
-            <details style={menuStyle}>
-              <summary style={summaryStyle}>场景</summary>
-              <div role="menu" style={menuPanelStyle}>
-                {renderMenuItem(t("toolbar.applyTemplate"), props.onApplyTemplate)}
-                {!props.playMode ? renderMenuItem(t("toolbar.interact"), props.onInteract) : null}
-                {renderMenuItem(t("toolbar.playMode", { enabled: String(props.playMode) }), props.onTogglePlayMode)}
-              </div>
-            </details>
-            <details style={menuStyle}>
-              <summary style={summaryStyle}>运行时</summary>
-              <div role="menu" style={menuPanelStyle}>
-                {renderMenuItem(t("toolbar.toggleLock", { locked: String(props.locked) }), props.onToggleLock)}
-                {renderMenuItem(t("toolbar.adapterMode", { mode: props.adapterMode }), props.onToggleAdapterMode)}
-              </div>
-            </details>
+          <div style={{ display: "flex", alignItems: "center", gap: "2px", flexWrap: "wrap" }}>
+            <ToolbarMenu label={isEnglish ? "File" : "文件"} items={[{ label: t("toolbar.import"), onSelect: props.onImport }, { label: t("toolbar.export"), onSelect: props.onExport }, { label: t("toolbar.save"), onSelect: props.onSave }, { label: t("toolbar.load"), onSelect: props.onLoad }]} />
+            <ToolbarMenu label={isEnglish ? "Bricks" : "积木"} items={[{ label: t("toolbar.importBrick"), onSelect: props.onImportBrick }]} />
+            <ToolbarMenu
+              label={isEnglish ? "Scene" : "场景"}
+              items={[
+                { label: t("toolbar.applyTemplate"), onSelect: props.onApplyTemplate },
+                ...(props.playMode ? [] : [{ label: t("toolbar.interact"), onSelect: props.onInteract }]),
+                { label: t("toolbar.playMode", { enabled: String(props.playMode) }), onSelect: props.onTogglePlayMode },
+                { label: props.playtestFullscreen ? (isEnglish ? "Exit 3D Test" : "退出全屏测试") : isEnglish ? "Launch 3D Test" : "一键 3D 测试", onSelect: props.onTogglePlaytestFullscreen },
+              ]}
+            />
+            <ToolbarMenu
+              label={isEnglish ? "View" : "视图"}
+              items={[
+                { label: panelToggleLabel("library", "积木库", "Brick Registry"), onSelect: () => props.onTogglePanel("library") },
+                { label: panelToggleLabel("samples", "森林小屋 Demo", "Forest Demo"), onSelect: () => props.onTogglePanel("samples") },
+                { label: panelToggleLabel("assets", "资源库", "Assets"), onSelect: () => props.onTogglePanel("assets") },
+                { label: panelToggleLabel("inspector", "右侧面板", "Inspector"), onSelect: () => props.onTogglePanel("inspector") },
+                { label: panelToggleLabel("validation", "校验区", "Output"), onSelect: () => props.onTogglePanel("validation") },
+              ]}
+            />
+            <ToolbarMenu label={isEnglish ? "Runtime" : "运行时"} items={[{ label: t("toolbar.toggleLock", { locked: String(props.locked) }), onSelect: props.onToggleLock }, { label: t("toolbar.adapterMode", { mode: props.adapterMode }), onSelect: props.onToggleAdapterMode }]} />
           </div>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-          <span style={statusPillStyle}>{props.lockStatusText}</span>
-          <span style={statusPillStyle}>{props.playMode ? "Play Session" : "Edit Session"}</span>
-          <button type="button" onClick={() => switchLocale(nextLocale)} style={localeStyle}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "2px 6px", borderRadius: "3px", background: "#232a32", border: "1px solid #343d47", color: "#9fb0c3", fontSize: "10px" }}>
+            {props.lockStatusText}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "2px 6px", borderRadius: "3px", background: "#232a32", border: "1px solid #343d47", color: "#9fb0c3", fontSize: "10px" }}>
+            {props.playMode ? "Play Session" : "Edit Session"}
+          </span>
+          <button
+            type="button"
+            onClick={props.onTogglePlaytestFullscreen}
+            style={{
+              ...ueGhostButton,
+              padding: "4px 10px",
+              background: ueShellColors.accent,
+              borderColor: ueShellColors.accent,
+              color: "#11161d",
+              fontWeight: 700,
+              fontSize: "10px",
+            }}
+          >
+            {props.playtestFullscreen ? (isEnglish ? "Exit Test" : "退出测试") : isEnglish ? "Test" : "测试"}
+          </button>
+          <button
+            type="button"
+            onClick={() => switchLocale(nextLocale)}
+            style={{ ...ueGhostButton, padding: "3px 7px", color: ueShellColors.text, fontWeight: 600, fontSize: "10px" }}
+          >
             {t("toolbar.locale.zh")} / {t("toolbar.locale.en")}
           </button>
         </div>

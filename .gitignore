@@ -7,3 +7,5 @@ editor/app/tests/visual-diff/*
 .DS_Store
 build/*
 runtime/door_core/target/debug/*
+.trash/*
+.pnpm-store/*

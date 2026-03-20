@@ -1,4 +1,5 @@
 import { useI18n } from "./i18n/I18nProvider";
+import { ueGhostButton, ueShellColors } from "./ue-shell-theme";
 
 export type SceneSampleItem = {
   id: string;
@@ -17,8 +18,8 @@ type SceneSamplesPanelProps = {
 
 const getSampleAccent = (kind: SceneSampleItem["kind"]): { background: string; label: string } =>
   kind === "template"
-    ? { background: "linear-gradient(135deg, #dff1ff 0%, #6ca6d8 100%)", label: "TEMPLATE" }
-    : { background: "linear-gradient(135deg, #fff3d8 0%, #d9a76c 100%)", label: "PREVIEW" };
+    ? { background: "linear-gradient(135deg, #4f5f76 0%, #25303e 100%)", label: "TEMPLATE" }
+    : { background: "linear-gradient(135deg, #6f5731 0%, #302516 100%)", label: "PREVIEW" };
 
 const createSamplePreviewUri = (item: SceneSampleItem): string => {
   if (typeof item.previewSrc === "string" && item.previewSrc.length > 0) {
@@ -33,13 +34,13 @@ const createSamplePreviewUri = (item: SceneSampleItem): string => {
           <stop offset="100%" stop-color="#d9e5f4"/>
         </linearGradient>
       </defs>
-      <rect width="320" height="180" rx="18" fill="url(#bg)"/>
-      <rect x="18" y="18" width="120" height="72" rx="12" fill="rgba(255,255,255,0.44)"/>
-      <rect x="152" y="28" width="122" height="16" rx="8" fill="rgba(19,34,56,0.18)"/>
-      <rect x="152" y="54" width="92" height="12" rx="6" fill="rgba(19,34,56,0.12)"/>
-      <rect x="24" y="108" width="272" height="44" rx="14" fill="rgba(255,255,255,0.58)"/>
-      <text x="28" y="42" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#132238">${accent.label}</text>
-      <text x="28" y="132" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#132238">${item.name.slice(0, 22)}</text>
+      <rect width="320" height="180" rx="18" fill="#1d2530"/>
+      <rect x="18" y="18" width="120" height="72" rx="12" fill="rgba(243,179,62,0.16)"/>
+      <rect x="152" y="28" width="122" height="16" rx="8" fill="rgba(219,229,239,0.12)"/>
+      <rect x="152" y="54" width="92" height="12" rx="6" fill="rgba(219,229,239,0.08)"/>
+      <rect x="24" y="108" width="272" height="44" rx="14" fill="rgba(17,22,29,0.82)"/>
+      <text x="28" y="42" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#f3b33e">${accent.label}</text>
+      <text x="28" y="132" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#dbe5ef">${item.name.slice(0, 22)}</text>
     </svg>
   `.trim();
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -53,10 +54,10 @@ export default function SceneSamplesPanel(props: SceneSamplesPanelProps): JSX.El
       gap: "8px",
       padding: "12px",
       borderRadius: "10px",
-      border: selected ? "1px solid #5f8bc2" : "1px solid #2a3543",
+      border: selected ? "1px solid #f3b33e" : `1px solid ${ueShellColors.border}`,
       background: selected
-        ? "linear-gradient(180deg, rgba(42, 69, 104, 0.98) 0%, rgba(32, 44, 61, 0.98) 100%)"
-        : "linear-gradient(180deg, rgba(43, 51, 62, 0.98) 0%, rgba(34, 42, 52, 0.98) 100%)",
+        ? "linear-gradient(180deg, rgba(52, 41, 18, 0.98) 0%, rgba(31, 36, 45, 0.98) 100%)"
+        : "linear-gradient(180deg, rgba(28, 35, 45, 0.98) 0%, rgba(22, 28, 36, 0.98) 100%)",
     }) as const;
 
   return (
@@ -89,15 +90,15 @@ export default function SceneSamplesPanel(props: SceneSamplesPanelProps): JSX.El
                   backgroundPosition: "center",
                 }}
               >
-                <span style={{ fontSize: "11px", letterSpacing: "0.08em", fontWeight: 700, color: "#203249" }}>{accent.label}</span>
-                <strong style={{ color: "#132238" }}>{item.name}</strong>
+                <span style={{ fontSize: "11px", letterSpacing: "0.08em", fontWeight: 700, color: "#f7d895" }}>{accent.label}</span>
+                <strong style={{ color: "#f2f6fb" }}>{item.name}</strong>
               </div>
               <div style={{ fontSize: "12px", color: "#d8e1ed" }}>{item.summary}</div>
               {(item.relatedBrickIds ?? []).length > 0 ? <div style={{ fontSize: "11px", color: "#a9b8c9" }}>{t("panel.sceneSamples.relatedBricks", { bricks: item.relatedBrickIds?.join(", ") ?? "" })}</div> : null}
               <button
                 type="button"
                 onClick={() => props.onOpenSample(item.id)}
-                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #5378aa", background: "#2d4d74", color: "#fff" }}
+                style={{ ...ueGhostButton, padding: "8px 12px", color: isSelected ? "#11161d" : ueShellColors.text, background: isSelected ? ueShellColors.accent : ueShellColors.panelMuted, borderColor: isSelected ? ueShellColors.accent : ueShellColors.borderStrong }}
               >
                 {t("panel.sceneSamples.open")}
               </button>

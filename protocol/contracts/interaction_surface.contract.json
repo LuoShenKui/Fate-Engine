@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "events": [
+    "OnUsed",
+    "OnDenied",
+    "OnStateChanged"
+  ],
+  "high_frequency_state_keys": [
+    "enabled",
+    "locked",
+    "open",
+    "active",
+    "occupied",
+    "opened",
+    "activated",
+    "charging"
+  ],
+  "door_state_keys": [
+    "locked",
+    "open"
+  ],
+  "door_commands": [
+    "open",
+    "close",
+    "lock",
+    "unlock",
+    "toggle"
+  ],
+  "door_link_actions": [
+    "open_on_enter",
+    "close_on_exit",
+    "toggle_on_use",
+    "toggle_on_climb"
+  ],
+  "deny_reasons": [
+    "disabled",
+    "locked"
+  ]
+}

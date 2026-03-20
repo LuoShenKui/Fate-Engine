@@ -1,7 +1,8 @@
 import { DoorRuntimeAdapter, LadderRuntimeAdapter, SwitchRuntimeAdapter, TriggerZoneRuntimeAdapter, formatRuntimeEventLog, type AdapterMode, type DoorBrickEvent } from "../domain/door";
 import type { Envelope } from "../protocol/envelope";
-import { DoorSceneComponent } from "../runtime/doorScene";
+import type { DoorSceneComponent } from "../runtime/doorScene";
 import { isRecipeLockfileLocked, type EditorRecipeV0 } from "../project/recipe";
+import { DOOR_LINK_ACTIONS } from "../workflow/interactionContract";
 import { getLinkedDoorIds, planTriggerZoneDoorActions } from "../workflow/sceneRouting";
 import { runBatchValidate, type BatchValidationStats } from "../workflow/validation";
 import { DEFAULT_ACTOR_TYPE, DEFAULT_TRIGGER_DISTANCE, RECENT_BRICKS_LIMIT } from "./app-constants";
@@ -9,6 +10,7 @@ import { builtinCatalogEntries } from "./app-catalog";
 import { deserializeInstalledBricks, serializeInstalledBricks } from "./app-imports";
 import { buildResolvedPropertyFields, inferPropertyGroup, initialFields, parseFieldDraftMap, parseInstanceFieldDrafts, toPropertyFields } from "./app-property-helpers";
 import { buildRecipePackageState, calcDistance, getEnemyPatrolRoutePoints, parseAssetRegistry, resolveRuntimeKind } from "./app-scene";
+import { getLadderRuntime, getSceneDoorRuntime, getSwitchRuntime, getTriggerZoneRuntime, syncGrantedAbilitiesForSource } from "./app-runtime-helpers";
 import type { AbilityGrantState, AssetRegistryItem, BrickCatalogEntry, RuntimeEventItem } from "./app-types";
 import type { CanvasEdge, CanvasNode } from "./GraphCanvasPanel";
 import type { PropertyField } from "./PropertyInspectorPanel";
@@ -145,50 +147,8 @@ export const createAppRuntimeActions = ({
   setRequestSeq,
   pushWorkspaceNotice,
 }: CreateRuntimeActionsArgs) => {
-  const getSceneDoor = (entityId: string): DoorSceneComponent => {
-    const cached = sceneDoorMap.get(entityId);
-    if (cached !== undefined) return cached;
-    const created = new DoorSceneComponent(entityId);
-    sceneDoorMap.set(entityId, created);
-    return created;
-  };
-
-  const getTriggerZoneRuntime = (entityId: string): TriggerZoneRuntimeAdapter => {
-    const cached = triggerZoneRuntimeMap.get(entityId);
-    if (cached !== undefined) return cached;
-    const created = new TriggerZoneRuntimeAdapter();
-    triggerZoneRuntimeMap.set(entityId, created);
-    return created;
-  };
-
-  const getSwitchRuntime = (entityId: string): SwitchRuntimeAdapter => {
-    const cached = switchRuntimeMap.get(entityId);
-    if (cached !== undefined) return cached;
-    const created = new SwitchRuntimeAdapter();
-    switchRuntimeMap.set(entityId, created);
-    return created;
-  };
-
-  const getLadderRuntime = (entityId: string): LadderRuntimeAdapter => {
-    const cached = ladderRuntimeMap.get(entityId);
-    if (cached !== undefined) return cached;
-    const created = new LadderRuntimeAdapter();
-    ladderRuntimeMap.set(entityId, created);
-    return created;
-  };
-
   const getEntryByPackageOrId = (packageIdOrBrickId: string): BrickCatalogEntry | undefined =>
     catalogEntries.find((entry) => entry.packageId === packageIdOrBrickId || entry.id === packageIdOrBrickId);
-
-  const resolveGrantedAbilityPackageIds = (nodeId: string): string[] => {
-    const node = nodes.find((candidate) => candidate.id === nodeId);
-    if (node?.meta?.grantedAbilityPackageIds !== undefined && node.meta.grantedAbilityPackageIds.length > 0) {
-      return node.meta.grantedAbilityPackageIds;
-    }
-    const nodeType = node?.type;
-    if (nodeType === undefined) return [];
-    return catalogEntries.find((entry) => entry.id === nodeType)?.grantedAbilityPackageIds ?? [];
-  };
 
   const renderValidate = (): void => {
     const entityId = activeEntityId;
@@ -345,52 +305,9 @@ export const createAppRuntimeActions = ({
     renderBatchValidate(recipe);
   };
 
-  const updateGrantedAbilitiesForSource = (sourceNodeId: string, occupied: boolean): void => {
-    const packageIds = resolveGrantedAbilityPackageIds(sourceNodeId);
-    if (packageIds.length === 0) return;
-
-    if (occupied) {
-      const nextGrants = packageIds.flatMap<AbilityGrantState>((packageId) => {
-        const abilityEntry = getEntryByPackageOrId(packageId);
-        if (abilityEntry === undefined) {
-          setEvents((prev) => [...prev, { source: "ability", text: `[ability] source=${sourceNodeId} package=${packageId} result=blocked reason=missing_package` }]);
-          return [];
-        }
-        if (abilityEntry.category !== "ability") {
-          setEvents((prev) => [...prev, { source: "ability", text: `[ability] source=${sourceNodeId} package=${packageId} result=blocked reason=not_ability_package` }]);
-          return [];
-        }
-        if (abilityEntry.supportedActorTypes.length > 0 && !abilityEntry.supportedActorTypes.includes(DEFAULT_ACTOR_TYPE)) {
-          setEvents((prev) => [
-            ...prev,
-            { source: "ability", text: `[ability] source=${sourceNodeId} package=${packageId} result=blocked reason=actor_incompatible actor_type=${DEFAULT_ACTOR_TYPE}` },
-          ]);
-          return [];
-        }
-        setEvents((prev) => [...prev, { source: "ability", text: `[ability] source=${sourceNodeId} package=${packageId} result=granted actor_type=${DEFAULT_ACTOR_TYPE}` }]);
-        return [{ packageId, brickId: abilityEntry.id, sourceNodeId }];
-      });
-
-      if (nextGrants.length === 0) return;
-      setGrantedAbilities((prev) => {
-        const filtered = prev.filter((grant) => !nextGrants.some((candidate) => candidate.packageId === grant.packageId && candidate.sourceNodeId === grant.sourceNodeId));
-        return [...filtered, ...nextGrants];
-      });
-      return;
-    }
-
-    setGrantedAbilities((prev) => {
-      const revoked = prev.filter((grant) => grant.sourceNodeId === sourceNodeId && packageIds.includes(grant.packageId));
-      revoked.forEach((grant) => {
-        setEvents((eventPrev) => [...eventPrev, { source: "ability", text: `[ability] source=${sourceNodeId} package=${grant.packageId} result=revoked actor_type=${DEFAULT_ACTOR_TYPE}` }]);
-      });
-      return prev.filter((grant) => !(grant.sourceNodeId === sourceNodeId && packageIds.includes(grant.packageId)));
-    });
-  };
-
   const onDoorInteract = (sourceNodeId?: string): void => {
     const entityId = sourceNodeId ?? "door-1";
-    const sceneDoor = getSceneDoor(entityId);
+    const sceneDoor = getSceneDoorRuntime(sceneDoorMap, entityId);
     setActiveEntityId(entityId);
     setSelectedSceneNodeId(entityId);
 
@@ -445,16 +362,16 @@ export const createAppRuntimeActions = ({
   const onSwitchInteract = (entityId: string): void => {
     const requestId = `req-${requestSeq}`;
     setRequestSeq((prev) => prev + 1);
-    const runtime = getSwitchRuntime(entityId);
+    const runtime = getSwitchRuntime(switchRuntimeMap, entityId);
     const switchEvent = runtime.interact("player_1", entityId);
     setEvents((prev) => [...prev, { source: "switch", text: `[switch] request_id=${requestId} entity_id=${entityId} event=${switchEvent.event} payload=${switchEvent.payload}` }]);
 
     const linkedDoorIds = getLinkedDoorIds(nodes, edges, entityId);
-    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, true, (doorId) => getSceneDoor(doorId).syncToProtocol());
+    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, true, (doorId) => getSceneDoorRuntime(sceneDoorMap, doorId).syncToProtocol());
     plannedActions.forEach(({ doorId, shouldToggle, previousState }) => {
       setEvents((prev) => [
         ...prev,
-        { source: "link", text: `[switch_link] source=${entityId} target=${doorId} action=toggle_on_use result=${shouldToggle ? "interact" : "noop"} previous_state=${previousState}` },
+        { source: "link", text: `[switch_link] source=${entityId} target=${doorId} action=${DOOR_LINK_ACTIONS[2]} result=${shouldToggle ? "interact" : "noop"} previous_state=${previousState}` },
       ]);
       if (shouldToggle) onDoorInteract(doorId);
     });
@@ -463,16 +380,16 @@ export const createAppRuntimeActions = ({
   const onLadderInteract = (entityId: string): void => {
     const requestId = `req-${requestSeq}`;
     setRequestSeq((prev) => prev + 1);
-    const runtime = getLadderRuntime(entityId);
+    const runtime = getLadderRuntime(ladderRuntimeMap, entityId);
     const ladderEvent = runtime.interact("player_1", entityId);
     setEvents((prev) => [...prev, { source: "ladder", text: `[ladder] request_id=${requestId} entity_id=${entityId} event=${ladderEvent.event} payload=${ladderEvent.payload}` }]);
 
     const linkedDoorIds = getLinkedDoorIds(nodes, edges, entityId);
-    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, true, (doorId) => getSceneDoor(doorId).syncToProtocol());
+    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, true, (doorId) => getSceneDoorRuntime(sceneDoorMap, doorId).syncToProtocol());
     plannedActions.forEach(({ doorId, shouldToggle, previousState }) => {
       setEvents((prev) => [
         ...prev,
-        { source: "link", text: `[ladder_link] source=${entityId} target=${doorId} action=toggle_on_climb result=${shouldToggle ? "interact" : "noop"} previous_state=${previousState}` },
+        { source: "link", text: `[ladder_link] source=${entityId} target=${doorId} action=${DOOR_LINK_ACTIONS[3]} result=${shouldToggle ? "interact" : "noop"} previous_state=${previousState}` },
       ]);
       if (shouldToggle) onDoorInteract(doorId);
     });
@@ -492,7 +409,7 @@ export const createAppRuntimeActions = ({
   const onToggleLock = (): void => {
     const nextLocked = !locked;
     const entityId = activeEntityId;
-    const sceneDoor = getSceneDoor(entityId);
+    const sceneDoor = getSceneDoorRuntime(sceneDoorMap, entityId);
     const requestId = `req-${requestSeq}`;
     setRequestSeq((prev) => prev + 1);
     setLocked(nextLocked);
@@ -538,15 +455,15 @@ export const createAppRuntimeActions = ({
   };
 
   const onTriggerZoneStateChange = (zoneId: string, occupied: boolean): void => {
-    const runtime = getTriggerZoneRuntime(zoneId);
+    const runtime = getTriggerZoneRuntime(triggerZoneRuntimeMap, zoneId);
     const requestId = `req-${requestSeq}`;
     setRequestSeq((prev) => prev + 1);
     const triggerEvent = runtime.interact("player_1", zoneId);
     setEvents((prev) => [...prev, { source: "trigger-zone", text: `[trigger_zone] request_id=${requestId} entity_id=${zoneId} occupied=${occupied} event=${triggerEvent.event} payload=${triggerEvent.payload}` }]);
-    updateGrantedAbilitiesForSource(zoneId, occupied);
+    syncGrantedAbilitiesForSource({ sourceNodeId: zoneId, occupied, nodes, catalogEntries, setEvents, setGrantedAbilities });
 
     const linkedDoorIds = getLinkedDoorIds(nodes, edges, zoneId);
-    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, occupied, (doorId) => getSceneDoor(doorId).syncToProtocol());
+    const plannedActions = planTriggerZoneDoorActions(linkedDoorIds, occupied, (doorId) => getSceneDoorRuntime(sceneDoorMap, doorId).syncToProtocol());
     plannedActions.forEach(({ doorId, action, shouldToggle, previousState }) => {
       if (!shouldToggle) {
         setEvents((prev) => [...prev, { source: "link", text: `[trigger_zone_link] source=${zoneId} target=${doorId} action=${action} result=noop state=${previousState}` }]);
@@ -570,6 +487,7 @@ export const createAppRuntimeActions = ({
     onToggleAdapterMode,
     onToggleActorAbility,
     onTriggerZoneStateChange,
+    syncGrantedAbilitiesForSource: (sourceNodeId: string, occupied: boolean) => syncGrantedAbilitiesForSource({ sourceNodeId, occupied, nodes, catalogEntries, setEvents, setGrantedAbilities }),
     lockStatusText,
   };
 };

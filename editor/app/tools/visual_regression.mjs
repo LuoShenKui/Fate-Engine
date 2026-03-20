@@ -12,6 +12,7 @@ const pixelmatch = pixelmatchModule.default ?? pixelmatchModule;
 const { PNG } = require('pngjs');
 
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const distDir = path.join(appDir, 'dist');
 const baselineDir = path.join(appDir, 'tests', 'visual-baseline');
 const currentDir = path.join(appDir, 'tests', 'visual-current');
 const diffDir = path.join(appDir, 'tests', 'visual-diff');
@@ -45,7 +46,7 @@ const mime = new Map([
 const resolvePath = (urlPath) => {
   const cleanPath = urlPath.split('?')[0];
   const normalized = cleanPath === '/' ? '/index.html' : cleanPath;
-  const abs = path.join(appDir, normalized);
+  const abs = path.join(distDir, normalized);
   if (fs.existsSync(abs) && fs.statSync(abs).isFile()) return abs;
   const withJs = `${abs}.js`;
   if (fs.existsSync(withJs) && fs.statSync(withJs).isFile()) return withJs;
@@ -80,14 +81,22 @@ const compareImages = (baselinePath, currentPath, diffPath) => {
 
 const run = async () => {
   let failed = false;
+  if (!fs.existsSync(path.join(distDir, 'index.html'))) {
+    throw new Error('missing dist/index.html, run `pnpm --dir editor/app run build` before visual regression');
+  }
   await new Promise((resolve) => server.listen(port, '127.0.0.1', resolve));
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     for (const scenario of scenarios) {
+      const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
+      const page = await context.newPage();
       await page.goto(`http://127.0.0.1:${port}/${scenario.query}`, { waitUntil: 'networkidle' });
       await page.waitForSelector('[data-testid="editor-page-ready"]', { state: 'visible', timeout: 20000 });
-      await page.waitForTimeout(300);
+      await page.waitForFunction(
+        () => !document.body.innerText.includes('等待校验') && !document.body.innerText.includes('Waiting for validation'),
+        { timeout: 5000 },
+      ).catch(() => undefined);
+      await page.waitForTimeout(800);
       const currentPath = path.join(currentDir, `${scenario.name}.png`);
       const baselinePath = path.join(baselineDir, `${scenario.name}.png`);
       const diffPath = path.join(diffDir, `${scenario.name}.png`);
@@ -108,6 +117,7 @@ const run = async () => {
       const pass = diffPixels <= maxDiffPixels && diffRatio <= maxDiffRatio;
       console.log(`[visual] ${scenario.name}: diffPixels=${diffPixels}, diffRatio=${diffRatio.toFixed(6)}, pass=${pass}`);
       if (!pass) failed = true;
+      await context.close();
     }
   } finally {
     await browser.close();

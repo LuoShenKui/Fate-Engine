@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "./i18n/I18nProvider";
+import { ueGhostButton, ueShellColors } from "./ue-shell-theme";
 
 export type AssetLibraryItem = {
   id: string;
@@ -20,6 +21,7 @@ export default function AssetLibraryPanel(props: AssetLibraryPanelProps): JSX.El
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [showOnlyMatchingSlot, setShowOnlyMatchingSlot] = useState(false);
+  const [showFullAssetNames, setShowFullAssetNames] = useState(false);
   const shellCardStyle = {
     display: "grid",
     gap: "8px",
@@ -31,15 +33,15 @@ export default function AssetLibraryPanel(props: AssetLibraryPanelProps): JSX.El
   const getAssetAccent = (slotHints: string[]): { background: string; label: string } => {
     const joined = slotHints.join(" ").toLowerCase();
     if (joined.includes("mesh")) {
-      return { background: "linear-gradient(135deg, #dff1ff 0%, #7ca8d9 100%)", label: "MESH" };
+      return { background: "linear-gradient(135deg, #455a74 0%, #223243 100%)", label: "MESH" };
     }
     if (joined.includes("anim")) {
-      return { background: "linear-gradient(135deg, #fff0d7 0%, #d8a15e 100%)", label: "ANIM" };
+      return { background: "linear-gradient(135deg, #6d5632 0%, #322415 100%)", label: "ANIM" };
     }
     if (joined.includes("audio") || joined.includes("sfx")) {
-      return { background: "linear-gradient(135deg, #efe0ff 0%, #9b79d2 100%)", label: "AUDIO" };
+      return { background: "linear-gradient(135deg, #5a476f 0%, #281f34 100%)", label: "AUDIO" };
     }
-    return { background: "linear-gradient(135deg, #eef2f7 0%, #93a4bb 100%)", label: "ASSET" };
+    return { background: "linear-gradient(135deg, #42505f 0%, #222d37 100%)", label: "ASSET" };
   };
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -72,7 +74,7 @@ export default function AssetLibraryPanel(props: AssetLibraryPanelProps): JSX.El
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={t("panel.assetLibrary.searchPlaceholder")}
-        style={{ padding: "8px 10px", borderRadius: "8px", border: "1px solid #435062", background: "#1b2430", color: "#edf3fb" }}
+        style={{ padding: "8px 10px", borderRadius: "8px", border: `1px solid ${ueShellColors.borderStrong}`, background: ueShellColors.panelMuted, color: ueShellColors.text }}
       />
       <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#a9b8c9" }}>
         <input
@@ -81,6 +83,14 @@ export default function AssetLibraryPanel(props: AssetLibraryPanelProps): JSX.El
           onChange={(event) => setShowOnlyMatchingSlot(event.target.checked)}
         />
         {t("panel.assetLibrary.matchSlotOnly")}
+      </label>
+      <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#a9b8c9" }}>
+        <input
+          type="checkbox"
+          checked={showFullAssetNames}
+          onChange={(event) => setShowFullAssetNames(event.target.checked)}
+        />
+        {showFullAssetNames ? "Hide full asset names" : "Show full asset names"}
       </label>
       <div style={{ fontSize: "12px", color: "#8fa1b6" }}>
         {props.selectedSlotId !== undefined && props.selectedSlotId.length > 0
@@ -113,19 +123,19 @@ export default function AssetLibraryPanel(props: AssetLibraryPanelProps): JSX.El
                   background: getAssetAccent(item.slotHints).background,
                 }}
               >
-                <span style={{ fontSize: "11px", letterSpacing: "0.08em", fontWeight: 700, color: "#203249" }}>{getAssetAccent(item.slotHints).label}</span>
-                <strong style={{ color: "#132238" }}>{item.name}</strong>
+                <span style={{ fontSize: "11px", letterSpacing: "0.08em", fontWeight: 700, color: "#f2d593" }}>{getAssetAccent(item.slotHints).label}</span>
+                <strong style={{ color: "#eef4fb", whiteSpace: showFullAssetNames ? "normal" : "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
                 <span style={{ fontSize: "11px", color: "#a9b8c9" }}>{item.slotHints.join(", ") || t("panel.assetLibrary.anySlot")}</span>
               </div>
-              <div style={{ fontSize: "12px", color: "#d8e1ed" }}>{item.assetRef}</div>
+              <div style={{ fontSize: "12px", color: "#d8e1ed", whiteSpace: showFullAssetNames ? "normal" : "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.assetRef}</div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={() => props.onBindAsset(item.assetRef)}
                   disabled={props.selectedSlotId === undefined || props.selectedSlotId.length === 0}
-                  style={{ padding: "7px 10px", borderRadius: "8px", border: "1px solid #5378aa", background: props.selectedSlotId ? "#2d4d74" : "#2a3543", color: "#fff" }}
+                  style={{ ...ueGhostButton, padding: "7px 10px", background: props.selectedSlotId ? ueShellColors.accent : ueShellColors.panelMuted, color: props.selectedSlotId ? "#11161d" : ueShellColors.text, borderColor: props.selectedSlotId ? ueShellColors.accent : ueShellColors.borderStrong }}
                 >
                   {t("panel.assetLibrary.bind")}
                 </button>

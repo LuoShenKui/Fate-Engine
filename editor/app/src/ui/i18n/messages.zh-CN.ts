@@ -18,8 +18,8 @@ const zhCNMessages = {
   "toolbar.locale.zh": "中文",
   "toolbar.locale.en": "EN",
 
-  "panel.brickPalette.title": "积木面板",
-  "panel.brickPalette.summary": "当前可直接装配 {count} 个积木类型",
+  "panel.brickPalette.title": "快捷放置",
+  "panel.brickPalette.summary": "从已安装积木中快速挑选并放入场景",
   "panel.brickPalette.add": "放入场景",
   "panel.brickPalette.recentTitle": "最近使用",
   "panel.brickPalette.categoryTitle": "{category}",
@@ -216,6 +216,7 @@ const zhCNMessages = {
   "validation.eventSource.link": "联动",
   "validation.eventSource.adapter": "适配器",
   "validation.eventSource.ability": "能力",
+  "validation.eventSource.camera": "视口",
   "validation.level.Error": "错误",
   "validation.level.Warning": "警告",
   "validation.level.Info": "信息",

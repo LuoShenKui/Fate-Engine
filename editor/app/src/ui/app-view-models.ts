@@ -43,7 +43,7 @@ export const buildBusinessValidationItems = (
   ...workspaceNotices,
   ...validationItems,
   ...(activeAbilityNames.length > 0 ? [{ level: "Info" as const, message: t("validation.activeAbilities", { count: String(activeAbilityNames.length), abilities: activeAbilityNames.join(", ") }) }] : []),
-  ...events.slice(-4).map((eventItem) => ({
+  ...events.filter((eventItem) => eventItem.source !== "camera").slice(-4).map((eventItem) => ({
     level: "Info" as const,
     message: t("validation.eventPrefix", {
       source: t(`validation.eventSource.${eventItem.source}`),

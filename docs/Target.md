@@ -1,26 +1,26 @@
 # Fate Engine 总体定位
 
-## 近期里程碑（日期 + 验收口径）
+## 近期里程碑（阶段 + 验收口径）
 
 > 说明：以下为**原型阶段**里程碑，目标是先跑通闭环与机检入口，不代表最终真实 3D 联调全部完成。
 
-| 里程碑 | 目标 | 里程碑日期 | 验收口径（通过标准） | 机检命令入口 |
-| --- | --- | --- | --- | --- |
-| M1 | 真实 3D 视口可加载 Door 占位并交互 | 2026-03-31 | 见 `docs/Editor3DTestReadiness.md`（功能项阈值）。 | `make check-m1` |
-| M2 | 碰撞/触发闭环 | 2026-04-15 | 见 `docs/Editor3DTestReadiness.md`（稳定性项阈值）。 | `make check-m2` |
-| M3 | 可复现场景回放与自动化冒烟 | 2026-04-30 | 见 `docs/Editor3DTestReadiness.md`（回放一致性项阈值）。 | `make check-m3` |
+| 里程碑 | 目标 | 验收口径（通过标准） | 机检命令入口 |
+| --- | --- | --- | --- |
+| M1 | 真实 3D 视口可加载 Door 占位并交互 | 见 `docs/Editor3DTestReadiness.md`（功能项阈值）。 | `make check-m1` |
+| M2 | 碰撞/触发闭环 | 见 `docs/Editor3DTestReadiness.md`（稳定性项阈值）。 | `make check-m2` |
+| M3 | 可复现场景回放与自动化冒烟 | 见 `docs/Editor3DTestReadiness.md`（回放一致性项阈值）。 | `make check-m3` |
 
 
-## CI 跨平台覆盖矩阵（当前）
+## 门禁覆盖矩阵（当前）
 
-| Job | ubuntu-latest | windows-latest | macos-latest | 覆盖等级 |
+| 检查入口 | ubuntu-latest | windows-latest | macos-latest | 覆盖等级 |
 | --- | --- | --- | --- | --- |
 | `check` | schema + rust + cmake build + ts build + perf budget | schema + rust + cmake build + ts build + perf budget | schema + rust + cmake build + ts build + perf budget | smoke |
 | `replay-determinism` | 固定 seed/recipe/lockfile 的摘要 hash 一致性 | - | - | full |
 
-> PR 必过项：`replay-determinism`（请在仓库 Branch protection / Rulesets 中将该 check 标记为 required）。
+> 当前仓库以**本地手动门禁**为准：发布前至少执行 `make check-m1`、`make check-m2`、`make check-m3`、`make check-visual`、`make check-perf-scenes`。若后续恢复 GitHub 自动门禁，再单独更新本节。
 
-## 目标机型 + 预算基线 + 回归策略（按周统计）
+## 目标机型 + 预算基线 + 回归策略
 
 ### 目标机型（当前 Perf Budget profile）
 
@@ -37,16 +37,16 @@
 
 > 基线配置存放在 `protocol/perf/perf_budget.json`，并通过 `tools/check_perf_budget.py` 统一校验。
 
-### 回归策略（按周统计）
+### 回归策略（持续执行）
 
-1. 每周固定抽取主干代表场景（至少含 Door/TriggerZone 交互流）。
+1. 持续抽取主干代表场景（至少含 Door/TriggerZone 交互流）。
 2. 运行 `make check-perf-scenes` 批量生成结构化报告（`artifacts/perf/*.json`）。
 3. `error` 指标（含必填元数据缺失）阻断合入，必须归零；`warning` 指标不阻断，但要进入周报并分配责任人。
-4. 连续两周 warning 上升的指标，必须给出预算调整或优化方案并在下周复测。
+4. warning 持续上升的指标，必须给出预算调整或优化方案并复测。
 5. 例外流程：确需临时放行时，必须在 PR 记录原因、影响范围、修复截止时间与责任人，并在后续 PR 回收例外。
 
 ## 最终愿景
-* 开发世界3D引擎；
+* 开放世界3D引擎；
 * **内容装配引擎**：把重复劳动（门/梯子/水域/容器/机关…）做成可安装、可组合、可升级的“互动积木库”。
 * **AI 只做工具**：白盒“检索 + 装配 + 参数化 + 校验报告”，不在运行时每帧调用模型。
 * **开放世界默认**：世界分区、流式、状态存档是第一公民；画质不是主战场，内容密度与互动才是。
