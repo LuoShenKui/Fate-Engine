@@ -13,7 +13,7 @@ Fate Engine is currently in the prototype stage. This repository is not trying t
 
 Fate Engine is exploring a workflow where repetitive game-production work can be reduced through reusable interactive bricks, scene templates, validation gates, and AI-assisted assembly. The long-term direction is:
 
-`demo -> brick protocol cluster -> 3D brick marketplace -> AI-assisted composition -> content assembly engine -> XR-capable pipeline`
+`demo -> Block Protocol Cluster -> 3D Block Market -> AI agent -> 3D Engine -> XR Engine -> Metaverse Game Engine -> Infinite Fate Games`
 
 That future state is not done yet. This repo is still focused on proving the workflow, not claiming the full destination.
 
