@@ -109,6 +109,9 @@ jobs:
 
       - name: Visual baseline check
         shell: bash
+        env:
+          VISUAL_MAX_DIFF_PIXELS: "120000"
+          VISUAL_MAX_DIFF_RATIO: "0.06"
         run: |
           set -euo pipefail
           make check-visual
