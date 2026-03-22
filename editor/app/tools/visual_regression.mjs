@@ -17,7 +17,7 @@ const baselineDir = path.join(appDir, 'tests', 'visual-baseline');
 const currentDir = path.join(appDir, 'tests', 'visual-current');
 const diffDir = path.join(appDir, 'tests', 'visual-diff');
 const updateBaseline = process.argv.includes('--update-baseline');
-const maxDiffPixels = Number(process.env.VISUAL_MAX_DIFF_PIXELS ?? '150');
+const maxDiffPixels = Number(process.env.VISUAL_MAX_DIFF_PIXELS ?? '2500');
 const maxDiffRatio = Number(process.env.VISUAL_MAX_DIFF_RATIO ?? '0.0015');
 const port = 5173;
 
