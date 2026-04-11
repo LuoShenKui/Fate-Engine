@@ -1,0 +1,18 @@
+{
+  "name": "FateUnityImporter.Editor",
+  "rootNamespace": "FateUnityImporter.Editor",
+  "references": [
+    "FateUnityImporter.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

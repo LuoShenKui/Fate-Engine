@@ -7,6 +7,13 @@ export type CanvasNodeMeta = {
   grantedAbilityPackageIds?: string[];
   compositeParentId?: string;
   patrolRoutePoints?: Array<[number, number, number]>;
+  placeholderKind?: string;
+  missingReason?: string;
+  requiredCapability?: string;
+  agentSessionId?: string;
+  agentAppliedAt?: string;
+  validationState?: "ready" | "incomplete" | "blocked";
+  validationIssues?: string[];
 };
 
 export type CanvasNode = {

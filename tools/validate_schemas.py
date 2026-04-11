@@ -15,12 +15,19 @@ SCHEMA_DIR = ROOT / "protocol" / "schemas"
 REQUIRED_FILES = [
     "envelope.schema.json",
     "brick.publish.schema.json",
+    "actor.humanoid.schema.json",
+    "ability.locomotion.schema.json",
     "door.interact.request.schema.json",
     "door.interact.response.schema.json",
+    "interaction.pickup.schema.json",
+    "interaction.throw.schema.json",
     "ladder.interact.request.schema.json",
     "ladder.interact.response.schema.json",
     "trigger_zone.interact.request.schema.json",
     "trigger_zone.interact.response.schema.json",
+    "unity.export.schema.json",
+    "unity.asset.binding.schema.json",
+    "unity.generated.object.map.schema.json",
     "asset.pipeline.schema.json",
 ]
 REQUIRED_TOP_LEVEL_FIELDS = [
@@ -30,6 +37,14 @@ REQUIRED_TOP_LEVEL_FIELDS = [
     "contract_version",
     "engine_compat",
     "license",
+    "style",
+    "art_style",
+    "semantic_tags",
+    "notes",
+    "real_world_scale",
+    "actor_class",
+    "interaction_intent",
+    "unit_system",
     "dependencies",
     "capabilities",
     "params",
@@ -39,40 +54,12 @@ REQUIRED_TOP_LEVEL_FIELDS = [
 ]
 PACKAGE_CASES = [
     {
-        "name": "door",
-        "manifest": ROOT / "packages" / "door" / "manifest.json",
-        "invalid": ROOT / "packages" / "door" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "ladder",
-        "manifest": ROOT / "packages" / "ladder" / "manifest.json",
-        "invalid": ROOT / "packages" / "ladder" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "trigger_zone",
-        "manifest": ROOT / "packages" / "trigger_zone" / "manifest.json",
-        "invalid": ROOT / "packages" / "trigger_zone" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "switch",
-        "manifest": ROOT / "packages" / "switch" / "manifest.json",
-        "invalid": ROOT / "packages" / "switch" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "container",
-        "manifest": ROOT / "packages" / "container" / "manifest.json",
-        "invalid": ROOT / "packages" / "container" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "checkpoint",
-        "manifest": ROOT / "packages" / "checkpoint" / "manifest.json",
-        "invalid": ROOT / "packages" / "checkpoint" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
-    {
-        "name": "teleport",
-        "manifest": ROOT / "packages" / "teleport" / "manifest.json",
-        "invalid": ROOT / "packages" / "teleport" / "tests" / "manifest.invalid.missing_state_version.json",
-    },
+        "name": manifest_path.parent.name,
+        "manifest": manifest_path,
+        "invalid": invalid_path if invalid_path.exists() else None,
+    }
+    for manifest_path in sorted((ROOT / "packages").glob("*/manifest.json"))
+    for invalid_path in [manifest_path.parent / "tests" / "manifest.invalid.missing_state_version.json"]
 ]
 
 REQUIRED_PUBLISH_FIELDS = ["package", "package_kind", "version", "hash", "license", "compat", "source", "registry", "lifecycle", "release", "announcement_ref"]
@@ -82,6 +69,12 @@ SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
 
 LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
 RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
+ASSET_CLOSURE_REQUIRED_PRODUCTS = {
+    "fate.locomotion.basic",
+    "fate.pickup.basic",
+    "fate.throw.basic",
+    "fate.ladder.basic",
+}
 
 
 def build_mvp_violation(path: str, detail: str) -> str:
@@ -127,9 +120,40 @@ def validate_manifest(manifest: dict) -> list[str]:
     if manifest.get("contract_version") != "0.1":
         errors.append('INVALID_CONTRACT_VERSION: expected 0.1')
 
+    if manifest.get("unit_system") != "metric":
+        errors.append("INVALID_UNIT_SYSTEM: expected metric")
+
+    semantic_tags = manifest.get("semantic_tags")
+    if not isinstance(semantic_tags, list) or not all(isinstance(tag, str) and tag for tag in semantic_tags):
+        errors.append("INVALID_SEMANTIC_TAGS: expected non-empty string array")
+
+    for key in ("style", "art_style", "notes", "real_world_scale", "actor_class", "interaction_intent"):
+        if not isinstance(manifest.get(key), str) or manifest.get(key, "").strip() == "":
+            errors.append(f"INVALID_WHITEBOX_METADATA: {key} expected non-empty string")
+
     package_kind = manifest.get("package_kind")
     if package_kind not in PACKAGE_KIND_ALLOWED:
         errors.append("INVALID_PACKAGE_KIND: expected product|logic|asset")
+
+    asset_dependencies = manifest.get("asset_dependencies", [])
+    if not isinstance(asset_dependencies, list):
+        errors.append("INVALID_ASSET_DEPENDENCIES_TYPE: expected array")
+    elif package_kind == "product" and manifest.get("id") in ASSET_CLOSURE_REQUIRED_PRODUCTS and len(asset_dependencies) == 0:
+        errors.append("MISSING_ASSET_DEPENDENCIES: product packages must declare asset_dependencies")
+
+    default_asset_bindings = manifest.get("default_asset_bindings", [])
+    if not isinstance(default_asset_bindings, list):
+        errors.append("INVALID_DEFAULT_ASSET_BINDINGS_TYPE: expected array")
+    elif package_kind == "product" and manifest.get("id") in ASSET_CLOSURE_REQUIRED_PRODUCTS and len(default_asset_bindings) == 0:
+        errors.append("MISSING_DEFAULT_ASSET_BINDINGS: product packages must declare default_asset_bindings")
+    else:
+        for index, binding in enumerate(default_asset_bindings):
+            if not isinstance(binding, dict):
+                errors.append(f"INVALID_DEFAULT_ASSET_BINDING_ITEM_TYPE[{index}]: expected object")
+                continue
+            for key in ("slot_id", "resource_type", "asset_package_id", "resource_id"):
+                if not isinstance(binding.get(key), str) or binding.get(key, "").strip() == "":
+                    errors.append(f"INVALID_DEFAULT_ASSET_BINDING_FIELD[{index}]: {key}")
 
     dependencies = manifest.get("dependencies")
     if not isinstance(dependencies, list):
@@ -170,6 +194,21 @@ def validate_manifest(manifest: dict) -> list[str]:
             for key in ("slot_id", "slot_type", "fallback", "optional", "requires"):
                 if key not in slot:
                     errors.append(f"MISSING_SLOT_FIELD[{index}]: {key}")
+
+    resources = manifest.get("resources")
+    if package_kind == "asset":
+        if not isinstance(resources, list) or len(resources) == 0:
+            errors.append("INVALID_RESOURCES_TYPE: asset package requires non-empty resources array")
+        else:
+            for index, resource in enumerate(resources):
+                if not isinstance(resource, dict):
+                    errors.append(f"INVALID_RESOURCE_ITEM_TYPE[{index}]: expected object")
+                    continue
+                for key in ("id", "path", "resource_type", "unity_target_type", "license_source", "slot_hints"):
+                    if key not in resource:
+                        errors.append(f"MISSING_RESOURCE_FIELD[{index}]: {key}")
+                if not isinstance(resource.get("slot_hints"), list):
+                    errors.append(f"INVALID_RESOURCE_SLOT_HINTS_TYPE[{index}]: expected array")
 
     if not isinstance(manifest.get("state_version"), str):
         errors.append("INVALID_STATE_VERSION_TYPE: expected string")
@@ -359,10 +398,12 @@ def main() -> int:
                 print(f"  - {item}")
             return 1
 
-        invalid_case = load_json(package_case["invalid"])
-        if not any("state_version" in msg for msg in validate_manifest(invalid_case)):
-            print(f"[ERROR][INVALID_CASE_NOT_TRIGGERED] package={package_case['name']} field=state_version")
-            return 1
+        invalid_path = package_case["invalid"]
+        if invalid_path is not None:
+            invalid_case = load_json(invalid_path)
+            if not any("state_version" in msg for msg in validate_manifest(invalid_case)):
+                print(f"[ERROR][INVALID_CASE_NOT_TRIGGERED] package={package_case['name']} field=state_version")
+                return 1
 
     invalid_dep_case = load_json(
         ROOT / "packages" / "door" / "tests" / "manifest.invalid.dependency_missing_version.json"

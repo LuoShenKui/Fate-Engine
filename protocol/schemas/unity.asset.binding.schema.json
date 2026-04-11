@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.unity.asset.binding.schema.json",
+  "type": "object",
+  "required": ["binding_id", "node_id", "slot_id", "asset_ref", "resource_type", "unity_target_type", "source_package_id", "source_package_version", "source_resource_id", "binding_kind", "unity_target_path", "required", "notes"],
+  "properties": {
+    "binding_id": { "type": "string", "minLength": 1 },
+    "node_id": { "type": "string", "minLength": 1 },
+    "slot_id": { "type": "string", "minLength": 1 },
+    "asset_ref": { "type": "string", "minLength": 1 },
+    "resource_type": { "type": "string", "enum": ["mesh", "material", "anim", "prefab", "audio", "vfx", "script_ref"] },
+    "unity_target_type": { "type": "string", "minLength": 1 },
+    "source_package_id": { "type": "string", "minLength": 1 },
+    "source_package_version": { "type": "string", "minLength": 1 },
+    "source_resource_id": { "type": "string", "minLength": 1 },
+    "binding_kind": { "type": "string", "enum": ["formal", "fallback", "local"] },
+    "unity_target_path": { "type": "string", "minLength": 1 },
+    "required": { "type": "boolean" },
+    "notes": { "type": "string" },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "id": "fate.assets.ranged.enemy",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["enemy", "ranged", "mesh", "anim"],
+  "notes": "Grounded ranged enemy placeholder assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "enemy-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "ranged_enemy_mesh", "path": "assets/ranged_enemy_mesh.placeholder.txt", "resource_type": "mesh", "unity_target_type": "Mesh", "license_source": "https://example.local/licenses/ranged-enemy/mesh", "slot_hints": ["mesh.enemy"] },
+    { "id": "ranged_attack_anim", "path": "assets/ranged_attack_anim.placeholder.txt", "resource_type": "anim", "unity_target_type": "AnimationClip", "license_source": "https://example.local/licenses/ranged-enemy/anim", "slot_hints": ["anim.shoot"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/ranged_enemy_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

@@ -114,6 +114,21 @@ Fate Engine Brick Contract v0.1（规范稿）
 
 这四类积木之间至少要先把输入、输出、状态、参数和校验规则定义完整。未完成前，不应继续扩展更多玩法类型。
 
+0.4.1 Unity 白盒作者语义补充
+
+为了让 AI 更稳定地理解并装配白盒结果，角色基础组与 Unity 导出链路建议额外保留以下元数据语义：
+
+- `style`：视觉风格标签
+- `art_style`：资产画风标签
+- `semantic_tags`：语义标签集合
+- `notes`：人类备注与 AI 备注
+- `real_world_scale`：现实尺度描述
+- `actor_class`：角色类别，如 humanoid
+- `interaction_intent`：交互意图，如 walk/run/jump/pickup/throw/ladder
+- `unit_system`：单位系统，默认使用公制
+
+这些字段的目标不是增加噪音，而是让后续的 Unity 生成物、校验器与 AI 装配计划具有一致的解释基础。
+
 0.5 最小可行协议（MVP）
 
 第一版协议最少包含以下七项：

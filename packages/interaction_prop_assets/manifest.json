@@ -1,0 +1,133 @@
+{
+  "id": "fate.assets.interaction.props",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["pickup", "throw", "prop", "audio", "vfx", "prefab", "unity", "metric"],
+  "notes": "Asset package for pickup and throw interaction validation.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "interaction-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "resource.catalog",
+      "slot_type": "script_ref",
+      "fallback": "builtin:fate.asset.catalog",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "resources": [
+    {
+      "id": "pickup_prop_prefab",
+      "path": "assets/pickup_prop_prefab_placeholder.txt",
+      "resource_type": "prefab",
+      "unity_target_type": "GameObject",
+      "license_source": "https://example.local/licenses/pickup-prop",
+      "slot_hints": ["prefab.prop", "prefab.pickup"]
+    },
+    {
+      "id": "pickup_socket_binding",
+      "path": "assets/right_hand_socket_binding.txt",
+      "resource_type": "script_ref",
+      "unity_target_type": "MonoScript",
+      "license_source": "https://example.local/licenses/socket-binding",
+      "slot_hints": ["socket.hand"]
+    },
+    {
+      "id": "pickup_highlight_vfx",
+      "path": "assets/pickup_highlight_vfx_placeholder.txt",
+      "resource_type": "vfx",
+      "unity_target_type": "VisualEffectAsset",
+      "license_source": "https://example.local/licenses/pickup-vfx",
+      "slot_hints": ["fx.pickup"]
+    },
+    {
+      "id": "throw_release_vfx",
+      "path": "assets/throw_release_vfx_placeholder.txt",
+      "resource_type": "vfx",
+      "unity_target_type": "VisualEffectAsset",
+      "license_source": "https://example.local/licenses/throw-vfx",
+      "slot_hints": ["fx.throw"]
+    },
+    {
+      "id": "throw_release_audio",
+      "path": "assets/throw_release_audio_placeholder.txt",
+      "resource_type": "audio",
+      "unity_target_type": "AudioClip",
+      "license_source": "https://example.local/licenses/throw-audio",
+      "slot_hints": ["audio.throw"]
+    },
+    {
+      "id": "key_mesh",
+      "path": "assets/key_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/key-mesh",
+      "slot_hints": ["mesh.key"]
+    },
+    {
+      "id": "lever_mesh",
+      "path": "assets/lever_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/lever-mesh",
+      "slot_hints": ["mesh.lever"]
+    },
+    {
+      "id": "pressure_plate_mesh",
+      "path": "assets/pressure_plate_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/pressure-plate-mesh",
+      "slot_hints": ["mesh.plate"]
+    },
+    {
+      "id": "drop_reward_mesh",
+      "path": "assets/drop_reward_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/drop-reward-mesh",
+      "slot_hints": ["mesh.drop"]
+    },
+    {
+      "id": "socket_target_binding",
+      "path": "assets/socket_target_binding_placeholder.txt",
+      "resource_type": "script_ref",
+      "unity_target_type": "MonoScript",
+      "license_source": "https://example.local/licenses/socket-target",
+      "slot_hints": ["socket.target"]
+    },
+    {
+      "id": "destructible_prop_mesh",
+      "path": "assets/destructible_prop_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/destructible-prop-mesh",
+      "slot_hints": ["mesh.prop"]
+    },
+    {
+      "id": "button_mesh",
+      "path": "assets/button_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/button-mesh",
+      "slot_hints": ["mesh.button"]
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/interaction_prop_assets/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

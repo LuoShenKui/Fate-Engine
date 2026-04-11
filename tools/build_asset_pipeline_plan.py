@@ -49,9 +49,17 @@ def parse_resources(manifest: dict, base_dir: Path) -> list[dict]:
         if isinstance(item, str):
             rel_path = item
             logical_id = Path(item).stem
+            resource_type = "other"
+            unity_target_type = "Object"
+            license_source = "unspecified"
+            slot_hints: list[str] = []
         elif isinstance(item, dict):
             rel_path = item.get("path")
             logical_id = item.get("id") or item.get("name") or Path(str(rel_path or "")).stem
+            resource_type = item.get("resource_type") if isinstance(item.get("resource_type"), str) else "other"
+            unity_target_type = item.get("unity_target_type") if isinstance(item.get("unity_target_type"), str) else "Object"
+            license_source = item.get("license_source") if isinstance(item.get("license_source"), str) else "unspecified"
+            slot_hints = item.get("slot_hints") if isinstance(item.get("slot_hints"), list) else []
         else:
             raise ValueError(f"resources[{index}] 必须为字符串或对象")
 
@@ -66,6 +74,10 @@ def parse_resources(manifest: dict, base_dir: Path) -> list[dict]:
             {
                 "id": logical_id,
                 "path": rel_path,
+                "resource_type": resource_type,
+                "unity_target_type": unity_target_type,
+                "license_source": license_source,
+                "slot_hints": [hint for hint in slot_hints if isinstance(hint, str)],
                 "sha256": sha256_file(file_path),
             }
         )

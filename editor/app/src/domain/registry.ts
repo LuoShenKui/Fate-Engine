@@ -8,6 +8,12 @@ import {
   CheckpointBrickDefinition,
   TeleportBrickDefinition,
 } from "./door";
+import {
+  HumanoidActorDefinition,
+  LocomotionAbilityDefinition,
+  PickupInteractionDefinition,
+  ThrowInteractionDefinition,
+} from "./foundation";
 
 const brickRegistry: Record<string, BrickDefinition> = {
   [DoorBrickDefinition.id]: DoorBrickDefinition,
@@ -17,6 +23,10 @@ const brickRegistry: Record<string, BrickDefinition> = {
   [ContainerBrickDefinition.id]: ContainerBrickDefinition,
   [CheckpointBrickDefinition.id]: CheckpointBrickDefinition,
   [TeleportBrickDefinition.id]: TeleportBrickDefinition,
+  [HumanoidActorDefinition.id]: HumanoidActorDefinition,
+  [LocomotionAbilityDefinition.id]: LocomotionAbilityDefinition,
+  [PickupInteractionDefinition.id]: PickupInteractionDefinition,
+  [ThrowInteractionDefinition.id]: ThrowInteractionDefinition,
 };
 
 export function listBrickDefinitions(): BrickDefinition[] {

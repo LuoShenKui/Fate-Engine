@@ -1,0 +1,317 @@
+{
+  "version": "0",
+  "export_kind": "unity_whitebox",
+  "host": "unity",
+  "runtime_stack": "dots-ecs",
+  "world_bible": {
+    "scene_id": "checkpoint_room",
+    "central_conflict": "trust_vs_survival",
+    "phase_summary": "intro",
+    "world_rules": ["Nobody leaves after curfew.", "The checkpoint decides who survives the night."],
+    "public_lore": ["The town remembers the last breach.", "The night watch no longer trusts outsiders."]
+  },
+  "personas": [
+    {
+      "id": "npc-guard",
+      "display_name": "Gate Warden",
+      "role": "guard",
+      "faction": "watch",
+      "background_summary": "Keeps the checkpoint sealed until dawn.",
+      "personality_tags": ["guarded", "dutiful"],
+      "public_facts": ["The checkpoint is unstable.", "Someone triggered the alarm."],
+      "secret_facts": ["The alarm was staged to flush out a traitor."],
+      "initial_goals": ["maintain_cover", "test_player_loyalty"]
+    },
+    {
+      "id": "npc-medic",
+      "display_name": "Field Medic",
+      "role": "medic",
+      "faction": "civilians",
+      "background_summary": "Trying to keep panic from breaking the camp.",
+      "personality_tags": ["empathetic", "afraid"],
+      "public_facts": ["Supplies are running low."],
+      "secret_facts": ["The wounded courier carried a sealed order."],
+      "initial_goals": ["keep_people_calm"]
+    }
+  ],
+  "recipe": {
+    "version": "0",
+    "nodes": [
+      {
+        "id": "actor-1",
+        "type": "humanoid-actor",
+        "brickId": "fate.actor.humanoid",
+        "transform": { "position": [0, 0, 0], "rotation": [0, 0, 0] }
+      },
+      {
+        "id": "locomotion-1",
+        "type": "locomotion-ability",
+        "brickId": "fate.ability.locomotion",
+        "transform": { "position": [0, 0, 1.5], "rotation": [0, 0, 0] }
+      },
+      {
+        "id": "ladder-1",
+        "type": "ladder",
+        "brickId": "fate.ladder.basic",
+        "transform": { "position": [5, 0, 0], "rotation": [0, 0, 0] }
+      },
+      {
+        "id": "pickup-1",
+        "type": "pickup-interaction",
+        "brickId": "fate.interaction.pickup",
+        "transform": { "position": [2, 0, 2], "rotation": [0, 0, 0] }
+      },
+      {
+        "id": "throw-1",
+        "type": "throw-interaction",
+        "brickId": "fate.interaction.throw",
+        "transform": { "position": [7, 0, 2], "rotation": [0, 0, 0] }
+      }
+    ],
+    "edges": [],
+    "params": {
+      "authoring_host": "unity",
+      "runtime_stack": "dots-ecs",
+      "unit_system": "metric",
+      "runtime_feature_flags": {
+        "npc_ai_enabled": true
+      },
+      "brick_fields": {
+        "humanoid-actor": [
+          { "key": "heightMeters", "label": "Height", "value": 1.78, "defaultValue": 1.78, "packageValue": 1.78, "sceneValue": 1.78, "group": "Body" },
+          { "key": "interactionDistanceMeters", "label": "Interaction Distance", "value": 1.6, "defaultValue": 1.6, "packageValue": 1.6, "sceneValue": 1.6, "group": "Interaction" }
+        ],
+        "locomotion-ability": [
+          { "key": "walkSpeedMps", "label": "Walk Speed", "value": 1.42, "defaultValue": 1.42, "packageValue": 1.42, "sceneValue": 1.42, "group": "Movement" },
+          { "key": "runSpeedMps", "label": "Run Speed", "value": 3.8, "defaultValue": 3.8, "packageValue": 3.8, "sceneValue": 3.8, "group": "Movement" },
+          { "key": "jumpHeightMeters", "label": "Jump Height", "value": 0.45, "defaultValue": 0.45, "packageValue": 0.45, "sceneValue": 0.45, "group": "Movement" }
+        ],
+        "pickup-interaction": [
+          { "key": "reachDistanceMeters", "label": "Reach Distance", "value": 1.25, "defaultValue": 1.25, "packageValue": 1.25, "sceneValue": 1.25, "group": "Interaction" },
+          { "key": "carryMassKg", "label": "Carry Mass", "value": 8, "defaultValue": 8, "packageValue": 8, "sceneValue": 8, "group": "Interaction" }
+        ],
+        "throw-interaction": [
+          { "key": "throwSpeedMps", "label": "Throw Speed", "value": 11.5, "defaultValue": 11.5, "packageValue": 11.5, "sceneValue": 11.5, "group": "Interaction" },
+          { "key": "cooldownSeconds", "label": "Throw Cooldown", "value": 0.4, "defaultValue": 0.4, "packageValue": 0.4, "sceneValue": 0.4, "group": "Interaction" }
+        ]
+      }
+    },
+    "slot_bindings": {
+      "mesh.humanoid": "assetpkg://fate.assets.humanoid.foundation/humanoid_mesh_main",
+      "anim.controller": "builtin:unity.humanoid.controller",
+      "anim.locomotion": "assetpkg://fate.assets.humanoid.foundation/humanoid_locomotion_animset",
+      "input.map": "builtin:unity.input.third_person",
+      "mesh.primary": "assetpkg://fate.assets.ladder.foundation/ladder_mesh_primary",
+      "anim.ladder": "assetpkg://fate.assets.ladder.foundation/ladder_climb_anim",
+      "audio.ladder": "assetpkg://fate.assets.ladder.foundation/ladder_rattle_audio",
+      "fx.ladder": "assetpkg://fate.assets.ladder.foundation/ladder_dust_vfx",
+      "socket.hand": "assetpkg://fate.assets.interaction.props/pickup_socket_binding",
+      "fx.pickup": "assetpkg://fate.assets.interaction.props/pickup_highlight_vfx",
+      "fx.throw": "assetpkg://fate.assets.interaction.props/throw_release_vfx",
+      "audio.throw": "assetpkg://fate.assets.interaction.props/throw_release_audio"
+    },
+    "seed": 424242,
+    "lockfile": {
+      "packages": [
+        { "id": "fate.actor.humanoid", "version": "0.1.0", "hash": "sha256:actor" },
+        { "id": "fate.ability.locomotion", "version": "0.1.0", "hash": "sha256:locomotion" },
+        { "id": "fate.ladder.basic", "version": "0.1.0", "hash": "sha256:ladder" },
+        { "id": "fate.interaction.pickup", "version": "0.1.0", "hash": "sha256:pickup" },
+        { "id": "fate.interaction.throw", "version": "0.1.0", "hash": "sha256:throw" },
+        { "id": "fate.assets.humanoid.foundation", "version": "0.1.0", "hash": "sha256:humanoid-assets" },
+        { "id": "fate.assets.interaction.props", "version": "0.1.0", "hash": "sha256:interaction-assets" },
+        { "id": "fate.assets.ladder.foundation", "version": "0.1.0", "hash": "sha256:ladder-assets" }
+      ]
+    },
+    "package_lock": {
+      "packages": {
+        "editor": "0.1.0"
+      }
+    },
+    "suppress": []
+  },
+  "asset_bindings": [
+    {
+      "binding_id": "actor-1:mesh.humanoid",
+      "node_id": "actor-1",
+      "slot_id": "mesh.humanoid",
+      "asset_ref": "assetpkg://fate.assets.humanoid.foundation/humanoid_mesh_main",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "source_package_id": "fate.assets.humanoid.foundation",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "humanoid_mesh_main",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/actor-1/mesh_humanoid.prefab",
+      "required": true,
+      "notes": "Humanoid body mesh",
+      "issues": []
+    },
+    {
+      "binding_id": "actor-1:anim.controller",
+      "node_id": "actor-1",
+      "slot_id": "anim.controller",
+      "asset_ref": "builtin:unity.humanoid.controller",
+      "resource_type": "script_ref",
+      "unity_target_type": "MonoScript",
+      "source_package_id": "fate.actor.humanoid",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "anim.controller",
+      "binding_kind": "fallback",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/actor-1/anim_controller.asset",
+      "required": true,
+      "notes": "Fallback humanoid controller",
+      "issues": []
+    },
+    {
+      "binding_id": "locomotion-1:anim.locomotion",
+      "node_id": "locomotion-1",
+      "slot_id": "anim.locomotion",
+      "asset_ref": "assetpkg://fate.assets.humanoid.foundation/humanoid_locomotion_animset",
+      "resource_type": "anim",
+      "unity_target_type": "AnimationClip",
+      "source_package_id": "fate.assets.humanoid.foundation",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "humanoid_locomotion_animset",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/locomotion-1/anim_locomotion.asset",
+      "required": true,
+      "notes": "Locomotion animation placeholder",
+      "issues": []
+    },
+    {
+      "binding_id": "locomotion-1:input.map",
+      "node_id": "locomotion-1",
+      "slot_id": "input.map",
+      "asset_ref": "builtin:unity.input.third_person",
+      "resource_type": "script_ref",
+      "unity_target_type": "MonoScript",
+      "source_package_id": "fate.locomotion.basic",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "input.map",
+      "binding_kind": "fallback",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/locomotion-1/input_map.asset",
+      "required": true,
+      "notes": "Fallback input mapping",
+      "issues": []
+    },
+    {
+      "binding_id": "ladder-1:mesh.primary",
+      "node_id": "ladder-1",
+      "slot_id": "mesh.primary",
+      "asset_ref": "assetpkg://fate.assets.ladder.foundation/ladder_mesh_primary",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "source_package_id": "fate.assets.ladder.foundation",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "ladder_mesh_primary",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/ladder-1/mesh_primary.prefab",
+      "required": true,
+      "notes": "Ladder mesh placeholder",
+      "issues": []
+    },
+    {
+      "binding_id": "ladder-1:anim.ladder",
+      "node_id": "ladder-1",
+      "slot_id": "anim.ladder",
+      "asset_ref": "assetpkg://fate.assets.ladder.foundation/ladder_climb_anim",
+      "resource_type": "anim",
+      "unity_target_type": "AnimationClip",
+      "source_package_id": "fate.assets.ladder.foundation",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "ladder_climb_anim",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/ladder-1/anim_ladder.asset",
+      "required": false,
+      "notes": "Ladder climb animation placeholder",
+      "issues": []
+    },
+    {
+      "binding_id": "pickup-1:socket.hand",
+      "node_id": "pickup-1",
+      "slot_id": "socket.hand",
+      "asset_ref": "assetpkg://fate.assets.interaction.props/pickup_socket_binding",
+      "resource_type": "script_ref",
+      "unity_target_type": "MonoScript",
+      "source_package_id": "fate.assets.interaction.props",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "pickup_socket_binding",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/pickup-1/socket_hand.asset",
+      "required": true,
+      "notes": "Hand socket binding",
+      "issues": []
+    },
+    {
+      "binding_id": "pickup-1:fx.pickup",
+      "node_id": "pickup-1",
+      "slot_id": "fx.pickup",
+      "asset_ref": "assetpkg://fate.assets.interaction.props/pickup_highlight_vfx",
+      "resource_type": "vfx",
+      "unity_target_type": "VisualEffectAsset",
+      "source_package_id": "fate.assets.interaction.props",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "pickup_highlight_vfx",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/pickup-1/fx_pickup.asset",
+      "required": false,
+      "notes": "Pickup highlight effect",
+      "issues": []
+    },
+    {
+      "binding_id": "throw-1:fx.throw",
+      "node_id": "throw-1",
+      "slot_id": "fx.throw",
+      "asset_ref": "assetpkg://fate.assets.interaction.props/throw_release_vfx",
+      "resource_type": "vfx",
+      "unity_target_type": "VisualEffectAsset",
+      "source_package_id": "fate.assets.interaction.props",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "throw_release_vfx",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/throw-1/fx_throw.asset",
+      "required": false,
+      "notes": "Throw trail effect",
+      "issues": []
+    },
+    {
+      "binding_id": "throw-1:audio.throw",
+      "node_id": "throw-1",
+      "slot_id": "audio.throw",
+      "asset_ref": "assetpkg://fate.assets.interaction.props/throw_release_audio",
+      "resource_type": "audio",
+      "unity_target_type": "AudioClip",
+      "source_package_id": "fate.assets.interaction.props",
+      "source_package_version": "0.1.0",
+      "source_resource_id": "throw_release_audio",
+      "binding_kind": "formal",
+      "unity_target_path": "Assets/FateDemo/Generated/Bindings/throw-1/audio_throw.asset",
+      "required": false,
+      "notes": "Throw release audio",
+      "issues": []
+    }
+  ],
+  "generated_object_map": [
+    {
+      "node_id": "actor-1",
+      "brick_id": "fate.actor.humanoid",
+      "scriptable_object_path": "Assets/FateDemo/Generated/Resources/CharacterFoundationDemoRecipe.asset",
+      "prefab_variant_path": "Assets/FateDemo/Generated/Bindings/actor-1/mesh_humanoid.prefab",
+      "baker_input": "HumanoidAuthoringBaker"
+    }
+  ],
+  "audit": {
+    "packages": [
+      {
+        "package_id": "fate.actor.humanoid",
+        "version": "0.1.0",
+        "license": "MIT",
+        "reason": "player-avatar",
+        "notes": "Demo import fixture",
+        "alternatives": []
+      }
+    ],
+    "generated_from_seed": 424242
+  }
+}

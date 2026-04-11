@@ -1,0 +1,28 @@
+{
+  "id": "fate.assets.audio.gameplay",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["audio", "gameplay", "door", "chest"],
+  "notes": "Grounded gameplay audio placeholder assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "audio-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "door_lock_audio", "path": "assets/door_lock_audio.placeholder.txt", "resource_type": "audio", "unity_target_type": "AudioClip", "license_source": "https://example.local/licenses/gameplay-audio/door", "slot_hints": ["audio.lock"] },
+    { "id": "chest_open_audio", "path": "assets/chest_open_audio.placeholder.txt", "resource_type": "audio", "unity_target_type": "AudioClip", "license_source": "https://example.local/licenses/gameplay-audio/chest", "slot_hints": ["audio.open"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/gameplay_audio_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

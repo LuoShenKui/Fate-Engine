@@ -1,9 +1,22 @@
-import type { BrickDefinition } from "../domain/brick";
+import type { BrickDefinition, BrickWhiteboxMetadata } from "../domain/brick";
 import { listBrickDefinitions } from "../domain/registry";
 import type { InstallReportItem } from "./InstallReportPanel";
 import { BUILTIN_SCENE_CATEGORY, DEFAULT_ACTOR_TYPE } from "./app-constants";
+import { expandedBuiltinCatalogEntries } from "./app-catalog-expansion";
 import { emptyBrickTags } from "./brick-tags";
+import { getDefaultComposeHints } from "./compose-hints";
 import type { BrickCatalogEntry } from "./app-types";
+
+const defaultWhiteboxMetadata = (): BrickWhiteboxMetadata => ({
+  style: "neutral",
+  artStyle: "prototype",
+  semanticTags: [],
+  notes: "",
+  realWorldScale: "1 unit = 1 meter",
+  actorClass: "generic",
+  interactionIntent: "general",
+  unitSystem: "metric",
+});
 
 export const toCatalogEntry = (definition: BrickDefinition, source: "builtin" | "imported", overrides?: Partial<BrickCatalogEntry>): BrickCatalogEntry => ({
   ...definition,
@@ -13,6 +26,7 @@ export const toCatalogEntry = (definition: BrickDefinition, source: "builtin" | 
   dependencies: overrides?.dependencies ?? [],
   compat: overrides?.compat ?? "editor>=0.1.0",
   contractVersion: overrides?.contractVersion ?? "0.1",
+  packageKind: overrides?.packageKind ?? "product",
   supportedActorTypes: overrides?.supportedActorTypes ?? [],
   category: overrides?.category ?? BUILTIN_SCENE_CATEGORY,
   source,
@@ -23,11 +37,17 @@ export const toCatalogEntry = (definition: BrickDefinition, source: "builtin" | 
   compositeEdges: overrides?.compositeEdges ?? [],
   compositeParamGroups: overrides?.compositeParamGroups ?? [],
   grantedAbilityPackageIds: overrides?.grantedAbilityPackageIds ?? [],
+  assetDependencies: overrides?.assetDependencies ?? [],
+  defaultAssetBindings: overrides?.defaultAssetBindings ?? [],
+  resources: overrides?.resources ?? [],
   tags: overrides?.tags ?? emptyBrickTags(),
+  whiteboxMetadata: overrides?.whiteboxMetadata ?? definition.metadata ?? defaultWhiteboxMetadata(),
+  composeHints: overrides?.composeHints ?? getDefaultComposeHints(definition.id),
 });
 
 export const builtinCatalogEntries: BrickCatalogEntry[] = [
   ...listBrickDefinitions().map((definition) => toCatalogEntry(definition, "builtin")),
+  ...expandedBuiltinCatalogEntries,
   toCatalogEntry(
     {
       id: "patrol-guard",
@@ -54,6 +74,146 @@ export const builtinCatalogEntries: BrickCatalogEntry[] = [
       compat: "editor>=0.1.0",
       category: "enemy",
       tags: { styleTags: ["stylized"], platformTags: ["desktop"], themeTags: ["forest", "combat"], interactionTags: ["combat", "patrol"] },
+    },
+  ),
+  toCatalogEntry(
+    {
+      id: "humanoid-actor",
+      name: "Humanoid Actor",
+      summary: "A human-scale placeholder actor package for Unity DOTS/ECS white-box validation.",
+      metadata: {
+        style: "grounded",
+        artStyle: "realistic-placeholder",
+        semanticTags: ["unity", "humanoid", "metric"],
+        notes: "Placeholder human actor used to validate JSON-driven export into Unity generated assets.",
+        realWorldScale: "1 unit = 1 meter",
+        actorClass: "humanoid",
+        interactionIntent: "player-avatar",
+        unitSystem: "metric",
+      },
+      properties: [
+        { key: "heightMeters", label: "Height", type: "number", defaultValue: 1.78, description: "Standing height in meters.", group: "Body", unit: "m" },
+        { key: "interactionDistanceMeters", label: "Interaction Distance", type: "number", defaultValue: 1.6, description: "Default interaction reach.", group: "Interaction", unit: "m" },
+      ],
+      slots: [
+        { slotId: "mesh.humanoid", label: "Humanoid Mesh", optional: false, fallbackAssetRef: "asset://mesh/humanoid-placeholder" },
+        { slotId: "anim.controller", label: "Animator Controller", optional: false, fallbackAssetRef: "asset://anim/unity-humanoid-controller" },
+      ],
+      ports: [{ id: "on-ready", name: "OnReady", direction: "output", dataType: "event", description: "Emitted when the actor is ready." }],
+    },
+    "builtin",
+    {
+      packageId: "fate.actor.humanoid",
+      category: "actor",
+      tags: { styleTags: ["realistic"], platformTags: ["unity"], themeTags: ["foundation"], interactionTags: ["character"] },
+    },
+  ),
+  toCatalogEntry(
+    {
+      id: "locomotion-ability",
+      name: "Locomotion Ability",
+      summary: "Walk, run, and jump movement profile using metric real-world defaults.",
+      metadata: {
+        style: "grounded",
+        artStyle: "realistic-placeholder",
+        semanticTags: ["unity", "locomotion", "metric"],
+        notes: "Runtime profile intended for Unity CharacterController or DOTS movement bakers.",
+        realWorldScale: "1 unit = 1 meter",
+        actorClass: "humanoid",
+        interactionIntent: "movement",
+        unitSystem: "metric",
+      },
+      properties: [
+        { key: "walkSpeedMps", label: "Walk Speed", type: "number", defaultValue: 1.42, description: "Walk speed in meters per second.", group: "Movement", unit: "m/s" },
+        { key: "runSpeedMps", label: "Run Speed", type: "number", defaultValue: 3.8, description: "Run speed in meters per second.", group: "Movement", unit: "m/s" },
+        { key: "jumpHeightMeters", label: "Jump Height", type: "number", defaultValue: 0.45, description: "Jump height in meters.", group: "Movement", unit: "m" },
+      ],
+      slots: [
+        { slotId: "anim.locomotion", label: "Locomotion Anim Set", optional: false, fallbackAssetRef: "asset://anim/humanoid-locomotion-pack" },
+        { slotId: "input.map", label: "Input Map", optional: false, fallbackAssetRef: "asset://input/unity-third-person-map" },
+      ],
+      ports: [{ id: "on-granted", name: "OnGranted", direction: "output", dataType: "event", description: "Emitted when the locomotion profile is granted." }],
+    },
+    "builtin",
+    {
+      packageId: "fate.ability.locomotion",
+      category: "ability",
+      supportedActorTypes: [DEFAULT_ACTOR_TYPE],
+      tags: { styleTags: ["realistic"], platformTags: ["unity"], themeTags: ["foundation"], interactionTags: ["walk", "run", "jump"] },
+      whiteboxMetadata: {
+        style: "grounded",
+        artStyle: "realistic-placeholder",
+        semanticTags: ["unity", "locomotion", "human-scale"],
+        notes: "Authoring profile for walk/run/jump defaults.",
+        realWorldScale: "1 unit = 1 meter",
+        actorClass: "humanoid",
+        interactionIntent: "movement",
+        unitSystem: "metric",
+      },
+    },
+  ),
+  toCatalogEntry(
+    {
+      id: "pickup-interaction",
+      name: "Pickup Interaction",
+      summary: "Reach, carry, and attach profile for held props.",
+      metadata: {
+        style: "grounded",
+        artStyle: "realistic-placeholder",
+        semanticTags: ["unity", "pickup", "interaction"],
+        notes: "Defines the hand socket and reach parameters for white-box pickup flow.",
+        realWorldScale: "1 unit = 1 meter",
+        actorClass: "humanoid",
+        interactionIntent: "pickup",
+        unitSystem: "metric",
+      },
+      properties: [
+        { key: "reachDistanceMeters", label: "Reach Distance", type: "number", defaultValue: 1.25, description: "Pickup reach in meters.", group: "Interaction", unit: "m" },
+        { key: "carryMassKg", label: "Carry Mass", type: "number", defaultValue: 8, description: "Maximum carry mass in kilograms.", group: "Interaction", unit: "kg" },
+      ],
+      slots: [
+        { slotId: "socket.hand", label: "Hand Socket", optional: false, fallbackAssetRef: "asset://socket/right-hand" },
+        { slotId: "fx.pickup", label: "Pickup FX", optional: true, fallbackAssetRef: "asset://vfx/pickup-highlight" },
+      ],
+      ports: [{ id: "on-picked-up", name: "OnPickedUp", direction: "output", dataType: "event", description: "Emitted when a prop is picked up." }],
+    },
+    "builtin",
+    {
+      packageId: "fate.interaction.pickup",
+      category: "interaction",
+      tags: { styleTags: ["realistic"], platformTags: ["unity"], themeTags: ["foundation"], interactionTags: ["pickup", "hold"] },
+    },
+  ),
+  toCatalogEntry(
+    {
+      id: "throw-interaction",
+      name: "Throw Interaction",
+      summary: "Impulse profile for releasing held props with metric defaults.",
+      metadata: {
+        style: "grounded",
+        artStyle: "realistic-placeholder",
+        semanticTags: ["unity", "throw", "interaction"],
+        notes: "Throw parameters are intended to be exported into generated ScriptableObjects.",
+        realWorldScale: "1 unit = 1 meter",
+        actorClass: "humanoid",
+        interactionIntent: "throw",
+        unitSystem: "metric",
+      },
+      properties: [
+        { key: "throwSpeedMps", label: "Throw Speed", type: "number", defaultValue: 11.5, description: "Release speed in meters per second.", group: "Interaction", unit: "m/s" },
+        { key: "cooldownSeconds", label: "Throw Cooldown", type: "number", defaultValue: 0.4, description: "Throw cooldown in seconds.", group: "Interaction", unit: "s" },
+      ],
+      slots: [
+        { slotId: "fx.throw", label: "Throw FX", optional: true, fallbackAssetRef: "asset://vfx/throw-trail" },
+        { slotId: "audio.throw", label: "Throw Audio", optional: true, fallbackAssetRef: "asset://audio/throw-release" },
+      ],
+      ports: [{ id: "on-thrown", name: "OnThrown", direction: "output", dataType: "event", description: "Emitted when a prop is thrown." }],
+    },
+    "builtin",
+    {
+      packageId: "fate.interaction.throw",
+      category: "interaction",
+      tags: { styleTags: ["realistic"], platformTags: ["unity"], themeTags: ["foundation"], interactionTags: ["throw"] },
     },
   ),
   toCatalogEntry(

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.unity.generated.object.map.schema.json",
+  "type": "object",
+  "required": ["node_id", "brick_id", "scriptable_object_path", "prefab_variant_path", "baker_input"],
+  "properties": {
+    "node_id": { "type": "string", "minLength": 1 },
+    "brick_id": { "type": "string", "minLength": 1 },
+    "scriptable_object_path": { "type": "string", "minLength": 1 },
+    "prefab_variant_path": { "type": "string", "minLength": 1 },
+    "baker_input": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

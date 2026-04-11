@@ -1,0 +1,33 @@
+{
+  "package": "fate.assets.interaction.props",
+  "version": "0.1.0",
+  "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "license": "CC-BY-4.0",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1",
+    "matrix_ref": "docs/releases/compat_matrix.json"
+  },
+  "source": {
+    "type": "dir",
+    "uri": "file://packages/interaction_prop_assets"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.assets.interaction.props-0.1.0.tar.gz",
+    "checksum": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "lifecycle": {
+    "status": "active"
+  },
+  "release": {
+    "channel": "stable"
+  },
+  "announcement_ref": "docs/UnityWhiteBoxPivot.md",
+  "package_kind": "asset"
+}

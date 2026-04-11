@@ -19,6 +19,12 @@ LIFECYCLE_STATUS_ALLOWED = {"active", "deprecated", "revoked"}
 RELEASE_CHANNEL_ALLOWED = {"canary", "stable", "lts"}
 PACKAGE_KIND_ALLOWED = {"product", "logic", "asset"}
 MVP_LOCAL_ONLY_VIOLATION = "MVP_LOCAL_ONLY_VIOLATION"
+ASSET_CLOSURE_REQUIRED_PRODUCTS = {
+    "fate.locomotion.basic",
+    "fate.pickup.basic",
+    "fate.throw.basic",
+    "fate.ladder.basic",
+}
 
 
 def sha256_file(path: Path) -> str:
@@ -133,6 +139,9 @@ def validate_package_kind_and_structure(package_dir: Path, manifest: dict, publi
         has_file = any(child.is_file() for child in assets_dir.rglob("*"))
         if not has_file:
             raise ValueError(f"{package_dir.name}: asset 包 assets 目录为空")
+        resources = manifest.get("resources")
+        if not isinstance(resources, list) or len(resources) == 0:
+            raise ValueError(f"{package_dir.name}: asset 包缺少 resources 清单")
 
     if manifest_kind == "logic":
         slots = manifest.get("slots")
@@ -144,6 +153,19 @@ def validate_package_kind_and_structure(package_dir: Path, manifest: dict, publi
                     break
         if not has_script_slot:
             raise ValueError(f"{package_dir.name}: logic 包缺少 script_ref 脚本入口")
+
+    if manifest_kind == "product":
+        asset_dependencies = manifest.get("asset_dependencies")
+        default_asset_bindings = manifest.get("default_asset_bindings")
+        if asset_dependencies is not None and not isinstance(asset_dependencies, list):
+            raise ValueError(f"{package_dir.name}: product.asset_dependencies 必须为数组")
+        if default_asset_bindings is not None and not isinstance(default_asset_bindings, list):
+            raise ValueError(f"{package_dir.name}: product.default_asset_bindings 必须为数组")
+        if manifest.get("id") in ASSET_CLOSURE_REQUIRED_PRODUCTS:
+            if not asset_dependencies:
+                raise ValueError(f"{package_dir.name}: 角色基础组 product 必须声明 asset_dependencies")
+            if not default_asset_bindings:
+                raise ValueError(f"{package_dir.name}: 角色基础组 product 必须声明 default_asset_bindings")
 
 
 def build_package(

@@ -1,0 +1,90 @@
+{
+  "id": "fate.pickup.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["pickup", "hold", "unity", "metric"],
+  "notes": "Character foundation pickup profile exported from Fate Engine into Unity authoring data.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "pickup",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": ["fate.assets.interaction.props"],
+  "intent_aliases": ["pickup", "hold", "grab", "拾取", "拿起"],
+  "required_capabilities": ["interaction.pickup"],
+  "required_slots": ["socket.hand"],
+  "space_hints": {
+    "footprint_meters": [0.5, 0.5, 0.5],
+    "interaction_distance_meters": 1.25,
+    "facing": "forward"
+  },
+  "state_hints": ["free", "targeting", "held"],
+  "constraint_hints": {
+    "required_actor_class": "humanoid",
+    "conflicts_with": []
+  },
+  "capabilities": [
+    {
+      "capability_id": "interaction.pickup",
+      "level": 1,
+      "exposed_params": [
+        "reach_distance_m",
+        "carry_mass_kg",
+        "hold_offset_m"
+      ]
+    }
+  ],
+  "params": {
+    "reach_distance_m": {
+      "key": "reach_distance_m",
+      "type": "float",
+      "default": 1.25,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "carry_mass_kg": {
+      "key": "carry_mass_kg",
+      "type": "float",
+      "default": 8.0,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "hold_offset_m": {
+      "key": "hold_offset_m",
+      "type": "float",
+      "default": 0.55,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": ["gameplay"]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "socket.hand",
+      "slot_type": "script_ref",
+      "fallback": "builtin:socket.right_hand",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "default_asset_bindings": [
+    {
+      "slot_id": "socket.hand",
+      "resource_type": "script_ref",
+      "asset_package_id": "fate.assets.interaction.props",
+      "resource_id": "pickup_socket_binding"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/pickup/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

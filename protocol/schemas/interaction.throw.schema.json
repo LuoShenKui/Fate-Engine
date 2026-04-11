@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.interaction.throw.schema.json",
+  "type": "object",
+  "required": ["throw_speed_mps", "throw_mass_kg", "cooldown_s", "unit_system"],
+  "properties": {
+    "throw_speed_mps": { "type": "number", "minimum": 1.0, "maximum": 40.0 },
+    "throw_mass_kg": { "type": "number", "minimum": 0.1, "maximum": 20.0 },
+    "cooldown_s": { "type": "number", "minimum": 0.0, "maximum": 5.0 },
+    "unit_system": { "const": "metric" }
+  },
+  "additionalProperties": false
+}

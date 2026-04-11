@@ -27,6 +27,9 @@ check-compliance:
 check-schema:
 	@echo "[检查] Schema 校验中..."
 	@python3 tools/validate_schemas.py
+	@python3 -m unittest tools.tests.test_unity_whitebox_foundation
+	@python3 -m unittest tools.tests.test_asset_package_closure
+	@python3 -m unittest tools.tests.test_unity_demo_project
 	@python3 tools/check_protocol_contract.py
 	@python3 tools/check_interaction_contract.py
 	@python3 tools/check_schema_compat.py 		--baseline-dir "$${SCHEMA_BASELINE_DIR:-protocol/schemas}" 		--current-dir "$${SCHEMA_CURRENT_DIR:-protocol/schemas}" 		--docs-root "$${SCHEMA_MIGRATION_DOCS_DIR:-docs/protocol-migrations}" 		--report-json "$${SCHEMA_COMPAT_REPORT_JSON:-artifacts/schema_compat_report.json}"

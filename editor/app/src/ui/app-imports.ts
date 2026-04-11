@@ -1,8 +1,40 @@
-import type { BrickPort, BrickPropertySchema, BrickSlotSchema } from "../domain/brick";
+import type { BrickPort, BrickPropertySchema, BrickSlotSchema, BrickWhiteboxMetadata } from "../domain/brick";
 import type { CompositeChildSpec, CompositeEdgeSpec, CompositeParamGroup, BrickCatalogEntry } from "./app-types";
 import { DEFAULT_ACTOR_TYPE, EDITOR_ENGINE_VERSION, IMPORTED_BRICKS_STORAGE_KEY, IMPORTED_BRICK_HISTORY_STORAGE_KEY } from "./app-constants";
 import { inferRuntimeKindFromPackageId, normalizeDependencyVersion, parseDependencyList, parseDependencyRequirement, toCatalogEntry, versionMatches } from "./app-catalog";
+import { parseComposeHints, toComposeHintManifestFields } from "./compose-hints";
 import { parseBrickTags } from "./brick-tags";
+
+const emptyWhiteboxMetadata = (): BrickWhiteboxMetadata => ({
+  style: "neutral",
+  artStyle: "prototype",
+  semanticTags: [],
+  notes: "",
+  realWorldScale: "1 unit = 1 meter",
+  actorClass: "generic",
+  interactionIntent: "general",
+  unitSystem: "metric",
+});
+
+export const parseWhiteboxMetadata = (value: unknown): BrickWhiteboxMetadata => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return emptyWhiteboxMetadata();
+  }
+  const record = value as Record<string, unknown>;
+  const semanticTagsRaw = record.semanticTags ?? record.semantic_tags;
+  return {
+    style: typeof record.style === "string" ? record.style : "neutral",
+    artStyle: typeof record.artStyle === "string" ? record.artStyle : typeof record.art_style === "string" ? record.art_style : "prototype",
+    semanticTags: Array.isArray(semanticTagsRaw)
+      ? semanticTagsRaw.filter((item): item is string => typeof item === "string")
+      : [],
+    notes: typeof record.notes === "string" ? record.notes : "",
+    realWorldScale: typeof record.realWorldScale === "string" ? record.realWorldScale : typeof record.real_world_scale === "string" ? record.real_world_scale : "1 unit = 1 meter",
+    actorClass: typeof record.actorClass === "string" ? record.actorClass : typeof record.actor_class === "string" ? record.actor_class : "generic",
+    interactionIntent: typeof record.interactionIntent === "string" ? record.interactionIntent : typeof record.interaction_intent === "string" ? record.interaction_intent : "general",
+    unitSystem: record.unitSystem === "imperial" || record.unit_system === "imperial" ? "imperial" : "metric",
+  };
+};
 
 export const parseBrickProperties = (value: unknown): BrickPropertySchema[] => {
   if (!Array.isArray(value)) return [];
@@ -30,6 +62,26 @@ export const parseBrickSlots = (value: unknown): BrickSlotSchema[] => {
     label: typeof item.label === "string" ? item.label : typeof item.slotId === "string" ? item.slotId : "Slot",
     optional: item.optional === true,
     fallbackAssetRef: typeof item.fallbackAssetRef === "string" ? item.fallbackAssetRef : undefined,
+    slotType:
+      item.slotType === "mesh" ||
+      item.slotType === "material" ||
+      item.slotType === "anim" ||
+      item.slotType === "prefab" ||
+      item.slotType === "audio" ||
+      item.slotType === "vfx" ||
+      item.slotType === "script_ref" ||
+      item.slotType === "volume"
+        ? item.slotType
+        : item.slot_type === "mesh" ||
+            item.slot_type === "material" ||
+            item.slot_type === "anim" ||
+            item.slot_type === "prefab" ||
+            item.slot_type === "audio" ||
+            item.slot_type === "vfx" ||
+            item.slot_type === "script_ref" ||
+            item.slot_type === "volume"
+          ? item.slot_type
+          : undefined,
   }));
 };
 
@@ -83,6 +135,25 @@ export const parseCompositeParamGroups = (value: unknown): CompositeParamGroup[]
 export const parseGrantedAbilityPackageIds = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
 
+const parseAssetDependencies = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+
+const parseDefaultAssetBindings = (value: unknown): Array<{ slotId: string; resourceType: string; assetPackageId: string; resourceId: string }> =>
+  Array.isArray(value)
+    ? value
+        .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+        .map((item) => ({
+          slotId: typeof item.slot_id === "string" ? item.slot_id : typeof item.slotId === "string" ? item.slotId : "",
+          resourceType: typeof item.resource_type === "string" ? item.resource_type : typeof item.resourceType === "string" ? item.resourceType : "",
+          assetPackageId: typeof item.asset_package_id === "string" ? item.asset_package_id : typeof item.assetPackageId === "string" ? item.assetPackageId : "",
+          resourceId: typeof item.resource_id === "string" ? item.resource_id : typeof item.resourceId === "string" ? item.resourceId : "",
+        }))
+        .filter((item) => item.slotId.length > 0 && item.resourceType.length > 0 && item.assetPackageId.length > 0 && item.resourceId.length > 0)
+    : [];
+
+const parseAssetResources = (value: unknown): unknown[] =>
+  Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null) : [];
+
 export const toImportedBrickFromManifest = (raw: unknown): BrickCatalogEntry | null => {
   if (typeof raw !== "object" || raw === null) return null;
   const manifest = raw as Record<string, unknown>;
@@ -96,16 +167,28 @@ export const toImportedBrickFromManifest = (raw: unknown): BrickCatalogEntry | n
   const compositeEdges = parseCompositeEdges(manifest.composite_edges);
   const compositeParamGroups = parseCompositeParamGroups(manifest.composite_param_groups);
   const grantedAbilityPackageIds = parseGrantedAbilityPackageIds("granted_ability_packages" in manifest ? manifest.granted_ability_packages : manifest.granted_abilities);
+  const packageKind = manifest.package_kind === "logic" || manifest.package_kind === "asset" ? manifest.package_kind : "product";
   const importIssues: string[] = [];
   if (slots.length === 0) importIssues.push("Missing slot definitions");
-  if (ports.length === 0) importIssues.push("Missing port definitions");
-  if (properties.length === 0) importIssues.push("No editable parameters declared");
+  if (packageKind !== "asset" && ports.length === 0) importIssues.push("Missing port definitions");
+  if (packageKind !== "asset" && properties.length === 0) importIssues.push("No editable parameters declared");
   const dependencies = parseDependencyList(manifest.dependencies);
   const compat = typeof manifest.compat === "string" ? manifest.compat : typeof manifest.engine_compat === "string" ? manifest.engine_compat : "editor>=0.1.0";
   const contractVersion = typeof manifest.contract_version === "string" ? manifest.contract_version : "0.1";
   const supportedActorTypes = Array.isArray(manifest.supported_actor_types) ? manifest.supported_actor_types.filter((item): item is string => typeof item === "string") : [];
   const runtimeKindRaw = typeof manifest.runtime_kind === "string" ? manifest.runtime_kind : typeof manifest.extends === "string" ? manifest.extends : id;
   const runtimeKind: BrickCatalogEntry["runtimeKind"] = runtimeKindRaw === "door" || runtimeKindRaw === "switch" || runtimeKindRaw === "ladder" || runtimeKindRaw === "trigger-zone" || runtimeKindRaw === "enemy" ? runtimeKindRaw : "generic";
+  const whiteboxMetadata = parseWhiteboxMetadata({
+    style: manifest.style,
+    art_style: manifest.art_style,
+    semantic_tags: manifest.semantic_tags,
+    notes: manifest.notes,
+    real_world_scale: manifest.real_world_scale,
+    actor_class: manifest.actor_class,
+    interaction_intent: manifest.interaction_intent,
+    unit_system: manifest.unit_system,
+  });
+  const composeHints = parseComposeHints(manifest, id);
   return toCatalogEntry({ id, name, summary: typeof manifest.summary === "string" ? manifest.summary : "Imported brick package", properties, slots, ports }, "imported", {
     packageId: typeof manifest.package_id === "string" ? manifest.package_id : `user.${id}`,
     version: typeof manifest.version === "string" ? manifest.version : "0.1.0",
@@ -113,6 +196,7 @@ export const toImportedBrickFromManifest = (raw: unknown): BrickCatalogEntry | n
     dependencies,
     compat,
     contractVersion,
+    packageKind,
     supportedActorTypes,
     category: typeof manifest.category === "string" ? manifest.category : "custom",
     installState: importIssues.length === 0 ? "ready" : "incomplete",
@@ -122,7 +206,12 @@ export const toImportedBrickFromManifest = (raw: unknown): BrickCatalogEntry | n
     compositeEdges,
     compositeParamGroups,
     grantedAbilityPackageIds,
+    assetDependencies: parseAssetDependencies(manifest.asset_dependencies),
+    defaultAssetBindings: parseDefaultAssetBindings(manifest.default_asset_bindings),
+    resources: parseAssetResources(manifest.resources),
     tags: parseBrickTags(manifest.tags ?? manifest.metadata),
+    whiteboxMetadata,
+    composeHints,
   });
 };
 
@@ -141,6 +230,7 @@ export const toImportedBrickFromPackageRecord = (raw: unknown): BrickCatalogEntr
     dependencies: parseDependencyList(record.dependencies),
     compat: typeof record.compat === "string" ? record.compat : "editor>=0.1.0",
     contractVersion: typeof record.contract_version === "string" ? record.contract_version : "0.1",
+    packageKind: record.package_kind === "logic" || record.package_kind === "asset" ? record.package_kind : "product",
     supportedActorTypes: Array.isArray(record.supported_actor_types) ? record.supported_actor_types.filter((item): item is string => typeof item === "string") : [],
     category: typeof record.category === "string" ? record.category : "lockfile",
     installState: "incomplete",
@@ -149,7 +239,12 @@ export const toImportedBrickFromPackageRecord = (raw: unknown): BrickCatalogEntr
     compositeEdges: parseCompositeEdges(record.composite_edges),
     compositeParamGroups: parseCompositeParamGroups(record.composite_param_groups),
     grantedAbilityPackageIds: parseGrantedAbilityPackageIds(record.granted_ability_packages),
+    assetDependencies: parseAssetDependencies(record.asset_dependencies),
+    defaultAssetBindings: parseDefaultAssetBindings(record.default_asset_bindings),
+    resources: parseAssetResources(record.resources),
     tags: parseBrickTags(record.tags ?? record.metadata),
+    whiteboxMetadata: parseWhiteboxMetadata(record.whiteboxMetadata ?? record.whitebox_metadata),
+    composeHints: parseComposeHints(record, shortId),
   });
 };
 
@@ -170,7 +265,54 @@ export const detectImportSourceType = (json: string): "manifest" | "packages" | 
 
 export const exportInstalledBrickLockfile = (entries: BrickCatalogEntry[]): string =>
   JSON.stringify({
-    lockfile: { packages: entries.map((entry) => ({ package: entry.packageId, version: entry.version, license: entry.license, compat: entry.compat, dependencies: entry.dependencies, manifest: { id: entry.id, name: entry.name, summary: entry.summary, version: entry.version, license: entry.license, compat: entry.compat, category: entry.category, runtime_kind: entry.runtimeKind, supported_actor_types: entry.supportedActorTypes, granted_ability_packages: entry.grantedAbilityPackageIds, dependencies: entry.dependencies, properties: entry.properties, slots: entry.slots, ports: entry.ports, composite_children: entry.compositeChildren, composite_edges: entry.compositeEdges, composite_param_groups: entry.compositeParamGroups, tags: entry.tags } })) },
+    lockfile: {
+      packages: entries.map((entry) => ({
+        package: entry.packageId,
+        version: entry.version,
+        license: entry.license,
+        compat: entry.compat,
+        dependencies: entry.dependencies,
+        manifest: {
+          id: entry.id,
+          name: entry.name,
+          summary: entry.summary,
+          version: entry.version,
+          license: entry.license,
+          compat: entry.compat,
+          category: entry.category,
+          package_kind: entry.packageKind,
+          runtime_kind: entry.runtimeKind,
+          supported_actor_types: entry.supportedActorTypes,
+          granted_ability_packages: entry.grantedAbilityPackageIds,
+          asset_dependencies: entry.assetDependencies,
+          default_asset_bindings: entry.defaultAssetBindings.map((binding) => ({ slot_id: binding.slotId, resource_type: binding.resourceType, asset_package_id: binding.assetPackageId, resource_id: binding.resourceId })),
+          resources: entry.resources,
+          dependencies: entry.dependencies,
+          properties: entry.properties,
+          slots: entry.slots.map((slot) => ({
+            slotId: slot.slotId,
+            label: slot.label,
+            optional: slot.optional,
+            fallbackAssetRef: slot.fallbackAssetRef,
+            slot_type: slot.slotType,
+          })),
+          ports: entry.ports,
+          composite_children: entry.compositeChildren,
+          composite_edges: entry.compositeEdges,
+          composite_param_groups: entry.compositeParamGroups,
+          tags: entry.tags,
+          style: entry.whiteboxMetadata.style,
+          art_style: entry.whiteboxMetadata.artStyle,
+          semantic_tags: entry.whiteboxMetadata.semanticTags,
+          notes: entry.whiteboxMetadata.notes,
+          real_world_scale: entry.whiteboxMetadata.realWorldScale,
+          actor_class: entry.whiteboxMetadata.actorClass,
+          interaction_intent: entry.whiteboxMetadata.interactionIntent,
+          unit_system: entry.whiteboxMetadata.unitSystem,
+          ...toComposeHintManifestFields(entry.composeHints),
+        },
+      })),
+    },
     package_lock: { packages: entries.reduce<Record<string, string>>((acc, entry) => ({ ...acc, [entry.packageId]: entry.version }), {}) },
   }, null, 2);
 
@@ -237,6 +379,7 @@ export const assessImportedEntries = (entries: BrickCatalogEntry[], installedEnt
   const availableEntries = [...installedEntries.filter((entry) => !entries.some((candidate) => candidate.id === entry.id)), ...entries];
   return entries.map((entry) => {
     const nextIssues = [...entry.importIssues];
+    const availableAssetPackages = new Map(availableEntries.filter((candidate) => candidate.packageKind === "asset").map((candidate) => [candidate.packageId, candidate] as const));
     if (!versionMatches(EDITOR_ENGINE_VERSION, entry.compat)) nextIssues.push(`ENGINE_INCOMPATIBLE: required ${entry.compat}, current ${EDITOR_ENGINE_VERSION}`);
     if (entry.contractVersion !== "0.1") nextIssues.push(`CONTRACT_INCOMPATIBLE: required ${entry.contractVersion}, supported 0.1`);
     entry.slots.forEach((slot) => {
@@ -276,7 +419,27 @@ export const assessImportedEntries = (entries: BrickCatalogEntry[], installedEnt
       if (installed === undefined) nextIssues.push(`DEPENDENCY_MISSING: ${parsed.id}${parsed.requirement !== null ? ` (${parsed.requirement})` : ""}`);
       else if (parsed.requirement !== null && !versionMatches(installed.version, parsed.requirement)) nextIssues.push(`DEPENDENCY_VERSION_CONFLICT: ${parsed.id} requires ${parsed.requirement}, current ${installed.version}`);
     });
-    const hasBlockingIssue = nextIssues.some((issue) => issue.startsWith("ENGINE_INCOMPATIBLE") || issue.startsWith("CONTRACT_INCOMPATIBLE") || issue.startsWith("ABILITY_ACTOR_COMPAT_MISSING") || issue.startsWith("ABILITY_ACTOR_INCOMPATIBLE") || issue.startsWith("ABILITY_PACKAGE_MISSING") || issue.startsWith("COMPOSITE_CHILD_MISSING"));
+    entry.assetDependencies.forEach((assetPackageId) => {
+      if (!availableAssetPackages.has(assetPackageId)) nextIssues.push(`ASSET_PACKAGE_MISSING: ${assetPackageId}`);
+    });
+    entry.defaultAssetBindings.forEach((binding) => {
+      const slot = entry.slots.find((candidate) => candidate.slotId === binding.slotId);
+      if (slot === undefined) {
+        nextIssues.push(`ASSET_SLOT_MISSING: ${binding.slotId}`);
+        return;
+      }
+      if (slot.slotId !== binding.slotId) return;
+      const assetPackage = availableAssetPackages.get(binding.assetPackageId);
+      if (assetPackage === undefined) return;
+      const resources = parseAssetResources(assetPackage.resources);
+      const resource = resources.find((candidate) => typeof candidate === "object" && candidate !== null && (candidate as Record<string, unknown>).id === binding.resourceId) as Record<string, unknown> | undefined;
+      if (resource === undefined) {
+        nextIssues.push(`ASSET_RESOURCE_MISSING: ${binding.assetPackageId}/${binding.resourceId}`);
+        return;
+      }
+      if (resource.resource_type !== binding.resourceType) nextIssues.push(`ASSET_RESOURCE_TYPE_MISMATCH: ${binding.slotId} expects ${binding.resourceType}, got ${String(resource.resource_type ?? "")}`);
+    });
+    const hasBlockingIssue = nextIssues.some((issue) => issue.startsWith("ENGINE_INCOMPATIBLE") || issue.startsWith("CONTRACT_INCOMPATIBLE") || issue.startsWith("ABILITY_ACTOR_COMPAT_MISSING") || issue.startsWith("ABILITY_ACTOR_INCOMPATIBLE") || issue.startsWith("ABILITY_PACKAGE_MISSING") || issue.startsWith("COMPOSITE_CHILD_MISSING") || issue.startsWith("ASSET_PACKAGE_MISSING") || issue.startsWith("ASSET_RESOURCE_MISSING"));
     return { ...entry, installState: nextIssues.length === 0 ? "ready" : hasBlockingIssue ? "blocked" : "incomplete", importIssues: nextIssues };
   });
 };
@@ -284,7 +447,7 @@ export const assessImportedEntries = (entries: BrickCatalogEntry[], installedEnt
 export const extractDependencyIdFromIssue = (detail: string): string | null => /DEPENDENCY_(?:MISSING|VERSION_CONFLICT):\s*([A-Za-z0-9._-]+)/.exec(detail)?.[1] ?? null;
 
 export const serializeInstalledBricks = (entries: BrickCatalogEntry[]): Record<string, unknown>[] =>
-  entries.map((entry) => ({ id: entry.id, name: entry.name, summary: entry.summary, packageId: entry.packageId, version: entry.version, license: entry.license, dependencies: entry.dependencies, compat: entry.compat, contractVersion: entry.contractVersion, supportedActorTypes: entry.supportedActorTypes, category: entry.category, source: entry.source, installState: entry.installState, importIssues: entry.importIssues, runtimeKind: entry.runtimeKind, properties: entry.properties, slots: entry.slots, ports: entry.ports, compositeChildren: entry.compositeChildren, compositeEdges: entry.compositeEdges, compositeParamGroups: entry.compositeParamGroups, grantedAbilityPackageIds: entry.grantedAbilityPackageIds, tags: entry.tags }));
+  entries.map((entry) => ({ id: entry.id, name: entry.name, summary: entry.summary, packageId: entry.packageId, version: entry.version, license: entry.license, dependencies: entry.dependencies, compat: entry.compat, contractVersion: entry.contractVersion, packageKind: entry.packageKind, supportedActorTypes: entry.supportedActorTypes, category: entry.category, source: entry.source, installState: entry.installState, importIssues: entry.importIssues, runtimeKind: entry.runtimeKind, properties: entry.properties, slots: entry.slots, ports: entry.ports, compositeChildren: entry.compositeChildren, compositeEdges: entry.compositeEdges, compositeParamGroups: entry.compositeParamGroups, grantedAbilityPackageIds: entry.grantedAbilityPackageIds, assetDependencies: entry.assetDependencies, defaultAssetBindings: entry.defaultAssetBindings, resources: entry.resources, tags: entry.tags, whiteboxMetadata: entry.whiteboxMetadata, composeHints: entry.composeHints }));
 
 export const deserializeInstalledBricks = (value: unknown): BrickCatalogEntry[] => {
   if (!Array.isArray(value)) return [];
@@ -295,6 +458,7 @@ export const deserializeInstalledBricks = (value: unknown): BrickCatalogEntry[] 
     dependencies: Array.isArray(record.dependencies) ? record.dependencies.filter((dep): dep is string => typeof dep === "string") : [],
     compat: typeof record.compat === "string" ? record.compat : "editor>=0.1.0",
     contractVersion: typeof record.contractVersion === "string" ? record.contractVersion : "0.1",
+    packageKind: record.packageKind === "logic" || record.packageKind === "asset" ? record.packageKind : "product",
     category: typeof record.category === "string" ? record.category : "custom",
     installState: record.installState === "blocked" ? "blocked" : record.installState === "incomplete" ? "incomplete" : "ready",
     importIssues: Array.isArray(record.importIssues) ? record.importIssues.filter((issue): issue is string => typeof issue === "string") : [],
@@ -304,7 +468,12 @@ export const deserializeInstalledBricks = (value: unknown): BrickCatalogEntry[] 
     compositeEdges: parseCompositeEdges(record.compositeEdges),
     compositeParamGroups: parseCompositeParamGroups(record.compositeParamGroups),
     grantedAbilityPackageIds: parseGrantedAbilityPackageIds(record.grantedAbilityPackageIds),
+    assetDependencies: parseAssetDependencies(record.assetDependencies),
+    defaultAssetBindings: parseDefaultAssetBindings(record.defaultAssetBindings),
+    resources: parseAssetResources(record.resources),
     tags: parseBrickTags(record.tags),
+    whiteboxMetadata: parseWhiteboxMetadata(record.whiteboxMetadata ?? record.whitebox_metadata),
+    composeHints: parseComposeHints(record, typeof record.id === "string" ? record.id : "imported-brick"),
   }));
 };
 
@@ -319,11 +488,15 @@ export const createDependencyCandidateEntry = (dependencyId: string, requirement
     version: normalizeDependencyVersion(requirement, template.version),
     license: template.license,
     dependencies: [],
+    packageKind: "product",
     compat: template.compat,
     category: "dependency-candidate",
     installState: "ready",
     importIssues: [],
     runtimeKind,
+    assetDependencies: [],
+    defaultAssetBindings: [],
+    resources: [],
     tags: template.tags,
   });
 };

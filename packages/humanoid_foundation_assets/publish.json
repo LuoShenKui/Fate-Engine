@@ -1,0 +1,33 @@
+{
+  "package": "fate.assets.humanoid.foundation",
+  "version": "0.1.0",
+  "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "license": "CC-BY-4.0",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1",
+    "matrix_ref": "docs/releases/compat_matrix.json"
+  },
+  "source": {
+    "type": "dir",
+    "uri": "file://packages/humanoid_foundation_assets"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.assets.humanoid.foundation-0.1.0.tar.gz",
+    "checksum": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "lifecycle": {
+    "status": "active"
+  },
+  "release": {
+    "channel": "stable"
+  },
+  "announcement_ref": "docs/UnityWhiteBoxPivot.md",
+  "package_kind": "asset"
+}
