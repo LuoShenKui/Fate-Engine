@@ -4,6 +4,14 @@
   "contract_version": "0.1",
   "engine_compat": ">=0.1.0",
   "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["switch", "interaction", "unity", "metric"],
+  "notes": "Reference switch brick retained for white-box assembly flow and package compatibility checks.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "state-toggle",
+  "unit_system": "metric",
   "dependencies": [],
   "capabilities": [
     {

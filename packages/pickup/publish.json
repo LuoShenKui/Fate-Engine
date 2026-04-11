@@ -1,0 +1,33 @@
+{
+  "package": "fate.pickup.basic",
+  "version": "0.1.0",
+  "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "license": "MIT",
+  "compat": {
+    "engine": ">=0.1.0",
+    "contract": "0.1",
+    "matrix_ref": "docs/releases/compat_matrix.json"
+  },
+  "source": {
+    "type": "file",
+    "uri": "file://dist/fate.pickup.basic-0.1.0.tar.gz"
+  },
+  "registry": {
+    "provider": "local",
+    "namespace": "fate",
+    "channel": "stable",
+    "endpoint": ""
+  },
+  "artifact": {
+    "path": "dist/fate.pickup.basic-0.1.0.tar.gz",
+    "checksum": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "lifecycle": {
+    "status": "active"
+  },
+  "release": {
+    "channel": "stable"
+  },
+  "announcement_ref": "docs/UnityWhiteBoxPivot.md",
+  "package_kind": "product"
+}

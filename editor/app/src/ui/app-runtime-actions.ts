@@ -2,6 +2,8 @@ import { DoorRuntimeAdapter, LadderRuntimeAdapter, SwitchRuntimeAdapter, Trigger
 import type { Envelope } from "../protocol/envelope";
 import type { DoorSceneComponent } from "../runtime/doorScene";
 import { isRecipeLockfileLocked, type EditorRecipeV0 } from "../project/recipe";
+import { serializeComposeCatalogSnapshot } from "../composer/catalog-snapshot";
+import { annotateRecipeValidationState } from "../composer/validation-state";
 import { DOOR_LINK_ACTIONS } from "../workflow/interactionContract";
 import { getLinkedDoorIds, planTriggerZoneDoorActions } from "../workflow/sceneRouting";
 import { runBatchValidate, type BatchValidationStats } from "../workflow/validation";
@@ -188,11 +190,25 @@ export const createAppRuntimeActions = ({
 
   const getRecipe = (): EditorRecipeV0 => {
     const packageState = buildRecipePackageState(nodes, catalogEntries, importedBricks, locked, equippedAbilityPackageIds);
+    const whiteboxAudit = packageState.lockfile.packages.map((pkg) => {
+      const entry = catalogEntries.find((candidate) => candidate.packageId === pkg.id || candidate.id === pkg.id);
+      return {
+        package_id: pkg.id,
+        version: pkg.version,
+        license: entry?.license ?? "Unknown",
+        reason: entry?.whiteboxMetadata.interactionIntent ?? "recipe-dependency",
+        notes: entry?.whiteboxMetadata.notes ?? "",
+        alternatives: entry?.dependencies ?? [],
+      };
+    });
     return {
       version: "0",
       nodes,
       edges,
       params: {
+        authoring_host: "unity",
+        runtime_stack: "dots-ecs",
+        unit_system: "metric",
         selected_brick: selectedBrick,
         fields: fieldDraftsByBrickId[selectedBrick] ?? [],
         brick_fields: fieldDraftsByBrickId,
@@ -202,7 +218,29 @@ export const createAppRuntimeActions = ({
         composite_overrides: compositeOverridesByBrickId,
         actor_abilities: equippedAbilityPackageIds,
         asset_registry: assetRegistry,
+        catalog_snapshot: serializeComposeCatalogSnapshot(
+          catalogEntries.map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            packageId: entry.packageId,
+            version: entry.version,
+            packageKind: entry.packageKind,
+            installState: entry.installState,
+            summary: entry.summary,
+            slots: entry.slots,
+            defaultAssetBindings: entry.defaultAssetBindings as Array<{ slotId: string; resourceType: "mesh" | "material" | "anim" | "prefab" | "audio" | "vfx" | "script_ref"; assetPackageId: string; resourceId: string }>,
+            assetDependencies: entry.assetDependencies,
+            composeHints: entry.composeHints,
+            license: entry.license,
+            notes: entry.whiteboxMetadata.notes,
+          })),
+        ),
         recent_bricks: recentBrickIds,
+        whitebox_audit: whiteboxAudit,
+        world_schema: {
+          terrain_mode: "deferred",
+          terrain_extent_meters: 8000,
+        },
       },
       slot_bindings: slotBindings,
       seed,
@@ -213,31 +251,32 @@ export const createAppRuntimeActions = ({
   };
 
   const applyRecipe = (recipe: EditorRecipeV0): void => {
-    setNodes(recipe.nodes as CanvasNode[]);
-    setEdges(recipe.edges as CanvasEdge[]);
-    setSeed(recipe.seed);
+    const annotatedRecipe = annotateRecipeValidationState(recipe);
+    setNodes(annotatedRecipe.nodes as CanvasNode[]);
+    setEdges(annotatedRecipe.edges as CanvasEdge[]);
+    setSeed(annotatedRecipe.seed);
     setGrantedAbilities([]);
     setEquippedAbilityPackageIds(
-      Array.isArray(recipe.params.actor_abilities) ? recipe.params.actor_abilities.filter((item): item is string => typeof item === "string") : [],
+      Array.isArray(annotatedRecipe.params.actor_abilities) ? annotatedRecipe.params.actor_abilities.filter((item): item is string => typeof item === "string") : [],
     );
-    setAssetRegistry(parseAssetRegistry(recipe.params.asset_registry));
+    setAssetRegistry(parseAssetRegistry(annotatedRecipe.params.asset_registry));
     setRecentBrickIds(
-      Array.isArray(recipe.params.recent_bricks)
-        ? recipe.params.recent_bricks.filter((item): item is string => typeof item === "string").slice(0, RECENT_BRICKS_LIMIT)
+      Array.isArray(annotatedRecipe.params.recent_bricks)
+        ? annotatedRecipe.params.recent_bricks.filter((item): item is string => typeof item === "string").slice(0, RECENT_BRICKS_LIMIT)
         : [],
     );
-    setFieldDraftsByNodeId(parseInstanceFieldDrafts(recipe.params.instance_fields));
-    setSelectedSceneNodeId((recipe.nodes as CanvasNode[])[0]?.id ?? "door-1");
+    setFieldDraftsByNodeId(parseInstanceFieldDrafts(annotatedRecipe.params.instance_fields));
+    setSelectedSceneNodeId((annotatedRecipe.nodes as CanvasNode[])[0]?.id ?? "door-1");
 
-    const selected = typeof recipe.params.selected_brick === "string" ? recipe.params.selected_brick : selectedBrick;
+    const selected = typeof annotatedRecipe.params.selected_brick === "string" ? annotatedRecipe.params.selected_brick : selectedBrick;
     setSelectedBrick(selected);
 
-    if (typeof recipe.params.locked === "boolean") {
-      setLocked(recipe.params.locked);
+    if (typeof annotatedRecipe.params.locked === "boolean") {
+      setLocked(annotatedRecipe.params.locked);
     }
 
-    if (typeof recipe.params.composite_overrides === "object" && recipe.params.composite_overrides !== null && !Array.isArray(recipe.params.composite_overrides)) {
-      const rawOverrides = recipe.params.composite_overrides as Record<string, unknown>;
+    if (typeof annotatedRecipe.params.composite_overrides === "object" && annotatedRecipe.params.composite_overrides !== null && !Array.isArray(annotatedRecipe.params.composite_overrides)) {
+      const rawOverrides = annotatedRecipe.params.composite_overrides as Record<string, unknown>;
       const nextOverrides = Object.entries(rawOverrides).reduce<Record<string, Record<string, string | number | boolean>>>((acc, [brickId, value]) => {
         if (typeof value !== "object" || value === null || Array.isArray(value)) return acc;
         const normalized = Object.entries(value as Record<string, unknown>).reduce<Record<string, string | number | boolean>>((inner, [key, rawValue]) => {
@@ -252,15 +291,15 @@ export const createAppRuntimeActions = ({
       setCompositeOverridesByBrickId(nextOverrides);
     }
 
-    if (typeof recipe.params.brick_fields === "object" && recipe.params.brick_fields !== null && !Array.isArray(recipe.params.brick_fields)) {
+    if (typeof annotatedRecipe.params.brick_fields === "object" && annotatedRecipe.params.brick_fields !== null && !Array.isArray(annotatedRecipe.params.brick_fields)) {
       setFieldDraftsByBrickId((prev) => ({
         ...prev,
-        ...parseFieldDraftMap(recipe.params.brick_fields),
+        ...parseFieldDraftMap(annotatedRecipe.params.brick_fields),
       }));
     }
 
-    if (Array.isArray(recipe.params.installed_bricks)) {
-      const restoredImportedBricks = deserializeInstalledBricks(recipe.params.installed_bricks);
+    if (Array.isArray(annotatedRecipe.params.installed_bricks)) {
+      const restoredImportedBricks = deserializeInstalledBricks(annotatedRecipe.params.installed_bricks);
       setImportedBricks(restoredImportedBricks);
       setFieldDraftsByBrickId((prev) => {
         const next = { ...prev };
@@ -276,10 +315,10 @@ export const createAppRuntimeActions = ({
       });
     }
 
-    setSlotBindings(recipe.slot_bindings);
+    setSlotBindings(annotatedRecipe.slot_bindings);
 
-    if (Array.isArray(recipe.params.fields)) {
-      const validFields = recipe.params.fields.filter(
+    if (Array.isArray(annotatedRecipe.params.fields)) {
+      const validFields = annotatedRecipe.params.fields.filter(
         (field): field is PropertyField =>
           typeof field === "object" &&
           field !== null &&
@@ -302,7 +341,7 @@ export const createAppRuntimeActions = ({
       }
     }
 
-    renderBatchValidate(recipe);
+    renderBatchValidate(annotatedRecipe);
   };
 
   const onDoorInteract = (sourceNodeId?: string): void => {

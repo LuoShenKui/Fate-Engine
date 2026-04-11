@@ -2,13 +2,14 @@ import { getBrickDefinition } from "../domain/registry";
 import {
   createDefaultEditorDemoRecipe,
   downloadRecipe,
-  exportRecipe,
   importRecipe,
   loadFromLocalStorage,
   saveToLocalStorage,
   type EditorRecipeV0,
 } from "../project/recipe";
+import { exportUnityManifest } from "../project/unity-export";
 import { assembleWorkflowTemplate, listWorkflowTemplates, type WorkflowTemplateId } from "../workflow/templates";
+import { CHARACTER_FOUNDATION_TEMPLATE_ID, createCharacterFoundationDemoRecipe } from "../workflow/characterFoundationDemo";
 import type { BrickImportPreview, BrickLibraryItem } from "./BrickLibraryPanel";
 import { RECENT_BRICKS_LIMIT } from "./app-constants";
 import {
@@ -40,6 +41,7 @@ import { getBrickPreviewUri, getScenePreviewUri } from "./preview-art";
 import type { SceneSampleItem } from "./SceneSamplesPanel";
 import type { AbilityGrantState, BrickCatalogEntry } from "./app-types";
 import type { ValidationItem } from "./ValidationPanel";
+import type { AssetLibraryItem } from "./AssetLibraryPanel";
 
 type Setter<T> = (value: T | ((prev: T) => T)) => void;
 
@@ -82,6 +84,7 @@ type CreateLibraryActionsArgs = {
   importedBricks: BrickCatalogEntry[];
   importedBrickHistory: Record<string, BrickCatalogEntry[]>;
   sceneSampleItems: SceneSampleItem[];
+  assetLibraryItems: AssetLibraryItem[];
   nodes: CanvasNode[];
   slotBindings: Record<string, string>;
   fieldDraftsByBrickId: Record<string, PropertyField[]>;
@@ -93,7 +96,7 @@ type CreateLibraryActionsArgs = {
   setSelectedBrick: Setter<string>;
   setRecentBrickIds: Setter<string[]>;
   setSelectedSampleId: Setter<string>;
-  setActiveRightPanelTab: Setter<"install" | "details" | "inspector">;
+  setActiveRightPanelTab: Setter<"install" | "details" | "inspector" | "compose" | "export" | "narrative">;
   setNodes: Setter<CanvasNode[]>;
   setEdges: Setter<CanvasEdge[]>;
   setSlotBindings: Setter<Record<string, string>>;
@@ -112,6 +115,7 @@ export const createAppLibraryActions = ({
   importedBricks,
   importedBrickHistory,
   sceneSampleItems,
+  assetLibraryItems,
   nodes,
   slotBindings,
   fieldDraftsByBrickId,
@@ -160,6 +164,11 @@ export const createAppLibraryActions = ({
   const addBrickToScene = (brickId: string, position?: [number, number, number]): void => {
     recordRecentBrick(brickId);
     const definition = catalogEntries.find((entry) => entry.id === brickId);
+    if (definition?.packageKind === "asset" || definition?.category === "asset-package") {
+      pushWorkspaceNotice({ level: "Info", message: `${definition.name} is an asset package. Bind its resources from the Asset Library instead of placing it into the scene.` });
+      setActiveRightPanelTab("export");
+      return;
+    }
     if (definition !== undefined && definition.category === "ability") {
       onQuickPreviewBrick(brickId);
       pushWorkspaceNotice({ level: definition.installState === "ready" ? "Info" : "Warning", message: t("scene.abilityPreviewReady", { brickName: definition.name }) });
@@ -201,16 +210,14 @@ export const createAppLibraryActions = ({
   };
 
   const onExport = (): void => {
-    const json = exportRecipe(getRecipe());
-    downloadRecipe(json);
+    const json = exportUnityManifest(getRecipe(), catalogEntries, assetLibraryItems);
+    downloadRecipe(json, "CharacterFoundationDemo.unity-export.json");
     window.alert(t("export.started"));
   };
 
   const onApplyTemplate = (): void => {
-    const baseRecipe = createDefaultEditorDemoRecipe();
-    const assembled = assembleWorkflowTemplate("forest_cabin_v0");
-    const forestDemo = buildForestCabinDemoScene(assembled.nodes as CanvasNode[], assembled.edges as CanvasEdge[], catalogEntries);
-    applyRecipe({ ...baseRecipe, nodes: forestDemo.nodes, edges: forestDemo.edges, params: { ...baseRecipe.params, selected_brick: forestDemo.nodes.find((node) => node.type !== "door")?.type ?? forestDemo.nodes[0]?.type ?? "door" } });
+    const nextRecipe = createCharacterFoundationDemoRecipe();
+    applyRecipe(nextRecipe);
     window.alert(t("template.applied"));
   };
 
@@ -223,6 +230,11 @@ export const createAppLibraryActions = ({
   };
 
   const onApplyWorkflowTemplate = (templateId: WorkflowTemplateId): void => {
+    if (templateId === CHARACTER_FOUNDATION_TEMPLATE_ID) {
+      applyRecipe(createCharacterFoundationDemoRecipe());
+      pushWorkspaceNotice({ level: "Info", message: t("template.applied") });
+      return;
+    }
     const baseRecipe = createDefaultEditorDemoRecipe();
     const assembled = assembleWorkflowTemplate(templateId);
     const nextScene = templateId === "forest_cabin_v0" ? buildForestCabinDemoScene(assembled.nodes as CanvasNode[], assembled.edges as CanvasEdge[], catalogEntries) : { nodes: assembled.nodes as CanvasNode[], edges: assembled.edges as CanvasEdge[] };

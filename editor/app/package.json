@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
+    "test:composer": "tsc -p tsconfig.composer-tests.json && node --test /tmp/fate-engine-composer-tests-dist/tests/composer/*.test.js",
     "build": "vite build && node tools/check_editor_local_runtime.mjs",
     "preview": "vite preview",
     "start": "pnpm run tauri:dev",

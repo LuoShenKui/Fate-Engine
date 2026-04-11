@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.actor.humanoid.schema.json",
+  "type": "object",
+  "required": ["actor_class", "height_m", "capsule_radius_m", "capsule_height_m", "interaction_distance_m"],
+  "properties": {
+    "actor_class": { "const": "humanoid" },
+    "height_m": { "type": "number", "minimum": 1.2, "maximum": 2.4 },
+    "capsule_radius_m": { "type": "number", "minimum": 0.15, "maximum": 0.6 },
+    "capsule_height_m": { "type": "number", "minimum": 1.0, "maximum": 2.5 },
+    "interaction_distance_m": { "type": "number", "minimum": 0.5, "maximum": 3.0 }
+  },
+  "additionalProperties": false
+}

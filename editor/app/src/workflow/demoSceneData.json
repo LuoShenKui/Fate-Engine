@@ -28,6 +28,22 @@
       }
     },
     {
+      "id": "trigger-zone-1",
+      "type": "trigger-zone",
+      "transform": {
+        "position": [0, 0, 1.1],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
+      "id": "trigger-zone-2",
+      "type": "trigger-zone",
+      "transform": {
+        "position": [4.2, 0, -4.1],
+        "rotation": [0, 0, 0]
+      }
+    },
+    {
       "id": "ladder-1",
       "type": "ladder",
       "transform": {
@@ -75,6 +91,14 @@
     }
   ],
   "edges": [
+    {
+      "from": "trigger-zone-1",
+      "to": "door-1"
+    },
+    {
+      "from": "trigger-zone-2",
+      "to": "door-2"
+    },
     {
       "from": "switch-1",
       "to": "door-2"

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.ability.locomotion.schema.json",
+  "type": "object",
+  "required": ["walk_speed_mps", "run_speed_mps", "jump_height_m", "stride_m", "unit_system"],
+  "properties": {
+    "walk_speed_mps": { "type": "number", "minimum": 0.5, "maximum": 3.0 },
+    "run_speed_mps": { "type": "number", "minimum": 1.0, "maximum": 8.0 },
+    "jump_height_m": { "type": "number", "minimum": 0.1, "maximum": 1.2 },
+    "stride_m": { "type": "number", "minimum": 0.2, "maximum": 2.0 },
+    "unit_system": { "const": "metric" }
+  },
+  "additionalProperties": false
+}

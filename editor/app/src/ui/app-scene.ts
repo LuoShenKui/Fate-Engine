@@ -1,22 +1,38 @@
 import type { EditorRecipeV0 } from "../project/recipe";
 import type { CanvasEdge, CanvasNode } from "./GraphCanvasPanel";
-import type { BrickCatalogEntry } from "./app-types";
+import type { AssetRegistryItem, BrickCatalogEntry } from "./app-types";
 import { DEFAULT_ACTOR_TYPE, DEFAULT_TRIGGER_DISTANCE, EDITOR_ENGINE_VERSION, SCENE_LAYOUT_COLUMNS } from "./app-constants";
 import { getForestDemoPlacement } from "./forest-demo-layout";
 import { getBrickPreviewUri } from "./preview-art";
 
-export const parseAssetRegistry = (value: unknown) => {
+export const parseAssetRegistry = (value: unknown): AssetRegistryItem[] => {
   if (!Array.isArray(value)) {
     return [];
   }
+  const isResourceType = (candidate: unknown): candidate is "mesh" | "material" | "anim" | "prefab" | "audio" | "vfx" | "script_ref" =>
+    candidate === "mesh" || candidate === "material" || candidate === "anim" || candidate === "prefab" || candidate === "audio" || candidate === "vfx" || candidate === "script_ref";
   return value
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-    .map((record, index) => ({
-      id: typeof record.id === "string" ? record.id : `asset-${index + 1}`,
-      name: typeof record.name === "string" ? record.name : "Imported Asset",
-      assetRef: typeof record.assetRef === "string" ? record.assetRef : "",
-      slotHints: Array.isArray(record.slotHints) ? record.slotHints.filter((hint): hint is string => typeof hint === "string") : [],
-    }))
+    .map((record, index): AssetRegistryItem => {
+      const sourcePackageKind: AssetRegistryItem["sourcePackageKind"] = record.sourcePackageKind === "asset" ? "asset" : "local";
+      const importStatus: AssetRegistryItem["importStatus"] =
+        record.importStatus === "formal" || record.importStatus === "fallback" || record.importStatus === "local" ? record.importStatus : "local";
+      return {
+        id: typeof record.id === "string" ? record.id : `asset-${index + 1}`,
+        name: typeof record.name === "string" ? record.name : "Imported Asset",
+        assetRef: typeof record.assetRef === "string" ? record.assetRef : "",
+        slotHints: Array.isArray(record.slotHints) ? record.slotHints.filter((hint): hint is string => typeof hint === "string") : [],
+        packageId: typeof record.packageId === "string" ? record.packageId : "local.imports",
+        packageVersion: typeof record.packageVersion === "string" ? record.packageVersion : "0.0.0",
+        resourceId: typeof record.resourceId === "string" ? record.resourceId : typeof record.id === "string" ? record.id : `asset-${index + 1}`,
+        resourceType: isResourceType(record.resourceType) ? record.resourceType : "prefab",
+        unityTargetType: typeof record.unityTargetType === "string" ? record.unityTargetType : "Object",
+        licenseSource: typeof record.licenseSource === "string" ? record.licenseSource : "local-user-import",
+        localPath: typeof record.localPath === "string" ? record.localPath : undefined,
+        sourcePackageKind,
+        importStatus,
+      };
+    })
     .filter((item) => item.assetRef.length > 0);
 };
 
@@ -149,7 +165,7 @@ export const getReadinessSummary = (entry: BrickCatalogEntry | undefined, t: (ke
   if (entry === undefined) return [];
   const issues = entry.importIssues;
   const hasDependencyIssue = issues.some((issue) => issue.startsWith("DEPENDENCY_"));
-  const hasResourceIssue = issues.some((issue) => issue.startsWith("SLOT_DEFAULT_MISSING") || issue.startsWith("ENEMY_MESH_MISSING") || issue.startsWith("ENEMY_ATTACK_ANIMATION_MISSING"));
+  const hasResourceIssue = issues.some((issue) => issue.startsWith("SLOT_DEFAULT_MISSING") || issue.startsWith("ENEMY_MESH_MISSING") || issue.startsWith("ENEMY_ATTACK_ANIMATION_MISSING") || issue.startsWith("ASSET_PACKAGE_MISSING") || issue.startsWith("ASSET_RESOURCE_MISSING") || issue.startsWith("ASSET_RESOURCE_TYPE_MISMATCH"));
   const hasAbilityIssue = issues.some((issue) => issue.startsWith("ABILITY_"));
   const hasCompositeIssue = issues.some((issue) => issue.startsWith("COMPOSITE_CHILD_MISSING"));
   const hasCompatIssue = issues.some((issue) => issue.startsWith("ENGINE_INCOMPATIBLE") || issue.startsWith("CONTRACT_INCOMPATIBLE"));

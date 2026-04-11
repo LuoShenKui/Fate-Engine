@@ -1,6 +1,7 @@
 import { createDefaultEditorDemoEdges, createDefaultEditorDemoNodes, DEFAULT_EDITOR_DEMO_SCENE_ID, DEFAULT_EDITOR_DEMO_SCENE_NAME } from "./demoScene";
+import { CHARACTER_FOUNDATION_TEMPLATE_ID, createCharacterFoundationTemplateEdges, createCharacterFoundationTemplateNodes } from "./characterFoundationDemo";
 
-export type WorkflowTemplateId = "forest_cabin_v0" | "warehouse_gate_v0" | "small_house_v0" | "warehouse_zone_v0";
+export type WorkflowTemplateId = typeof CHARACTER_FOUNDATION_TEMPLATE_ID | "forest_cabin_v0" | "warehouse_gate_v0" | "small_house_v0" | "warehouse_zone_v0";
 
 export type WorkflowTemplateNode = {
   id: string;
@@ -35,6 +36,12 @@ const toWorkflowTemplateEdges = (): WorkflowTemplateEdge[] =>
   }));
 
 const templates: Record<WorkflowTemplateId, WorkflowTemplate> = {
+  [CHARACTER_FOUNDATION_TEMPLATE_ID]: {
+    id: CHARACTER_FOUNDATION_TEMPLATE_ID,
+    name: "Character Foundation Demo",
+    nodes: createCharacterFoundationTemplateNodes().map((node) => ({ id: node.id, type: node.type ?? "unknown" })),
+    edges: createCharacterFoundationTemplateEdges().map((edge) => ({ from: edge.from, to: edge.to })),
+  },
   forest_cabin_v0: {
     id: "forest_cabin_v0",
     name: DEFAULT_EDITOR_DEMO_SCENE_NAME,

@@ -1,0 +1,32 @@
+{
+  "id": "fate.locomotion.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["locomotion", "unity", "metric"],
+  "notes": "invalid fixture",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "movement",
+  "unit_system": "metric",
+  "dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "anim.locomotion",
+      "slot_type": "anim",
+      "fallback": "builtin:humanoid.anim.locomotion",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_migration": {
+    "entry": "packages/locomotion/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

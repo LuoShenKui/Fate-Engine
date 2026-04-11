@@ -145,6 +145,22 @@ export const createAppPropertyActions = ({
         name: file.name,
         assetRef,
         slotHints: [slotId],
+        packageId: "local.imports",
+        packageVersion: "0.0.0",
+        resourceId: file.name,
+        resourceType:
+          slotId.startsWith("mesh") ? "mesh" :
+          slotId.startsWith("material") ? "material" :
+          slotId.startsWith("anim") ? "anim" :
+          slotId.startsWith("audio") ? "audio" :
+          slotId.startsWith("fx") ? "vfx" :
+          slotId.startsWith("socket") || slotId.startsWith("input") ? "script_ref" :
+          "prefab",
+        unityTargetType: "LocalFile",
+        licenseSource: "local-user-import",
+        localPath: file.name,
+        sourcePackageKind: "local",
+        importStatus: "local",
       };
       const filtered = prev.filter((item) => item.assetRef !== assetRef);
       return [...filtered, nextItem];

@@ -4,6 +4,14 @@
   "contract_version": "0.1",
   "engine_compat": ">=0.1.0",
   "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["teleport", "interaction", "unity", "metric"],
+  "notes": "Reference teleport brick kept as a contract sample; it is not part of the current MVP slice.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "teleport",
+  "unit_system": "metric",
   "dependencies": [],
   "capabilities": [
     {

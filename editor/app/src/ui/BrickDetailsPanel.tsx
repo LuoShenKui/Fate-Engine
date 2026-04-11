@@ -1,4 +1,4 @@
-import type { BrickPort, BrickSlotSchema } from "../domain/brick";
+import type { BrickPort, BrickSlotSchema, BrickWhiteboxMetadata } from "../domain/brick";
 import type { BrickTags } from "./brick-tags";
 import { formatBrickTags } from "./brick-tags";
 import { useI18n } from "./i18n/I18nProvider";
@@ -27,6 +27,9 @@ type BrickDetailsPanelProps = {
   abilityEquipped?: boolean;
   onToggleActorAbility?: () => void;
   tags?: BrickTags;
+  whiteboxMetadata?: BrickWhiteboxMetadata;
+  nodeValidationState?: "ready" | "incomplete" | "blocked";
+  nodeValidationIssues?: string[];
   slots: BrickSlotSchema[];
   ports: BrickPort[];
 };
@@ -39,6 +42,31 @@ const cardStyle = {
   border: "1px solid #2a3543",
   background: "linear-gradient(180deg, rgba(43, 51, 62, 0.98) 0%, rgba(34, 42, 52, 0.98) 100%)",
 } as const;
+
+const formatCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    actor: "Actor",
+    ability: "Ability",
+    interaction: "Interaction",
+    enemy: "Enemy",
+    loot: "Loot",
+    zone: "Zone",
+    "asset-package": "Asset Package",
+  };
+  return labels[category] ?? category;
+};
+
+const validationToneStyle = (state: "ready" | "incomplete" | "blocked"): { background: string; color: string } => {
+  if (state === "blocked") return { background: "#ffe3de", color: "#7d2c1f" };
+  if (state === "incomplete") return { background: "#fff1cf", color: "#7d5400" };
+  return { background: "#ddf5df", color: "#2d6b2f" };
+};
+
+const formatValidationLabel = (state: "ready" | "incomplete" | "blocked"): string => {
+  if (state === "blocked") return "Blocked";
+  if (state === "incomplete") return "Incomplete";
+  return "Ready";
+};
 
 export default function BrickDetailsPanel(props: BrickDetailsPanelProps): JSX.Element {
   const { t } = useI18n();
@@ -98,7 +126,7 @@ export default function BrickDetailsPanel(props: BrickDetailsPanelProps): JSX.El
           <div><strong>{t("panel.brickDetails.license")}</strong><div>{props.license}</div></div>
           <div><strong>{t("panel.brickDetails.compat")}</strong><div>{props.compat}</div></div>
           <div><strong>{t("panel.brickDetails.source")}</strong><div>{props.source === "builtin" ? t("panel.brickLibrary.sourceBuiltin") : t("panel.brickLibrary.sourceImported")}</div></div>
-          <div><strong>{t("panel.brickDetails.category")}</strong><div>{props.category}</div></div>
+          <div><strong>{t("panel.brickDetails.category")}</strong><div>{formatCategoryLabel(props.category)}</div></div>
           <div><strong>{t("panel.brickDetails.runtimeKind")}</strong><div>{props.runtimeKind}</div></div>
           {props.category === "composite" ? <div><strong>{t("panel.brickDetails.compositeChildren")}</strong><div>{String(props.compositeChildCount ?? 0)}</div></div> : null}
           {props.category === "ability" ? <div><strong>{t("panel.brickDetails.actorTypes")}</strong><div>{(props.supportedActorTypes ?? []).join(", ") || "-"}</div></div> : null}
@@ -150,6 +178,50 @@ export default function BrickDetailsPanel(props: BrickDetailsPanelProps): JSX.El
         </div>
       ) : null}
 
+      {props.whiteboxMetadata !== undefined ? (
+        <div style={cardStyle}>
+          <strong style={{ fontSize: "13px", color: "#f3f7fb" }}>Whitebox</strong>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px", fontSize: "12px", color: "#c6d2df" }}>
+            <div><strong>Style</strong><div>{props.whiteboxMetadata.style}</div></div>
+            <div><strong>Art</strong><div>{props.whiteboxMetadata.artStyle}</div></div>
+            <div><strong>Scale</strong><div>{props.whiteboxMetadata.realWorldScale}</div></div>
+            <div><strong>Actor Class</strong><div>{props.whiteboxMetadata.actorClass}</div></div>
+            <div><strong>Interaction Intent</strong><div>{props.whiteboxMetadata.interactionIntent}</div></div>
+            <div><strong>Units</strong><div>{props.whiteboxMetadata.unitSystem}</div></div>
+          </div>
+          {props.whiteboxMetadata.semanticTags.length > 0 ? <div style={{ fontSize: "12px", color: "#c6d2df" }}>{props.whiteboxMetadata.semanticTags.join(", ")}</div> : null}
+          {props.whiteboxMetadata.notes.length > 0 ? <div style={{ fontSize: "12px", color: "#a9b8c9" }}>{props.whiteboxMetadata.notes}</div> : null}
+        </div>
+      ) : null}
+
+      {props.nodeValidationState !== undefined ? (
+        <div style={cardStyle}>
+          <strong style={{ fontSize: "13px", color: "#f3f7fb" }}>Validation</strong>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", alignItems: "center" }}>
+            <div style={{ fontSize: "12px", color: "#c6d2df" }}>Scene node assembly state</div>
+            <span
+              style={{
+                fontSize: "11px",
+                padding: "2px 8px",
+                borderRadius: "999px",
+                ...validationToneStyle(props.nodeValidationState),
+              }}
+            >
+              {formatValidationLabel(props.nodeValidationState)}
+            </span>
+          </div>
+          {(props.nodeValidationIssues?.length ?? 0) === 0 ? (
+            <div style={{ fontSize: "12px", color: "#c6d2df" }}>No blocking scene validation issues.</div>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: props.nodeValidationState === "blocked" ? "#ffd0c6" : "#f0d79f" }}>
+              {props.nodeValidationIssues?.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
       {(props.grantedAbilityPackageIds ?? []).length > 0 || props.category === "ability" ? (
         <div style={cardStyle}>
           <strong style={{ fontSize: "13px", color: "#f3f7fb" }}>{t("panel.brickDetails.ability")}</strong>
@@ -194,6 +266,7 @@ export default function BrickDetailsPanel(props: BrickDetailsPanelProps): JSX.El
 
       <div style={cardStyle}>
         <strong style={{ fontSize: "13px", color: "#f3f7fb" }}>{t("panel.brickDetails.readiness")}</strong>
+        <div style={{ fontSize: "12px", color: "#8ea3ba" }}>Package install state. Scene validation is shown on placed nodes.</div>
         {props.importIssues.length === 0 ? (
           <div style={{ fontSize: "12px", color: "#c6d2df" }}>{t("panel.brickDetails.readyMessage")}</div>
         ) : (

@@ -1,0 +1,24 @@
+{
+  "recipeId": "fate.whitebox.character.foundation",
+  "displayName": "Character Foundation",
+  "host": "Unity",
+  "semanticTags": ["whitebox", "humanoid", "foundation", "unity"],
+  "characterFoundation": {
+    "HeightMeters": 1.78,
+    "CapsuleRadiusMeters": 0.28,
+    "CapsuleHeightMeters": 1.8,
+    "WalkSpeedMetersPerSecond": 1.4,
+    "RunSpeedMetersPerSecond": 4.0,
+    "JumpHeightMeters": 1.2,
+    "LadderClimbSpeedMetersPerSecond": 1.9,
+    "PickupReachMeters": 1.3,
+    "ThrowImpulseNewtons": 210.0,
+    "StepLengthMeters": 0.75
+  },
+  "assetBindings": [
+    { "SlotId": "actor.mesh", "AssetRef": "asset://character/human/default" },
+    { "SlotId": "anim.controller", "AssetRef": "asset://anim/human/foundation" },
+    { "SlotId": "movement.profile", "AssetRef": "asset://profile/human/movement" }
+  ]
+}
+

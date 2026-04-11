@@ -1,4 +1,5 @@
-import type { BrickDefinition } from "../domain/brick";
+import type { BrickDefinition, BrickWhiteboxMetadata } from "../domain/brick";
+import type { ComposerHints } from "../composer";
 import type { BrickTags } from "./brick-tags";
 
 export type RuntimeEventItem = {
@@ -34,6 +35,15 @@ export type AssetRegistryItem = {
   name: string;
   assetRef: string;
   slotHints: string[];
+  packageId: string;
+  packageVersion: string;
+  resourceId: string;
+  resourceType: "mesh" | "material" | "anim" | "prefab" | "audio" | "vfx" | "script_ref";
+  unityTargetType: string;
+  licenseSource: string;
+  localPath?: string;
+  sourcePackageKind: "asset" | "local";
+  importStatus: "formal" | "fallback" | "local";
 };
 
 export type BrickCatalogEntry = BrickDefinition & {
@@ -43,6 +53,7 @@ export type BrickCatalogEntry = BrickDefinition & {
   dependencies: string[];
   compat: string;
   contractVersion: string;
+  packageKind: "product" | "logic" | "asset";
   supportedActorTypes: string[];
   category: string;
   source: "builtin" | "imported";
@@ -53,5 +64,10 @@ export type BrickCatalogEntry = BrickDefinition & {
   compositeEdges: CompositeEdgeSpec[];
   compositeParamGroups: CompositeParamGroup[];
   grantedAbilityPackageIds: string[];
+  assetDependencies: string[];
+  defaultAssetBindings: Array<{ slotId: string; resourceType: string; assetPackageId: string; resourceId: string }>;
+  resources: unknown[];
   tags: BrickTags;
+  whiteboxMetadata: BrickWhiteboxMetadata;
+  composeHints?: ComposerHints;
 };

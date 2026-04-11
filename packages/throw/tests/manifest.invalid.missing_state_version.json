@@ -1,0 +1,32 @@
+{
+  "id": "fate.throw.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["throw", "unity", "metric"],
+  "notes": "invalid fixture",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "throw",
+  "unit_system": "metric",
+  "dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "fx.throw",
+      "slot_type": "vfx",
+      "fallback": "builtin:throw.fx.default",
+      "optional": true,
+      "requires": "true"
+    }
+  ],
+  "state_migration": {
+    "entry": "packages/throw/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

@@ -37,6 +37,14 @@ export const createDefaultEditorDemoRecipe = (): EditorRecipeV0 => ({
     selected_brick: "switch",
     fields: [],
     locked: false,
+    authoring_host: "unity",
+    runtime_stack: "dots-ecs",
+    unit_system: "metric",
+    world_schema: {
+      terrain_mode: "deferred",
+      terrain_extent_meters: 8000,
+    },
+    whitebox_audit: [],
   },
   slot_bindings: {
     mesh: "asset://mesh/default-door",
@@ -114,7 +122,13 @@ export const normalizeRecipe = (raw: unknown): EditorRecipeV0 => {
     version: RECIPE_VERSION,
     nodes: Array.isArray(obj.nodes) ? obj.nodes : [],
     edges: Array.isArray(obj.edges) ? obj.edges : [],
-    params: ensureObject(obj.params),
+    params: {
+      authoring_host: "unity",
+      runtime_stack: "dots-ecs",
+      unit_system: "metric",
+      whitebox_audit: [],
+      ...ensureObject(obj.params),
+    },
     slot_bindings: ensureStringMap(obj.slot_bindings),
     seed: typeof obj.seed === "number" ? obj.seed : Date.now(),
     lockfile: {

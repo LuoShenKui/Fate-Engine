@@ -13,6 +13,8 @@ type I18nContextValue = {
   t: (key: MessageKey, params?: Record<string, string | number | boolean>) => string;
 };
 
+export type TranslateFn = I18nContextValue["t"];
+
 const STORAGE_KEY = "fate-engine-ui-locale";
 
 const messageMap: Record<Locale, Messages> = {

@@ -1,0 +1,38 @@
+{
+  "id": "fate.interaction.locked-door",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["door", "locked", "key", "interaction"],
+  "notes": "Grounded locked door interaction package for realistic white-box gameplay.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "locked-door",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": ["fate.assets.doors.locks", "fate.assets.audio.gameplay"],
+  "intent_aliases": ["locked door", "lock", "锁门", "钥匙门"],
+  "required_capabilities": ["interaction.locked_door"],
+  "required_slots": ["mesh.primary"],
+  "space_hints": { "footprint_meters": [1.4, 0.3, 2.3], "interaction_distance_meters": 1.5, "facing": "forward" },
+  "state_hints": ["locked", "unlocked", "open"],
+  "constraint_hints": { "required_actor_class": "generic", "conflicts_with": [] },
+  "capabilities": [{ "capability_id": "interaction.locked_door", "level": 1, "exposed_params": ["required_key_id", "open_angle_deg"] }],
+  "params": {
+    "required_key_id": { "key": "required_key_id", "type": "string", "default": "key_a", "mutability": "runtime", "visibility": "basic", "impact": ["gameplay"] },
+    "open_angle_deg": { "key": "open_angle_deg", "type": "float", "default": 95, "mutability": "runtime", "visibility": "advanced", "impact": ["gameplay"] }
+  },
+  "slots": [
+    { "slot_id": "mesh.primary", "slot_type": "mesh", "fallback": "builtin:door.locked.mesh", "optional": false, "requires": "true" },
+    { "slot_id": "audio.lock", "slot_type": "audio", "fallback": "builtin:door.locked.audio", "optional": true, "requires": "true" }
+  ],
+  "default_asset_bindings": [
+    { "slot_id": "mesh.primary", "resource_type": "mesh", "asset_package_id": "fate.assets.doors.locks", "resource_id": "locked_door_mesh" }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/locked_door/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "product"
+}

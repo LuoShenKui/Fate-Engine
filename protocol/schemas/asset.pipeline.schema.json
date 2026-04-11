@@ -21,7 +21,7 @@
         "properties": {
           "name": { "type": "string", "minLength": 1 },
           "path": { "type": "string", "minLength": 1 },
-          "type": { "type": "string", "enum": ["fbx", "gltf", "obj", "usd", "other"] }
+          "type": { "type": "string", "enum": ["fbx", "gltf", "obj", "usd", "wav", "mp3", "png", "exr", "other"] }
         },
         "additionalProperties": false
       }

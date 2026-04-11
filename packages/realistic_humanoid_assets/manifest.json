@@ -1,0 +1,29 @@
+{
+  "id": "fate.assets.humanoid.realistic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["humanoid", "realistic", "mesh", "material", "anim"],
+  "notes": "Grounded realistic placeholder humanoid assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "movement-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "realistic_humanoid_mesh", "path": "assets/realistic_humanoid_mesh.placeholder.txt", "resource_type": "mesh", "unity_target_type": "Mesh", "license_source": "https://example.local/licenses/humanoid-realistic/mesh", "slot_hints": ["mesh.humanoid"] },
+    { "id": "realistic_humanoid_material", "path": "assets/realistic_humanoid_material.placeholder.txt", "resource_type": "material", "unity_target_type": "Material", "license_source": "https://example.local/licenses/humanoid-realistic/material", "slot_hints": ["material.humanoid"] },
+    { "id": "realistic_humanoid_animset", "path": "assets/realistic_humanoid_animset.placeholder.txt", "resource_type": "anim", "unity_target_type": "AnimationClip", "license_source": "https://example.local/licenses/humanoid-realistic/anim", "slot_hints": ["anim.locomotion"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/realistic_humanoid_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

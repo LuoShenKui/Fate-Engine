@@ -1,22 +1,49 @@
 import type { BrickDefinition } from "../domain/brick";
+import type { AgentApplyReport, AgentComposeResult, ComposeResult } from "../composer";
+import type { UnityExportManifest } from "../project/unity-export";
 import BrickDetailsPanel from "./BrickDetailsPanel";
+import ComposerPanel from "./ComposerPanel";
 import InstallReportPanel, { type InstallReportItem } from "./InstallReportPanel";
+import NarrativeDebugPanel from "./NarrativeDebugPanel";
 import PropertyInspectorPanel, { type CompositeOverrideGroup, type PropertyField } from "./PropertyInspectorPanel";
+import type {
+  ConversationSessionRecord,
+  DialogueCandidateRecord,
+  DialogueTurnRecord,
+  NarrativeDemoFixture,
+  NarrativeHistoryTurnRecord,
+  RuntimeAiHealthResponse,
+  RuntimeDialogueChoiceResponse,
+} from "./runtime-narrative-client";
+import UnityExportPanel from "./UnityExportPanel";
 import { dockHeaderButtonStyle, rightTabButtonStyle } from "./app-chrome";
 import type { BrickTags } from "./brick-tags";
 import type { BrickCatalogEntry } from "./app-types";
 import { uePanelSurface, ueShellColors } from "./ue-shell-theme";
 
-type RightPanelTab = "install" | "details" | "inspector";
+type RightPanelTab = "install" | "details" | "inspector" | "compose" | "export" | "narrative";
 type Translate = (key: string, params?: Record<string, string>) => string;
 
-type RenderAppRightPanelArgs = {
+export type RenderAppRightPanelArgs = {
   t: Translate;
   activeRightPanelTab: RightPanelTab;
   setActiveRightPanelTab: (tab: RightPanelTab) => void;
   selectedBrick: string;
   selectedBrickDefinition?: BrickDefinition;
   selectedCatalogEntry?: BrickCatalogEntry;
+  composePrompt: string;
+  setComposePrompt: (value: string) => void;
+  composeMode: "rules" | "agent";
+  setComposeMode: (value: "rules" | "agent") => void;
+  composeHistory: string[];
+  composeResult: ComposeResult | null;
+  agentResult: AgentComposeResult | null;
+  lastAgentApplyReport: AgentApplyReport | null;
+  canRollbackAgentApply: boolean;
+  onCompose: () => Promise<void> | void;
+  onApplyComposeDraft: () => void;
+  onRollbackAgentApply: () => void;
+  onReuseComposeHistory: (value: string) => void;
   selectedGrantedAbilityPackageIds: string[];
   selectedEnemyBehaviorSummary: Array<{ label: string; value: string }>;
   selectedAbilityEquipped: boolean;
@@ -46,8 +73,36 @@ type RenderAppRightPanelArgs = {
   readinessSummary: Array<{ label: string; tone: "ready" | "warning" | "blocked" }>;
   previewSrc?: string;
   onToggleActorAbility?: () => void;
+  unityExportManifest: UnityExportManifest;
+  onExport: () => void;
+  narrativeLoading: boolean;
+  narrativeError: string | null;
+  narrativeHealth: RuntimeAiHealthResponse | null;
+  narrativeModels: string[];
+  narrativeSessions: ConversationSessionRecord[];
+  narrativeFixtures: NarrativeDemoFixture[];
+  narrativeSelectedFixtureId: string;
+  narrativeSessionId: string;
+  narrativeKnownSessionIds: string[];
+  narrativeHistory: NarrativeHistoryTurnRecord[];
+  narrativeCurrentTurn: DialogueTurnRecord | null;
+  narrativeCandidates: DialogueCandidateRecord[];
+  narrativeLastChoiceResult: RuntimeDialogueChoiceResponse | null;
+  narrativeAuditLines: string[];
+  narrativeSnapshotAnchorId: string;
+  narrativeSnapshotJson: string;
+  onNarrativeSessionIdChange: (value: string) => void;
+  onNarrativeFixtureIdChange: (value: string) => void;
+  onNarrativeSnapshotJsonChange: (value: string) => void;
+  onNarrativeRefreshOverview: () => void;
+  onNarrativeRefreshHistory: () => void;
+  onNarrativeBeginFixtureSession: () => void;
+  onNarrativeSubmitChoice: (optionId: string) => void;
+  onNarrativeImportSnapshot: () => void;
   category: string;
   tags?: BrickTags;
+  nodeValidationState?: "ready" | "incomplete" | "blocked";
+  nodeValidationIssues?: string[];
   maximized?: boolean;
   onToggleMaximize?: () => void;
 };
@@ -59,6 +114,19 @@ export const renderAppRightPanel = ({
   selectedBrick,
   selectedBrickDefinition,
   selectedCatalogEntry,
+  composePrompt,
+  setComposePrompt,
+  composeMode,
+  setComposeMode,
+  composeHistory,
+  composeResult,
+  agentResult,
+  lastAgentApplyReport,
+  canRollbackAgentApply,
+  onCompose,
+  onApplyComposeDraft,
+  onRollbackAgentApply,
+  onReuseComposeHistory,
   selectedGrantedAbilityPackageIds,
   selectedEnemyBehaviorSummary,
   selectedAbilityEquipped,
@@ -88,8 +156,36 @@ export const renderAppRightPanel = ({
   readinessSummary,
   previewSrc,
   onToggleActorAbility,
+  unityExportManifest,
+  onExport,
+  narrativeLoading,
+  narrativeError,
+  narrativeHealth,
+  narrativeModels,
+  narrativeSessions,
+  narrativeFixtures,
+  narrativeSelectedFixtureId,
+  narrativeSessionId,
+  narrativeKnownSessionIds,
+  narrativeHistory,
+  narrativeCurrentTurn,
+  narrativeCandidates,
+  narrativeLastChoiceResult,
+  narrativeAuditLines,
+  narrativeSnapshotAnchorId,
+  narrativeSnapshotJson,
+  onNarrativeSessionIdChange,
+  onNarrativeFixtureIdChange,
+  onNarrativeSnapshotJsonChange,
+  onNarrativeRefreshOverview,
+  onNarrativeRefreshHistory,
+  onNarrativeBeginFixtureSession,
+  onNarrativeSubmitChoice,
+  onNarrativeImportSnapshot,
   category,
   tags,
+  nodeValidationState,
+  nodeValidationIssues,
   maximized,
   onToggleMaximize,
 }: RenderAppRightPanelArgs): JSX.Element => (
@@ -108,6 +204,15 @@ export const renderAppRightPanel = ({
         </button>
         <button type="button" onClick={() => setActiveRightPanelTab("inspector")} style={rightTabButtonStyle(activeRightPanelTab === "inspector")}>
           {t("panel.rightTabs.inspector")}
+        </button>
+        <button type="button" onClick={() => setActiveRightPanelTab("compose")} style={rightTabButtonStyle(activeRightPanelTab === "compose")}>
+          Compose
+        </button>
+        <button type="button" onClick={() => setActiveRightPanelTab("export")} style={rightTabButtonStyle(activeRightPanelTab === "export")}>
+          {t("panel.rightTabs.export")}
+        </button>
+        <button type="button" onClick={() => setActiveRightPanelTab("narrative")} style={rightTabButtonStyle(activeRightPanelTab === "narrative")}>
+          Narrative
         </button>
         {onToggleMaximize !== undefined ? (
           <button type="button" onClick={onToggleMaximize} style={dockHeaderButtonStyle}>
@@ -145,6 +250,9 @@ export const renderAppRightPanel = ({
           abilityEquipped={selectedAbilityEquipped}
           onToggleActorAbility={onToggleActorAbility}
           tags={tags}
+          whiteboxMetadata={selectedCatalogEntry?.whiteboxMetadata}
+          nodeValidationState={nodeValidationState}
+          nodeValidationIssues={nodeValidationIssues}
           slots={selectedBrickDefinition?.slots ?? []}
           ports={selectedBrickDefinition?.ports ?? []}
         />
@@ -167,6 +275,52 @@ export const renderAppRightPanel = ({
           onImportSlotAsset={onImportSlotAsset}
           onBindAssetToSlot={onBindAssetToSlot}
           onCompositeOverrideChange={onCompositeOverrideChange}
+        />
+      ) : null}
+      {activeRightPanelTab === "compose" ? (
+        <ComposerPanel
+          mode={composeMode}
+          onModeChange={setComposeMode}
+          prompt={composePrompt}
+          onPromptChange={setComposePrompt}
+          onCompose={onCompose}
+          onApplyDraft={onApplyComposeDraft}
+          onRollbackAgentApply={onRollbackAgentApply}
+          composeResult={composeResult}
+          agentResult={agentResult}
+          lastAgentApplyReport={lastAgentApplyReport}
+          canRollbackAgentApply={canRollbackAgentApply}
+          composeHistory={composeHistory}
+          onReuseHistory={onReuseComposeHistory}
+        />
+      ) : null}
+      {activeRightPanelTab === "export" ? <UnityExportPanel manifest={unityExportManifest} onExport={onExport} /> : null}
+      {activeRightPanelTab === "narrative" ? (
+        <NarrativeDebugPanel
+          loading={narrativeLoading}
+          error={narrativeError}
+          health={narrativeHealth}
+          models={narrativeModels}
+          sessions={narrativeSessions}
+          fixtures={narrativeFixtures}
+          selectedFixtureId={narrativeSelectedFixtureId}
+          sessionId={narrativeSessionId}
+          knownSessionIds={narrativeKnownSessionIds}
+          history={narrativeHistory}
+          currentTurn={narrativeCurrentTurn}
+          candidates={narrativeCandidates}
+          lastChoiceResult={narrativeLastChoiceResult}
+          auditLines={narrativeAuditLines}
+          snapshotAnchorId={narrativeSnapshotAnchorId}
+          snapshotJson={narrativeSnapshotJson}
+          onSessionIdChange={onNarrativeSessionIdChange}
+          onFixtureIdChange={onNarrativeFixtureIdChange}
+          onSnapshotJsonChange={onNarrativeSnapshotJsonChange}
+          onRefreshOverview={onNarrativeRefreshOverview}
+          onRefreshHistory={onNarrativeRefreshHistory}
+          onBeginFixtureSession={onNarrativeBeginFixtureSession}
+          onSubmitChoice={onNarrativeSubmitChoice}
+          onImportSnapshot={onNarrativeImportSnapshot}
         />
       ) : null}
     </div>

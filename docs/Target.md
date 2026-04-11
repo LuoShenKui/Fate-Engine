@@ -6,8 +6,8 @@
 
 | 里程碑 | 目标 | 验收口径（通过标准） | 机检命令入口 |
 | --- | --- | --- | --- |
-| M1 | 真实 3D 视口可加载 Door 占位并交互 | 见 `docs/Editor3DTestReadiness.md`（功能项阈值）。 | `make check-m1` |
-| M2 | 碰撞/触发闭环 | 见 `docs/Editor3DTestReadiness.md`（稳定性项阈值）。 | `make check-m2` |
+| M1 | Unity 中可导入并消费角色基础组白盒 recipe | 见 `docs/Editor3DTestReadiness.md`（功能项阈值）。 | `make check-m1` |
+| M2 | 角色基础组的碰撞/触发/攀爬/拾取闭环 | 见 `docs/Editor3DTestReadiness.md`（稳定性项阈值）。 | `make check-m2` |
 | M3 | 可复现场景回放与自动化冒烟 | 见 `docs/Editor3DTestReadiness.md`（回放一致性项阈值）。 | `make check-m3` |
 
 
@@ -46,15 +46,15 @@
 5. 例外流程：确需临时放行时，必须在 PR 记录原因、影响范围、修复截止时间与责任人，并在后续 PR 回收例外。
 
 ## 最终愿景
-* 开放世界3D引擎；
+* Unity 宿主上的白盒内容装配系统；
 * **内容装配引擎**：把重复劳动（门/梯子/水域/容器/机关…）做成可安装、可组合、可升级的“互动积木库”。
 * **AI 只做工具**：白盒“检索 + 装配 + 参数化 + 校验报告”，不在运行时每帧调用模型。
-* **开放世界默认**：世界分区、流式、状态存档是第一公民；画质不是主战场，内容密度与互动才是。
+* **真实尺度优先**：角色高度、移动速度、步幅、抓取距离等以现实单位表达，写实资产通过 Unity 资源链路落地。
 
 ## 核心差异点
 
 * “拖一个门进场景就能用”升级成：
-  “拖一个区域套件（篮球场/小屋/仓库）进场景就能玩，并自动授予技能包、氛围与交互”。
+  “拖一个角色基础组或区域套件进场景就能玩，并自动授予技能包、氛围与交互”。
 * **积木库**：包含所有互动积木（门/梯子/水域/容器/机关…）的“互动积木库”。
 * 工业化工件，不再重复搭建相同逻辑；
 * 所见即所得；
@@ -63,12 +63,12 @@
 
 # 语言与模块分工（收敛版）
 
-> 目标：开发者尽量不用写 C++；C++ 只在渲染后端。
+> 目标：开发者尽量不用写自定义宿主；Unity 负责运行与渲染。
 
-* **C++**：渲染后端（DX12/Vulkan + DXR/VKRT 光追能力层），RHI/渲染图执行器（尽量薄）
-* **Rust**：引擎主体底座（任务系统、资源系统、世界分区与流式、序列化/存档、校验器、工具链）
+* **Unity/C#**：唯一运行宿主、渲染、物理、动画、DOTS/ECS 执行与 Baker 链路
+* **Rust**：参考校验核心、协议一致性验证、工具链与导出辅助
 * **TypeScript**：编辑器 UI 原型（当前为 `editor/app` 的 `React + Vite + Tauri` 桌面形态）+ 工作流编排（导入/索引/装配/校验/打包）
-* **Go**：资产库/注册表/账号/下载/队列/索引服务（平台后端）
+* **Go**：后续资产库/注册表/账号/下载/队列/索引服务（平台后端）
 
 > 对外开发者主要用：**拖拽积木 + 事件图/组合模板 + 少量 TS（可选）**
 > Rust 插件作为高级扩展（非日常玩法语言）。
@@ -81,20 +81,18 @@
 
 ### 1.1 Core
 
-* 主循环 + 时间系统
-* **Job System（任务系统）**：线程池、任务图
-* 日志、Trace、崩溃收集、回放基础设施（早期就要）
+* 早期参考实现只保留日志、Trace、崩溃收集、回放基础设施
+* 主循环、渲染与物理都交给 Unity
 
 ### 1.2 World（开放世界一等公民）
 
-* **World Partition（世界分区）**：网格/层级分区
-* **Streaming（流式加载）**：异步 IO、解压、GPU 上传队列
-* **Working Set（驻留集）**：内存预算驱动的驻留/驱逐
+* Unity 负责世界分区、流式加载与场景驻留
+* Fate Engine 只定义 world/terrain recipe 与资产布局规则
 
 ### 1.3 Asset System（资源系统）
 
 * GUID、依赖图、增量构建缓存
-* Bundle/Chunk 打包
+* Unity 资源导入、ScriptableObject 生成、Prefab/引用绑定
 * 热重载（编辑器联动）
 
 ### 1.4 Gameplay Substrate（玩法基底，非脚本优先）
@@ -102,31 +100,15 @@
 * 统一交互契约：输入/事件/状态（Interact / OnDenied / StateChanged）
 * 状态可序列化（存档、回放）
 * 事件总线（Event Bus）+ 条件/动作系统（数据驱动）
+* 第一阶段 MVP 包集是角色基础组：walk / run / jump / ladder / pickup / throw
 
 ## 2) Rendering（渲染）
 
-### 2.1 RHI（硬件接口层）
+### 2.1 Rendering Ownership
 
-* DX12 + Vulkan 两后端
-* 统一资源/管线/命令提交抽象
-
-### 2.2 Render Graph（渲染图）
-
-* Pass 依赖、资源生命周期、barrier 管理
-
-### 2.3 LOD 体系（与你定位最配）
-
-* 自动 LOD（导入时生成）
-* **HLOD（分层合并代理）**：开放世界内容密度的关键
-* 远景 impostor/billboard（可选）
-* Nanite 级虚拟几何：**预留接口，后置为长期研究线**
-
-### 2.4 Ray Tracing（光追能力层）
-
-* Tier0：无光追（SSR/阴影贴图/探针）
-* Tier1：**RT 阴影 + RT 反射**（首选落地）
-* Tier2：RTAO/RTGI（后置）
-* Tier3：Path Tracing（截图/离线/烘焙）
+* Unity owns the renderer in the first phase
+* Fate Engine may only reference rendering requirements as data
+* No custom render graph, RHI, or ray tracing stack is part of this slice
 
 ## 3) Toolchain（工具链）
 
@@ -140,7 +122,7 @@
 * 资源浏览器、场景编辑、属性面板、节点图
 * Play-in-Editor：即时预览
 * Profiler/Frame Debugger（尽早做）
-* “组合模板”面板：一键放置复合积木（篮球场/小屋/仓库区）
+* “组合模板”面板：一键放置复合积木或角色基础组
 
 ## 5) Platform（资产库与生态）
 
@@ -241,13 +223,13 @@
 
 ---
 
-## Phase 4：渲染增强（按性价比推进）
+## Phase 4：Unity 视觉增强（按性价比推进）
 
-* 光追 Tier1：RT 阴影 + RT 反射（可降级）
 * 更完整的 HLOD、遮挡剔除、流式优化
-  -（长期研究线）虚拟几何/Nanite-like：仅在生态与现金流稳定后投入
+* 角色表演、写实资产、动画质量和大世界表现继续向上迭代
+*（长期研究线）更激进的图形技术只在生态与现金流稳定后投入
 
-产出：满足“现代引擎有光追按钮”的市场预期，但不被画质战线绑架。
+产出：满足“现代宿主有更好画质按钮”的市场预期，但不把 Fate Engine 变回自研渲染战线。
 
 ---
 
@@ -287,12 +269,12 @@
    - 缺口：缺少“多版本状态迁移 + 回放一致性”回归矩阵。
    - 目标：同 seed/recipe/lockfile + 存档快照在不同机器复现一致结果。
 
-## B. 3D 渲染与性能（生产门槛）
+## B. 3D 渲染与性能（历史门槛参考）
 
-1. **渲染后端能力仍需工程化**
-   - 现状：已补充“最小可运行后端层”（模拟 Vulkan + `fate_render_probe` 探测程序），并接入 `make check-render-matrix` 双重校验。
-   - 仍有缺口：当前 Vulkan 为软件模拟探测，不代表真实 GPU 驱动链路能力。
-   - 目标：在保持可开关、可回退的前提下，逐步替换为真实后端初始化与压测数据。
+1. **渲染后端能力曾作为实验项存在**
+   - 现状：历史上补充过“最小可运行后端层”（模拟 Vulkan + `fate_render_probe` 探测程序），并接入过 `make check-render-matrix` 双重校验。
+   - 说明：这条线现在不是 Unity 白盒主线的一部分，只保留作历史参考。
+   - 目标：当前产品主线应把表现层交给 Unity，Fate Engine 只输出 recipe、校验和导出数据。
 
 2. **性能预算体系未固化**
    - 缺口：缺少帧时间预算（CPU/GPU）、draw call/材质/阴影距离等硬阈值与 CI 报告。
@@ -355,13 +337,13 @@
 > 结论：当前阶段可用于“原型验证与流程打样”，若要进入生产可用 3D 环境，优先级应是“测试体系 + 可观测性 + 资源流水线 + 发布治理”，而不是先追求高阶渲染特效。
 
 
-### 渲染后端测试通过标准（当前最小门槛）
-> 统一准入口径见 `docs/Editor3DTestReadiness.md`（视觉/性能项）；本节保留排障细节。
-1. 配置合法：`protocol/runtime/render_capabilities.json` 中 `backend/feature_tier/fallback_chain` 命中枚举，且回退链以 `none` 收敛。
-2. 后端可初始化：`make check-render-backend-init` 成功构建 `fate_render_probe`。
-3. 双重校验通过：`make check-render-matrix` 同时通过“配置合法性 + 非 `none` 后端探测可用性”。
+### 历史渲染后端测试说明
+> 统一准入口径见 `docs/Editor3DTestReadiness.md`（视觉/性能项）；本节仅保留历史排障记录，不再作为 Unity 主线门槛。
+1. 过去曾校验 `protocol/runtime/render_capabilities.json` 与 `fate_render_probe` 的模拟后端链路。
+2. 过去曾使用 `make check-render-backend-init` 和 `make check-render-matrix` 做双重校验。
+3. 这些命令与 Unity 白盒主线无关，仅供理解旧实验路径时参考。
 
-### 渲染后端失败排查（最短路径）
+### 历史排障记录（可忽略）
 1. 若提示缺少探测程序：执行 `cmake -S . -B build-render -DFATE_ENABLE_RENDER=ON && cmake --build build-render --target fate_render_probe`。
 2. 若提示 `backend_unavailable=vulkan`：检查是否设置了 `FATE_RENDER_DISABLE_VULKAN_SIM=1`，并确认 `FATE_RENDER_ENABLE_VULKAN_SIM=ON`。
 3. 若配置校验失败：检查 `fallback_chain` 是否非空、无重复、以 `none` 结尾，且所有后端值在允许枚举内。

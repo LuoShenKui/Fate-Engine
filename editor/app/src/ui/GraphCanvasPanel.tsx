@@ -6,7 +6,7 @@ import { buildLabelAnchors } from "./graph-canvas-label-anchors";
 import { findHitEntity, projectRayToGround } from "./graph-canvas-hit-test";
 import { compileShader, drawScene, getRayContext, getSceneFocus, getSceneOrbitDistance } from "./graph-canvas-renderer";
 import { findInteractionTarget, updateActorPhysics, type ActorPhysicsState } from "./graph-canvas-playtest";
-import GraphCanvasWorldLabels from "./graph-canvas-world-labels";
+import GraphCanvasOverlays from "./graph-canvas-overlays";
 import { toDoorEntity, toEnemyEntity, toGenericEntity, toLadderEntity, toSwitchEntity, toTriggerZoneEntity, type CameraMode, type CameraState, type CanvasEdge, type CanvasNode, type GraphCanvasPanelProps } from "./graph-canvas-types";
 import { createEditorHomeCamera, formatVec3, getCameraTrace, getOrbitSamplePositions, normalizeEditorOrbitDistance } from "./graph-canvas-camera";
 export type { CanvasEdge, CanvasNode } from "./graph-canvas-types";
@@ -449,9 +449,6 @@ export default function GraphCanvasPanel({
           onChangeCameraMode={handleCameraModeChange}
         />
         <div style={{ position: "relative", minHeight: 0, height: "100%", overflow: "hidden" }}>
-          <div data-testid="viewport-render-state" style={{ position: "absolute", right: "10px", bottom: "10px", zIndex: 2, padding: "4px 8px", borderRadius: "6px", background: "rgba(15,23,42,0.78)", color: "#cfd8e3", fontSize: "10px" }}>
-            {webglState === "ready" ? "render ok" : `render:${webglState}`}
-          </div>
           <canvas
             ref={canvasRef}
             style={{ display: "block", minHeight: "320px", width: "100%", height: "100%", border: dragActive ? "1px solid #5f8bc2" : "1px solid #2f3b4c", borderRadius: "8px", touchAction: "none", cursor: cameraMode === "editor" ? "grab" : "crosshair" }}
@@ -466,20 +463,14 @@ export default function GraphCanvasPanel({
             onDragLeave={() => setDragActive(false)}
             onDrop={onCanvasDrop}
           />
-          {dragActive ? (
-            <div style={{ position: "absolute", inset: "12px", borderRadius: "10px", border: "1px dashed #2553a4", background: "rgba(40, 67, 104, 0.78)", display: "grid", placeItems: "center", pointerEvents: "none", color: "#dbeeff", fontSize: "13px", fontWeight: 700 }}>
-              {t("panel.graphCanvas.dropHint")}
-            </div>
-          ) : null}
-          {webglState === "failed" ? (
-            <div style={{ position: "absolute", inset: "12px", borderRadius: "10px", background: "rgba(25,30,40,0.92)", display: "grid", placeItems: "center", color: "#f6c3b8", fontSize: "12px", fontWeight: 700 }}>
-              视口初始化失败：WebGL 未就绪
-            </div>
-          ) : null}
-          <GraphCanvasWorldLabels
+          <GraphCanvasOverlays
             canvas={canvasRef.current}
-            labels={worldLabels}
-            anchors={labelAnchors}
+            dragActive={dragActive}
+            webglState={webglState}
+            dragHintText={t("panel.graphCanvas.dropHint")}
+            worldLabels={worldLabels}
+            labelAnchors={labelAnchors}
+            nodes={nodes}
             cameraMode={cameraMode}
             cameraRef={cameraRef}
             actorStateRef={actorStateRef}

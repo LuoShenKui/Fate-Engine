@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fate.unity.export.schema.json",
+  "type": "object",
+  "required": ["version", "export_kind", "host", "runtime_stack", "recipe", "asset_bindings", "generated_object_map", "audit"],
+  "properties": {
+    "version": { "const": "0" },
+    "export_kind": { "const": "unity_whitebox" },
+    "host": { "const": "unity" },
+    "runtime_stack": { "const": "dots-ecs" },
+    "recipe": { "type": "object" },
+    "asset_bindings": {
+      "type": "array",
+      "items": { "$ref": "./unity.asset.binding.schema.json" }
+    },
+    "generated_object_map": {
+      "type": "array",
+      "items": { "$ref": "./unity.generated.object.map.schema.json" }
+    },
+    "audit": {
+      "type": "object",
+      "required": ["packages", "generated_from_seed"],
+      "properties": {
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["package_id", "version", "license", "reason", "notes", "alternatives"],
+            "properties": {
+              "package_id": { "type": "string", "minLength": 1 },
+              "version": { "type": "string", "minLength": 1 },
+              "license": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 },
+              "notes": { "type": "string" },
+              "alternatives": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "generated_from_seed": { "type": "number" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

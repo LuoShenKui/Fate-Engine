@@ -1,0 +1,33 @@
+{
+  "id": "fate.interaction.chest",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["chest", "loot", "reward"],
+  "notes": "Openable chest package for loot and reward white-box flows.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "chest",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": ["fate.assets.loot.chests", "fate.assets.audio.gameplay"],
+  "intent_aliases": ["chest", "宝箱", "treasure"],
+  "required_capabilities": ["interaction.chest"],
+  "required_slots": ["mesh.chest"],
+  "space_hints": { "footprint_meters": [1.0, 0.9, 0.9], "interaction_distance_meters": 1.4, "facing": "forward" },
+  "state_hints": ["closed", "opened", "looted"],
+  "constraint_hints": { "required_actor_class": "generic", "conflicts_with": [] },
+  "capabilities": [{ "capability_id": "interaction.chest", "level": 1, "exposed_params": ["reward_id"] }],
+  "params": { "reward_id": { "key": "reward_id", "type": "string", "default": "reward_basic", "mutability": "runtime", "visibility": "basic", "impact": ["gameplay"] } },
+  "slots": [
+    { "slot_id": "mesh.chest", "slot_type": "mesh", "fallback": "builtin:chest.mesh", "optional": false, "requires": "true" },
+    { "slot_id": "audio.open", "slot_type": "audio", "fallback": "builtin:chest.audio", "optional": true, "requires": "true" }
+  ],
+  "default_asset_bindings": [{ "slot_id": "mesh.chest", "resource_type": "mesh", "asset_package_id": "fate.assets.loot.chests", "resource_id": "chest_mesh" }],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/chest/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "product"
+}

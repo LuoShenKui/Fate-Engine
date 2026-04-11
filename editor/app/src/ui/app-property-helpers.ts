@@ -4,6 +4,12 @@ import type { PropertyField } from "./PropertyInspectorPanel";
 
 export const inferPropertyGroup = (key: string): string => {
   const normalized = key.toLowerCase();
+  if (normalized.includes("height") || normalized.includes("radius") || normalized.includes("mass") || normalized.includes("distance") || normalized.includes("stride")) {
+    return "Scale";
+  }
+  if (normalized.includes("speed") || normalized.includes("jump") || normalized.includes("cooldown") || normalized.includes("aircontrol")) {
+    return "Movement";
+  }
   if (normalized.includes("mesh") || normalized.includes("display") || normalized.includes("theme")) {
     return "Presentation";
   }
