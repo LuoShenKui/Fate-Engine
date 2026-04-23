@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::IntuitionDirective;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AgentMemoryRecord {
     pub key: String,
@@ -7,7 +9,7 @@ pub struct AgentMemoryRecord {
     pub timestamp_ms: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AgentMindState {
     pub entity_id: String,
     pub persona_profile_id: String,
@@ -19,6 +21,8 @@ pub struct AgentMindState {
     pub social_relations: Vec<String>,
     pub secret_flags: Vec<String>,
     pub conversation_state: String,
+    pub intuition_affinities: Vec<String>,
+    pub intuition_inbox: Vec<IntuitionDirective>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub current_focus: Option<String>,
 }
@@ -37,6 +41,8 @@ impl AgentMindState {
             social_relations: Vec::new(),
             secret_flags: Vec::new(),
             conversation_state: "idle".to_string(),
+            intuition_affinities: Vec::new(),
+            intuition_inbox: Vec::new(),
             current_focus: None,
         }
     }

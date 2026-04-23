@@ -1,9 +1,11 @@
 import type {
+  AvatarTemplateRecord,
   ConversationSessionRecord,
   DialogueCandidateRecord,
   DialogueTurnRecord,
   NarrativeDemoFixture,
   NarrativeHistoryTurnRecord,
+  PlayerAvatarRecord,
   RuntimeAiHealthResponse,
   RuntimeDialogueChoiceResponse,
 } from "./runtime-narrative-client";
@@ -15,6 +17,9 @@ type NarrativeDebugPanelProps = {
   health: RuntimeAiHealthResponse | null;
   models: string[];
   sessions: ConversationSessionRecord[];
+  avatarTemplates: AvatarTemplateRecord[];
+  avatars: PlayerAvatarRecord[];
+  selectedAvatarTemplateId: string;
   fixtures: NarrativeDemoFixture[];
   selectedFixtureId: string;
   sessionId: string;
@@ -27,11 +32,14 @@ type NarrativeDebugPanelProps = {
   snapshotAnchorId: string;
   snapshotJson: string;
   onSessionIdChange: (value: string) => void;
+  onAvatarTemplateIdChange: (value: string) => void;
   onFixtureIdChange: (value: string) => void;
   onSnapshotJsonChange: (value: string) => void;
   onRefreshOverview: () => void;
   onRefreshHistory: () => void;
   onBeginFixtureSession: () => void;
+  onCreateFallbackAvatar: () => void;
+  onSwitchAvatarPresentation: (avatarId: string, presentationMode: string) => void;
   onSubmitChoice: (optionId: string) => void;
   onImportSnapshot: () => void;
 };
@@ -47,6 +55,60 @@ const sectionTitleStyle = {
 export default function NarrativeDebugPanel(props: NarrativeDebugPanelProps): JSX.Element {
   return (
     <div style={{ display: "grid", gap: "12px" }}>
+      <div style={{ ...uePanelSurface, display: "grid", gap: "10px", padding: "12px" }}>
+        <div style={sectionTitleStyle}>Avatar Runtime</div>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+          <select
+            value={props.selectedAvatarTemplateId}
+            onChange={(event) => props.onAvatarTemplateIdChange(event.target.value)}
+            style={{
+              padding: "7px 10px",
+              borderRadius: "8px",
+              border: `1px solid ${ueShellColors.borderStrong}`,
+              background: ueShellColors.panelMuted,
+              color: ueShellColors.text,
+            }}
+          >
+            {props.avatarTemplates.map((template) => (
+              <option key={template.template_id} value={template.template_id}>
+                {template.label}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={props.onCreateFallbackAvatar} style={ueGhostButton}>
+            Create Fallback Avatar
+          </button>
+        </div>
+        {props.avatars.length === 0 ? (
+          <span style={{ color: ueShellColors.textMuted, fontSize: "12px" }}>No avatar profile stored yet.</span>
+        ) : (
+          <div style={{ display: "grid", gap: "8px" }}>
+            {props.avatars.map((avatar) => (
+              <div key={avatar.avatar_id} style={{ border: `1px solid ${ueShellColors.border}`, borderRadius: "8px", padding: "10px", background: ueShellColors.panelMuted, display: "grid", gap: "6px" }}>
+                <strong style={{ fontSize: "12px", color: ueShellColors.text }}>
+                  {avatar.avatar_id} / {avatar.body_model.template_id}
+                </strong>
+                <span style={{ fontSize: "11px", color: ueShellColors.textMuted }}>
+                  {avatar.head_fit.capture_mode} / {avatar.head_fit.fit_status} / mode={avatar.public_persona.presentation_mode}
+                </span>
+                <span style={{ fontSize: "11px", color: ueShellColors.textMuted }}>
+                  height={avatar.identity.height_meters.toFixed(2)}m / hair={avatar.tuning.hairstyle_id} / top={avatar.tuning.top_id}
+                </span>
+                <span style={{ fontSize: "11px", color: ueShellColors.textMuted }}>{avatar.head_fit.scan_summary}</span>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => props.onSwitchAvatarPresentation(avatar.avatar_id, "realistic_3d")} style={ueGhostButton}>
+                    Realistic
+                  </button>
+                  <button type="button" onClick={() => props.onSwitchAvatarPresentation(avatar.avatar_id, "anime_public_persona")} style={ueGhostButton}>
+                    Anime Persona
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ ...uePanelSurface, display: "grid", gap: "10px", padding: "12px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: "2px" }}>

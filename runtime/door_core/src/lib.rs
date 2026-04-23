@@ -1,5 +1,7 @@
 pub mod agent_mind;
 pub mod ai_runtime;
+pub mod avatar_identity;
+pub mod base_hall;
 pub mod event_bus;
 pub mod fate_state;
 pub mod host_adapter;
@@ -12,6 +14,7 @@ pub mod runtime_dialogue;
 pub mod scene;
 pub mod snapshot_replay;
 pub mod state;
+pub mod sixth_sense;
 pub mod task_drama;
 pub mod validation;
 pub mod world_core;
@@ -21,6 +24,11 @@ pub use ai_runtime::{
     DisabledRuntimeAiProvider, LocalRuntimeAiProvider, RuntimeAiProvider,
     RuntimeAiMode, RuntimeFeatureFlags,
 };
+pub use avatar_identity::{
+    AvatarBodyModel, AvatarTuningProfile, HeadFitProfile, IdentityParameterProfile,
+    PlayerAvatarRecord, PublicPersonaProfile,
+};
+pub use base_hall::{HallDecorationRecord, HallFeatureModuleRecord, HallStateRecord};
 pub use event_bus::EventBus;
 pub use fate_state::FateStateRecord;
 pub use host_adapter::{HostSignal, RuntimeHostBridge};
@@ -47,6 +55,7 @@ pub use runtime_dialogue::{
 pub use runtime_core::FateRuntimeCore;
 pub use scene::{DoorSceneComponent, DoorSceneInteractResult};
 pub use snapshot_replay::{RuntimeReplayLog, SnapshotReplayRecord};
+pub use sixth_sense::{IntuitionDirective, IntuitionDirectiveKind};
 pub use state::{
     CameraMode, CameraPreset, DoorState, DoorSyncState, EngineDefaults, LadderState,
     TriggerZoneState,

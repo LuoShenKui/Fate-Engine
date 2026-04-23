@@ -4,6 +4,73 @@ export type RuntimeAiHealthResponse = {
   model_name: string;
 };
 
+export type AvatarTemplateRecord = {
+  template_id: string;
+  label: string;
+  description: string;
+};
+
+export type IdentityParameterProfile = {
+  avatar_id: string;
+  player_entity_id: string;
+  height_meters: number;
+  build_index: number;
+  shoulder_width_meters: number;
+  leg_length_ratio: number;
+  skin_tone: string;
+  gender_style_tendency: string;
+  age_tendency: string;
+  facial_feature_params: Record<string, number>;
+};
+
+export type HeadFitProfile = {
+  avatar_id: string;
+  capture_mode: string;
+  fit_status: string;
+  topology_profile: string;
+  resemblance_notes: string;
+  texture_profile: string;
+  scan_summary: string;
+};
+
+export type AvatarBodyModel = {
+  avatar_id: string;
+  template_id: string;
+  body_archetype: string;
+  body_scale: [number, number, number];
+  template_based_avatar: boolean;
+};
+
+export type AvatarTuningProfile = {
+  avatar_id: string;
+  build_offset: number;
+  shoulder_offset: number;
+  waist_offset: number;
+  hairstyle_id: string;
+  top_id: string;
+  bottom_id: string;
+  shoes_id: string;
+  eyewear_id?: string | null;
+};
+
+export type PublicPersonaProfile = {
+  avatar_id: string;
+  presentation_mode: string;
+  anime_persona_id: string;
+  realistic_persona_id: string;
+};
+
+export type PlayerAvatarRecord = {
+  avatar_id: string;
+  player_entity_id: string;
+  identity: IdentityParameterProfile;
+  head_fit: HeadFitProfile;
+  body_model: AvatarBodyModel;
+  tuning: AvatarTuningProfile;
+  public_persona: PublicPersonaProfile;
+  equipment: string[];
+};
+
 export type DialogueCandidateRecord = {
   candidate_id: string;
   utterance: string;
@@ -128,6 +195,23 @@ const invokeNarrative = async <T>(command: string, args?: Record<string, unknown
 export const runtimeAiHealthCheck = async (): Promise<RuntimeAiHealthResponse> => invokeNarrative("runtime_ai_health_check");
 
 export const runtimeAiListModels = async (): Promise<string[]> => invokeNarrative("runtime_ai_list_models");
+
+export const runtimeAvatarTemplates = async (): Promise<AvatarTemplateRecord[]> => invokeNarrative("runtime_avatar_templates");
+
+export const runtimeAvatarCreateOrUpdate = async (request: {
+  avatar_id?: string | null;
+  player_entity_id: string;
+  template_id: string;
+  capture_mode: string;
+  fit_status: string;
+}): Promise<PlayerAvatarRecord> => invokeNarrative("runtime_avatar_create_or_update", { request });
+
+export const runtimeAvatarListProfiles = async (): Promise<PlayerAvatarRecord[]> => invokeNarrative("runtime_avatar_list_profiles");
+
+export const runtimeAvatarSwitchPresentation = async (
+  avatar_id: string,
+  presentation_mode: string,
+): Promise<PlayerAvatarRecord> => invokeNarrative("runtime_avatar_switch_presentation", { request: { avatar_id, presentation_mode } });
 
 export const runtimeDialogueBegin = async (request: RuntimeDialogueRequest): Promise<RuntimeDialogueBeginResponse> =>
   invokeNarrative("runtime_dialogue_begin", { request });

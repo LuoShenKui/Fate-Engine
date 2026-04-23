@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  runtimeAvatarCreateOrUpdate,
+  runtimeAvatarListProfiles,
+  runtimeAvatarSwitchPresentation,
+  runtimeAvatarTemplates,
   createNarrativeDemoFixtures,
   runtimeConversationSessions,
   createFixtureDialogueRequest,
@@ -17,6 +21,8 @@ import {
   type DialogueTurnRecord,
   type RuntimeAiHealthResponse,
   type RuntimeDialogueChoiceResponse,
+  type AvatarTemplateRecord,
+  type PlayerAvatarRecord,
 } from "./runtime-narrative-client";
 
 type ParsedAuditEvent = {
@@ -44,6 +50,9 @@ export const useRuntimeNarrativeDebug = () => {
   const [models, setModels] = useState<string[]>([]);
   const [auditLines, setAuditLines] = useState<string[]>([]);
   const [sessions, setSessions] = useState<ConversationSessionRecord[]>([]);
+  const [avatarTemplates, setAvatarTemplates] = useState<AvatarTemplateRecord[]>([]);
+  const [avatars, setAvatars] = useState<PlayerAvatarRecord[]>([]);
+  const [selectedAvatarTemplateId, setSelectedAvatarTemplateId] = useState("office_worker");
   const [sessionId, setSessionId] = useState("");
   const [history, setHistory] = useState<NarrativeHistoryTurnRecord[]>([]);
   const [currentTurn, setCurrentTurn] = useState<DialogueTurnRecord | null>(null);
@@ -77,16 +86,23 @@ export const useRuntimeNarrativeDebug = () => {
 
   const refreshOverview = async (): Promise<void> => {
     await runTask(async () => {
-      const [nextHealth, nextModels, nextSessions, nextAudit] = await Promise.all([
+      const [nextHealth, nextModels, nextSessions, nextAudit, nextTemplates, nextAvatars] = await Promise.all([
         runtimeAiHealthCheck(),
         runtimeAiListModels().catch(() => []),
         runtimeConversationSessions().catch(() => []),
         runtimeAuditTail(40).catch(() => []),
+        runtimeAvatarTemplates().catch(() => []),
+        runtimeAvatarListProfiles().catch(() => []),
       ]);
       setHealth(nextHealth);
       setModels(nextModels);
       setSessions(nextSessions);
       setAuditLines(nextAudit);
+      setAvatarTemplates(nextTemplates);
+      setAvatars(nextAvatars);
+      if (nextTemplates[0] && selectedAvatarTemplateId.length === 0) {
+        setSelectedAvatarTemplateId(nextTemplates[0].template_id);
+      }
     });
   };
 
@@ -152,6 +168,27 @@ export const useRuntimeNarrativeDebug = () => {
     });
   };
 
+  const createFallbackAvatar = async (): Promise<void> => {
+    await runTask(async () => {
+      const avatar = await runtimeAvatarCreateOrUpdate({
+        player_entity_id: "xr-player-rig",
+        template_id: selectedAvatarTemplateId,
+        capture_mode: "template_fallback",
+        fit_status: "template_based_avatar",
+      });
+      setAvatars((previous) => [avatar, ...previous.filter((item) => item.avatar_id !== avatar.avatar_id)]);
+      setAuditLines(await runtimeAuditTail(40).catch(() => auditLines));
+    });
+  };
+
+  const switchAvatarPresentation = async (avatarId: string, presentationMode: string): Promise<void> => {
+    await runTask(async () => {
+      const updated = await runtimeAvatarSwitchPresentation(avatarId, presentationMode);
+      setAvatars((previous) => previous.map((item) => (item.avatar_id === avatarId ? updated : item)));
+      setAuditLines(await runtimeAuditTail(40).catch(() => auditLines));
+    });
+  };
+
   useEffect(() => {
     void refreshOverview();
   }, []);
@@ -169,6 +206,10 @@ export const useRuntimeNarrativeDebug = () => {
     health,
     models,
     sessions,
+    avatarTemplates,
+    avatars,
+    selectedAvatarTemplateId,
+    setSelectedAvatarTemplateId,
     auditLines,
     parsedAudit,
     knownSessionIds,
@@ -189,5 +230,7 @@ export const useRuntimeNarrativeDebug = () => {
     beginFixtureSession,
     submitChoice,
     importSnapshot,
+    createFallbackAvatar,
+    switchAvatarPresentation,
   };
 };

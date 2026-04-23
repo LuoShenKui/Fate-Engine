@@ -3,9 +3,12 @@ use std::collections::BTreeMap;
 use crate::{
     begin_dialogue_turn, derive_fate_transitions, generate_tasks, resolve_dialogue_choice,
     resolve_intent, ActionResolution, AgentMindState, DialogueOutcome, DialogueTurn, EventBus,
-    FateStateRecord, HostSignal, LocalRuntimeAiProvider, NpcPersonaProfile, RuntimeAiProvider,
-    RuntimeFeatureFlags, RuntimeReplayLog, TaskInstance, WorldBibleRecord, WorldCommand,
-    WorldCore, WorldEntityKind, WorldEvent, WorldEventKind, WorldSnapshot,
+    FateStateRecord, HeadFitProfile, HostSignal, IdentityParameterProfile,
+    LocalRuntimeAiProvider, NpcPersonaProfile, PlayerAvatarRecord, PublicPersonaProfile,
+    RuntimeAiProvider, RuntimeFeatureFlags, RuntimeReplayLog, TaskInstance, WorldBibleRecord,
+    WorldCommand, WorldCore, WorldEntityKind, WorldEvent, WorldEventKind, WorldSnapshot,
+    AvatarBodyModel, AvatarTuningProfile, HallFeatureModuleRecord, HallStateRecord,
+    IntuitionDirective,
 };
 
 pub struct FateRuntimeCore {
@@ -18,7 +21,9 @@ pub struct FateRuntimeCore {
     tasks: Vec<TaskInstance>,
     persona_profiles: BTreeMap<String, NpcPersonaProfile>,
     world_bible: Option<WorldBibleRecord>,
+    hall_state: Option<HallStateRecord>,
     pending_dialogue_turns: Vec<DialogueTurn>,
+    player_avatars: BTreeMap<String, PlayerAvatarRecord>,
 }
 
 impl FateRuntimeCore {
@@ -33,7 +38,9 @@ impl FateRuntimeCore {
             tasks: Vec::new(),
             persona_profiles: BTreeMap::new(),
             world_bible: None,
+            hall_state: None,
             pending_dialogue_turns: Vec::new(),
+            player_avatars: BTreeMap::new(),
         }
     }
 
@@ -116,10 +123,12 @@ impl FateRuntimeCore {
     pub fn export_snapshot(&self) -> WorldSnapshot {
         let mut snapshot = self.world.export_snapshot(self.feature_flags);
         snapshot.world_bible = self.world_bible.clone();
+        snapshot.hall_state = self.hall_state.clone();
         snapshot.fate_records = self.fate_records.values().cloned().collect();
         snapshot.active_tasks = self.tasks.clone();
         snapshot.agent_minds = self.agent_minds.values().cloned().collect();
         snapshot.dialogue_turns = self.pending_dialogue_turns.clone();
+        snapshot.player_avatars = self.player_avatars.values().cloned().collect();
         snapshot
     }
 
@@ -127,6 +136,7 @@ impl FateRuntimeCore {
         self.feature_flags = snapshot.feature_flags;
         self.world.import_snapshot(&snapshot);
         self.world_bible = snapshot.world_bible;
+        self.hall_state = snapshot.hall_state;
         self.fate_records = snapshot
             .fate_records
             .into_iter()
@@ -139,6 +149,11 @@ impl FateRuntimeCore {
             .map(|mind| (mind.entity_id.clone(), mind))
             .collect();
         self.pending_dialogue_turns = snapshot.dialogue_turns;
+        self.player_avatars = snapshot
+            .player_avatars
+            .into_iter()
+            .map(|avatar| (avatar.avatar_id.clone(), avatar))
+            .collect();
         self.event_bus.publish(WorldEvent {
             tick: snapshot.tick,
             kind: WorldEventKind::SnapshotImported,
@@ -315,5 +330,123 @@ impl FateRuntimeCore {
 
     pub fn consume_dialogue_turns(&mut self) -> Vec<DialogueTurn> {
         std::mem::take(&mut self.pending_dialogue_turns)
+    }
+
+    pub fn update_hall_state(&mut self, hall_state: HallStateRecord) {
+        self.hall_state = Some(hall_state);
+    }
+
+    pub fn upsert_hall_module(&mut self, module: HallFeatureModuleRecord) -> Result<(), String> {
+        let hall_state = self
+            .hall_state
+            .get_or_insert(HallStateRecord {
+                hall_id: "xr-base-hall".to_string(),
+                hall_name: "Master Hall".to_string(),
+                theme_mode: "realistic_base".to_string(),
+                active_spawn_anchor_id: "spawn-point".to_string(),
+                modules: Vec::new(),
+                unlocked_anchor_ids: vec!["spawn-point".to_string()],
+            });
+        if let Some(existing) = hall_state.modules.iter_mut().find(|item| item.module_id == module.module_id) {
+            *existing = module;
+        } else {
+            hall_state.modules.push(module);
+        }
+        Ok(())
+    }
+
+    pub fn deliver_intuition(&mut self, directive: IntuitionDirective) -> Result<(), String> {
+        let recipient = self
+            .agent_minds
+            .entry(directive.recipient_entity_id.clone())
+            .or_insert_with(|| AgentMindState::new(directive.recipient_entity_id.clone()));
+        recipient.intuition_inbox.push(directive.clone());
+        self.event_bus.publish(WorldEvent {
+            tick: self.export_snapshot().tick,
+            kind: WorldEventKind::HostSignalReceived,
+            entity_id: Some(directive.recipient_entity_id),
+            detail: format!("sixth_sense={}", directive.summary),
+        });
+        Ok(())
+    }
+
+    pub fn upsert_player_avatar(&mut self, avatar: PlayerAvatarRecord) {
+        self.player_avatars.insert(avatar.avatar_id.clone(), avatar);
+    }
+
+    pub fn switch_avatar_presentation_mode(
+        &mut self,
+        avatar_id: &str,
+        presentation_mode: &str,
+    ) -> Result<(), String> {
+        let avatar = self
+            .player_avatars
+            .get_mut(avatar_id)
+            .ok_or_else(|| format!("avatar not found: {avatar_id}"))?;
+        avatar.public_persona.presentation_mode = presentation_mode.to_string();
+        Ok(())
+    }
+
+    pub fn create_template_avatar(
+        &self,
+        avatar_id: String,
+        player_entity_id: String,
+        template_id: String,
+    ) -> PlayerAvatarRecord {
+        PlayerAvatarRecord {
+            avatar_id: avatar_id.clone(),
+            player_entity_id: player_entity_id.clone(),
+            identity: IdentityParameterProfile {
+                avatar_id: avatar_id.clone(),
+                player_entity_id: player_entity_id.clone(),
+                height_meters: 1.72,
+                build_index: 0.0,
+                shoulder_width_meters: 0.43,
+                leg_length_ratio: 0.5,
+                skin_tone: "neutral_light".to_string(),
+                gender_style_tendency: "androgynous".to_string(),
+                age_tendency: "young_adult".to_string(),
+                facial_feature_params: BTreeMap::new(),
+            },
+            head_fit: HeadFitProfile {
+                avatar_id: avatar_id.clone(),
+                capture_mode: "template_fallback".to_string(),
+                fit_status: "template_based_avatar".to_string(),
+                topology_profile: "standard_humanoid_head".to_string(),
+                resemblance_notes: "fallback template avatar".to_string(),
+                texture_profile: "hall_face_neutral".to_string(),
+                scan_summary: "No passthrough capture available. Template fallback used.".to_string(),
+            },
+            body_model: AvatarBodyModel {
+                avatar_id: avatar_id.clone(),
+                template_id: template_id.clone(),
+                body_archetype: template_id,
+                body_scale: [1.0, 1.0, 1.0],
+                template_based_avatar: true,
+            },
+            tuning: AvatarTuningProfile {
+                avatar_id: avatar_id.clone(),
+                build_offset: 0.0,
+                shoulder_offset: 0.0,
+                waist_offset: 0.0,
+                hairstyle_id: "hair_short_a".to_string(),
+                top_id: "uniform_top_a".to_string(),
+                bottom_id: "uniform_bottom_a".to_string(),
+                shoes_id: "hall_shoes_a".to_string(),
+                eyewear_id: None,
+            },
+            public_persona: PublicPersonaProfile {
+                avatar_id: avatar_id.clone(),
+                presentation_mode: "realistic_3d".to_string(),
+                anime_persona_id: format!("{avatar_id}-anime"),
+                realistic_persona_id: format!("{avatar_id}-real"),
+            },
+            equipment: vec![
+                "hair_short_a".to_string(),
+                "uniform_top_a".to_string(),
+                "uniform_bottom_a".to_string(),
+                "hall_shoes_a".to_string(),
+            ],
+        }
     }
 }

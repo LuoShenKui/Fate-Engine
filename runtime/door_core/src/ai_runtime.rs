@@ -61,6 +61,16 @@ impl RuntimeAiProvider for LocalRuntimeAiProvider {
         let Some(entity) = entity else {
             return Ok(None);
         };
+        if let Some(intuition) = agent_state
+            .intuition_inbox
+            .iter()
+            .find(|directive| directive.expires_at_tick >= snapshot.tick && directive.target_position_meters.is_some())
+        {
+            return Ok(Some(IntentEnvelope::move_to(
+                agent_state.entity_id.clone(),
+                intuition.target_position_meters.expect("checked above"),
+            )));
+        }
         Ok(Some(IntentEnvelope::move_to(
             agent_state.entity_id.clone(),
             [

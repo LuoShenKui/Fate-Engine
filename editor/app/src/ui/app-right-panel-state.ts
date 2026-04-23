@@ -2,11 +2,13 @@ import type { BrickDefinition } from "../domain/brick";
 import type { AgentApplyReport, AgentComposeResult, ComposeResult } from "../composer";
 import type { UnityExportManifest } from "../project/unity-export";
 import type {
+  AvatarTemplateRecord,
   ConversationSessionRecord,
   DialogueCandidateRecord,
   DialogueTurnRecord,
   NarrativeDemoFixture,
   NarrativeHistoryTurnRecord,
+  PlayerAvatarRecord,
   RuntimeAiHealthResponse,
   RuntimeDialogueChoiceResponse,
 } from "./runtime-narrative-client";
@@ -73,6 +75,9 @@ type BuildRightPanelStateArgs = {
   narrativeHealth: RuntimeAiHealthResponse | null;
   narrativeModels: string[];
   narrativeSessions: ConversationSessionRecord[];
+  narrativeAvatarTemplates: AvatarTemplateRecord[];
+  narrativeAvatars: PlayerAvatarRecord[];
+  narrativeSelectedAvatarTemplateId: string;
   narrativeFixtures: NarrativeDemoFixture[];
   narrativeSelectedFixtureId: string;
   narrativeSessionId: string;
@@ -85,11 +90,14 @@ type BuildRightPanelStateArgs = {
   narrativeSnapshotAnchorId: string;
   narrativeSnapshotJson: string;
   onNarrativeSessionIdChange: (value: string) => void;
+  onNarrativeAvatarTemplateIdChange: (value: string) => void;
   onNarrativeFixtureIdChange: (value: string) => void;
   onNarrativeSnapshotJsonChange: (value: string) => void;
   onNarrativeRefreshOverview: () => void;
   onNarrativeRefreshHistory: () => void;
   onNarrativeBeginFixtureSession: () => void;
+  onNarrativeCreateFallbackAvatar: () => void;
+  onNarrativeSwitchAvatarPresentation: (avatarId: string, presentationMode: string) => void;
   onNarrativeSubmitChoice: (optionId: string) => void;
   onNarrativeImportSnapshot: () => void;
   category: string;
@@ -156,6 +164,9 @@ export const buildRightPanelState = (args: BuildRightPanelStateArgs): RenderAppR
   narrativeHealth: args.narrativeHealth,
   narrativeModels: args.narrativeModels,
   narrativeSessions: args.narrativeSessions,
+  narrativeAvatarTemplates: args.narrativeAvatarTemplates,
+  narrativeAvatars: args.narrativeAvatars,
+  narrativeSelectedAvatarTemplateId: args.narrativeSelectedAvatarTemplateId,
   narrativeFixtures: args.narrativeFixtures,
   narrativeSelectedFixtureId: args.narrativeSelectedFixtureId,
   narrativeSessionId: args.narrativeSessionId,
@@ -168,11 +179,14 @@ export const buildRightPanelState = (args: BuildRightPanelStateArgs): RenderAppR
   narrativeSnapshotAnchorId: args.narrativeSnapshotAnchorId,
   narrativeSnapshotJson: args.narrativeSnapshotJson,
   onNarrativeSessionIdChange: args.onNarrativeSessionIdChange,
+  onNarrativeAvatarTemplateIdChange: args.onNarrativeAvatarTemplateIdChange,
   onNarrativeFixtureIdChange: args.onNarrativeFixtureIdChange,
   onNarrativeSnapshotJsonChange: args.onNarrativeSnapshotJsonChange,
   onNarrativeRefreshOverview: args.onNarrativeRefreshOverview,
   onNarrativeRefreshHistory: args.onNarrativeRefreshHistory,
   onNarrativeBeginFixtureSession: args.onNarrativeBeginFixtureSession,
+  onNarrativeCreateFallbackAvatar: args.onNarrativeCreateFallbackAvatar,
+  onNarrativeSwitchAvatarPresentation: args.onNarrativeSwitchAvatarPresentation,
   onNarrativeSubmitChoice: args.onNarrativeSubmitChoice,
   onNarrativeImportSnapshot: args.onNarrativeImportSnapshot,
   category: args.category,

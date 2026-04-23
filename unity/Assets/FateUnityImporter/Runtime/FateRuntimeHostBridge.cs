@@ -57,5 +57,62 @@ namespace FateUnityImporter.Runtime
                 Options = options ?? System.Array.Empty<FateRuntimeDialogueOptionRecord>(),
             };
         }
+
+        public static XrRoomAnchorRecord CreateRoomAnchorRecord(
+            string anchorId,
+            string anchorKind,
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 sizeMeters)
+        {
+            return new XrRoomAnchorRecord
+            {
+                AnchorId = anchorId,
+                AnchorKind = anchorKind,
+                Position = position,
+                Rotation = rotation,
+                SizeMeters = sizeMeters,
+            };
+        }
+
+        public static FateRuntimeXrStateRecord CreateXrStateRecord(
+            Vector3 playerRootPosition,
+            Quaternion playerRootRotation,
+            Vector3 headPosition,
+            Quaternion headRotation,
+            Vector3 leftHandPosition,
+            Quaternion leftHandRotation,
+            Vector3 rightHandPosition,
+            Quaternion rightHandRotation,
+            XrLocomotionMode locomotionMode,
+            XrRoomAnchorRecord[] roomAnchors)
+        {
+            return new FateRuntimeXrStateRecord
+            {
+                PlayerRig = new XrPlayerRigStateRecord
+                {
+                    PlayerRootPosition = playerRootPosition,
+                    PlayerRootRotation = playerRootRotation,
+                    HeadPosition = headPosition,
+                    HeadRotation = headRotation,
+                    LocomotionMode = locomotionMode,
+                },
+                LeftHand = new XrHandStateRecord
+                {
+                    Handedness = "left",
+                    Position = leftHandPosition,
+                    Rotation = leftHandRotation,
+                    IsTracked = true,
+                },
+                RightHand = new XrHandStateRecord
+                {
+                    Handedness = "right",
+                    Position = rightHandPosition,
+                    Rotation = rightHandRotation,
+                    IsTracked = true,
+                },
+                RoomAnchors = roomAnchors ?? System.Array.Empty<XrRoomAnchorRecord>(),
+            };
+        }
     }
 }

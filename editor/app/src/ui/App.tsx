@@ -413,6 +413,9 @@ export default function App(): JSX.Element {
     narrativeHealth: narrativeDebug.health,
     narrativeModels: narrativeDebug.models,
     narrativeSessions: narrativeDebug.sessions,
+    narrativeAvatarTemplates: narrativeDebug.avatarTemplates,
+    narrativeAvatars: narrativeDebug.avatars,
+    narrativeSelectedAvatarTemplateId: narrativeDebug.selectedAvatarTemplateId,
     narrativeFixtures: narrativeDebug.fixtures,
     narrativeSelectedFixtureId: narrativeDebug.selectedFixtureId,
     narrativeSessionId: narrativeDebug.sessionId,
@@ -425,6 +428,7 @@ export default function App(): JSX.Element {
     narrativeSnapshotAnchorId: narrativeDebug.snapshotAnchorId,
     narrativeSnapshotJson: narrativeDebug.snapshotJson,
     onNarrativeSessionIdChange: narrativeDebug.setSessionId,
+    onNarrativeAvatarTemplateIdChange: narrativeDebug.setSelectedAvatarTemplateId,
     onNarrativeFixtureIdChange: narrativeDebug.setSelectedFixtureId,
     onNarrativeSnapshotJsonChange: narrativeDebug.setSnapshotJson,
     onNarrativeRefreshOverview: narrativeDebug.refreshOverview,
@@ -433,6 +437,12 @@ export default function App(): JSX.Element {
     },
     onNarrativeBeginFixtureSession: () => {
       void narrativeDebug.beginFixtureSession();
+    },
+    onNarrativeCreateFallbackAvatar: () => {
+      void narrativeDebug.createFallbackAvatar();
+    },
+    onNarrativeSwitchAvatarPresentation: (avatarId, presentationMode) => {
+      void narrativeDebug.switchAvatarPresentation(avatarId, presentationMode);
     },
     onNarrativeSubmitChoice: (optionId) => {
       void narrativeDebug.submitChoice(optionId);

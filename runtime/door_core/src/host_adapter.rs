@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{DialogueOutcome, DialogueTurn, FateRuntimeCore, IntentEnvelope, WorldEvent, WorldSnapshot};
+use crate::{
+    DialogueOutcome, DialogueTurn, FateRuntimeCore, HallFeatureModuleRecord, HallStateRecord,
+    IntentEnvelope, IntuitionDirective, WorldEvent, WorldSnapshot,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum HostSignal {
@@ -63,5 +66,17 @@ impl RuntimeHostBridge {
 
     pub fn import_snapshot(runtime: &mut FateRuntimeCore, snapshot: WorldSnapshot) -> Result<(), String> {
         runtime.import_snapshot(snapshot)
+    }
+
+    pub fn update_hall_state(runtime: &mut FateRuntimeCore, hall_state: HallStateRecord) {
+        runtime.update_hall_state(hall_state);
+    }
+
+    pub fn upsert_hall_module(runtime: &mut FateRuntimeCore, module: HallFeatureModuleRecord) -> Result<(), String> {
+        runtime.upsert_hall_module(module)
+    }
+
+    pub fn deliver_intuition(runtime: &mut FateRuntimeCore, directive: IntuitionDirective) -> Result<(), String> {
+        runtime.deliver_intuition(directive)
     }
 }

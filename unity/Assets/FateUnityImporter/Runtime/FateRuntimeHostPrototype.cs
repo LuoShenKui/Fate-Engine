@@ -81,6 +81,19 @@ namespace FateUnityImporter.Runtime
         public FateRuntimeTaskRecord[] ActiveTasks = Array.Empty<FateRuntimeTaskRecord>();
         public FateRuntimeFateRecord[] FateRecords = Array.Empty<FateRuntimeFateRecord>();
         public FateRuntimeDialogueTurnRecord[] DialogueTurns = Array.Empty<FateRuntimeDialogueTurnRecord>();
+        public FateRuntimeXrStateRecord XrState = new FateRuntimeXrStateRecord();
+        public FateRuntimeAvatarSummaryRecord[] PlayerAvatars = Array.Empty<FateRuntimeAvatarSummaryRecord>();
+    }
+
+    [Serializable]
+    public sealed class FateRuntimeAvatarSummaryRecord
+    {
+        public string AvatarId = string.Empty;
+        public string PlayerEntityId = string.Empty;
+        public string PresentationMode = "realistic_3d";
+        public string BodyTemplateId = string.Empty;
+        public string HeadFitStatus = string.Empty;
+        public string[] Equipment = Array.Empty<string>();
     }
 
     public sealed class FateRuntimeHostPrototype : MonoBehaviour
@@ -90,6 +103,7 @@ namespace FateUnityImporter.Runtime
         [SerializeField] private FateRuntimeFeatureFlagsRecord featureFlags = new FateRuntimeFeatureFlagsRecord();
         [SerializeField] private FateRuntimeSnapshotRecord latestSnapshot = new FateRuntimeSnapshotRecord();
         [SerializeField] private FateRuntimeDialogueTurnRecord[] pendingDialogueTurns = Array.Empty<FateRuntimeDialogueTurnRecord>();
+        [SerializeField] private XrInteractionCommandRecord[] pendingXrInteractions = Array.Empty<XrInteractionCommandRecord>();
 
         public FateRuntimeFeatureFlagsRecord FeatureFlags => featureFlags;
         public FateRuntimeSnapshotRecord LatestSnapshot => latestSnapshot;
@@ -129,6 +143,8 @@ namespace FateUnityImporter.Runtime
                 ActiveTasks = latestSnapshot.ActiveTasks ?? Array.Empty<FateRuntimeTaskRecord>(),
                 FateRecords = latestSnapshot.FateRecords ?? Array.Empty<FateRuntimeFateRecord>(),
                 DialogueTurns = latestSnapshot.DialogueTurns ?? Array.Empty<FateRuntimeDialogueTurnRecord>(),
+                XrState = latestSnapshot.XrState ?? new FateRuntimeXrStateRecord(),
+                PlayerAvatars = latestSnapshot.PlayerAvatars ?? Array.Empty<FateRuntimeAvatarSummaryRecord>(),
             };
         }
 
@@ -139,8 +155,18 @@ namespace FateUnityImporter.Runtime
             {
                 latestSnapshot.FeatureFlags = new FateRuntimeFeatureFlagsRecord();
             }
+            if (latestSnapshot.XrState == null)
+            {
+                latestSnapshot.XrState = new FateRuntimeXrStateRecord();
+            }
+            latestSnapshot.PlayerAvatars ??= Array.Empty<FateRuntimeAvatarSummaryRecord>();
             latestSnapshot.FeatureFlags.NpcAiEnabled = featureFlags.NpcAiEnabled;
             latestSnapshot.FeatureFlags.RuntimeAiMode = featureFlags.RuntimeAiMode;
+        }
+
+        public void UpdateXrState(FateRuntimeXrStateRecord xrState)
+        {
+            latestSnapshot.XrState = xrState ?? new FateRuntimeXrStateRecord();
         }
 
         public void BeginDialogue(FateRuntimeDialogueTurnRecord turn)
@@ -178,6 +204,26 @@ namespace FateUnityImporter.Runtime
             var turns = pendingDialogueTurns;
             pendingDialogueTurns = Array.Empty<FateRuntimeDialogueTurnRecord>();
             return turns;
+        }
+
+        public void SubmitXrInteraction(XrInteractionCommandRecord command)
+        {
+            if (command == null)
+            {
+                return;
+            }
+
+            var next = new XrInteractionCommandRecord[pendingXrInteractions.Length + 1];
+            pendingXrInteractions.CopyTo(next, 0);
+            next[^1] = command;
+            pendingXrInteractions = next;
+        }
+
+        public XrInteractionCommandRecord[] ConsumeXrInteractions()
+        {
+            var commands = pendingXrInteractions;
+            pendingXrInteractions = Array.Empty<XrInteractionCommandRecord>();
+            return commands;
         }
     }
 }

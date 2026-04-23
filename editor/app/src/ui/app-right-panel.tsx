@@ -7,11 +7,13 @@ import InstallReportPanel, { type InstallReportItem } from "./InstallReportPanel
 import NarrativeDebugPanel from "./NarrativeDebugPanel";
 import PropertyInspectorPanel, { type CompositeOverrideGroup, type PropertyField } from "./PropertyInspectorPanel";
 import type {
+  AvatarTemplateRecord,
   ConversationSessionRecord,
   DialogueCandidateRecord,
   DialogueTurnRecord,
   NarrativeDemoFixture,
   NarrativeHistoryTurnRecord,
+  PlayerAvatarRecord,
   RuntimeAiHealthResponse,
   RuntimeDialogueChoiceResponse,
 } from "./runtime-narrative-client";
@@ -80,6 +82,9 @@ export type RenderAppRightPanelArgs = {
   narrativeHealth: RuntimeAiHealthResponse | null;
   narrativeModels: string[];
   narrativeSessions: ConversationSessionRecord[];
+  narrativeAvatarTemplates: AvatarTemplateRecord[];
+  narrativeAvatars: PlayerAvatarRecord[];
+  narrativeSelectedAvatarTemplateId: string;
   narrativeFixtures: NarrativeDemoFixture[];
   narrativeSelectedFixtureId: string;
   narrativeSessionId: string;
@@ -92,11 +97,14 @@ export type RenderAppRightPanelArgs = {
   narrativeSnapshotAnchorId: string;
   narrativeSnapshotJson: string;
   onNarrativeSessionIdChange: (value: string) => void;
+  onNarrativeAvatarTemplateIdChange: (value: string) => void;
   onNarrativeFixtureIdChange: (value: string) => void;
   onNarrativeSnapshotJsonChange: (value: string) => void;
   onNarrativeRefreshOverview: () => void;
   onNarrativeRefreshHistory: () => void;
   onNarrativeBeginFixtureSession: () => void;
+  onNarrativeCreateFallbackAvatar: () => void;
+  onNarrativeSwitchAvatarPresentation: (avatarId: string, presentationMode: string) => void;
   onNarrativeSubmitChoice: (optionId: string) => void;
   onNarrativeImportSnapshot: () => void;
   category: string;
@@ -163,6 +171,9 @@ export const renderAppRightPanel = ({
   narrativeHealth,
   narrativeModels,
   narrativeSessions,
+  narrativeAvatarTemplates,
+  narrativeAvatars,
+  narrativeSelectedAvatarTemplateId,
   narrativeFixtures,
   narrativeSelectedFixtureId,
   narrativeSessionId,
@@ -175,11 +186,14 @@ export const renderAppRightPanel = ({
   narrativeSnapshotAnchorId,
   narrativeSnapshotJson,
   onNarrativeSessionIdChange,
+  onNarrativeAvatarTemplateIdChange,
   onNarrativeFixtureIdChange,
   onNarrativeSnapshotJsonChange,
   onNarrativeRefreshOverview,
   onNarrativeRefreshHistory,
   onNarrativeBeginFixtureSession,
+  onNarrativeCreateFallbackAvatar,
+  onNarrativeSwitchAvatarPresentation,
   onNarrativeSubmitChoice,
   onNarrativeImportSnapshot,
   category,
@@ -302,6 +316,9 @@ export const renderAppRightPanel = ({
           health={narrativeHealth}
           models={narrativeModels}
           sessions={narrativeSessions}
+          avatarTemplates={narrativeAvatarTemplates}
+          avatars={narrativeAvatars}
+          selectedAvatarTemplateId={narrativeSelectedAvatarTemplateId}
           fixtures={narrativeFixtures}
           selectedFixtureId={narrativeSelectedFixtureId}
           sessionId={narrativeSessionId}
@@ -314,11 +331,14 @@ export const renderAppRightPanel = ({
           snapshotAnchorId={narrativeSnapshotAnchorId}
           snapshotJson={narrativeSnapshotJson}
           onSessionIdChange={onNarrativeSessionIdChange}
+          onAvatarTemplateIdChange={onNarrativeAvatarTemplateIdChange}
           onFixtureIdChange={onNarrativeFixtureIdChange}
           onSnapshotJsonChange={onNarrativeSnapshotJsonChange}
           onRefreshOverview={onNarrativeRefreshOverview}
           onRefreshHistory={onNarrativeRefreshHistory}
           onBeginFixtureSession={onNarrativeBeginFixtureSession}
+          onCreateFallbackAvatar={onNarrativeCreateFallbackAvatar}
+          onSwitchAvatarPresentation={onNarrativeSwitchAvatarPresentation}
           onSubmitChoice={onNarrativeSubmitChoice}
           onImportSnapshot={onNarrativeImportSnapshot}
         />

@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 use crate::{
-    AgentMindState, DialogueTurn, FateStateRecord, RuntimeFeatureFlags, TaskInstance,
-    WorldBibleRecord,
+    AgentMindState, DialogueTurn, FateStateRecord, HallStateRecord, PlayerAvatarRecord,
+    RuntimeFeatureFlags, TaskInstance, WorldBibleRecord,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -79,10 +79,13 @@ pub struct WorldSnapshot {
     pub feature_flags: RuntimeFeatureFlags,
     pub entities: Vec<WorldEntity>,
     pub world_bible: Option<WorldBibleRecord>,
+    pub hall_state: Option<HallStateRecord>,
     pub fate_records: Vec<FateStateRecord>,
     pub active_tasks: Vec<TaskInstance>,
     pub agent_minds: Vec<AgentMindState>,
     pub dialogue_turns: Vec<DialogueTurn>,
+    #[serde(default)]
+    pub player_avatars: Vec<PlayerAvatarRecord>,
 }
 
 impl WorldSnapshot {
@@ -93,10 +96,12 @@ impl WorldSnapshot {
             feature_flags,
             entities: Vec::new(),
             world_bible: None,
+            hall_state: None,
             fate_records: Vec::new(),
             active_tasks: Vec::new(),
             agent_minds: Vec::new(),
             dialogue_turns: Vec::new(),
+            player_avatars: Vec::new(),
         }
     }
 }
@@ -185,10 +190,12 @@ impl WorldCore {
             feature_flags,
             entities: self.entities.values().cloned().collect(),
             world_bible: None,
+            hall_state: None,
             fate_records: Vec::new(),
             active_tasks: Vec::new(),
             agent_minds: Vec::new(),
             dialogue_turns: Vec::new(),
+            player_avatars: Vec::new(),
         }
     }
 

@@ -9,6 +9,7 @@ namespace FateDemo.DOTS
 {
     public sealed class CharacterFoundationDemoBootstrap : MonoBehaviour
     {
+        private static bool autoBootstrapEnabled;
         private readonly List<(Entity entity, Transform transform, Renderer renderer)> visualLinks = new();
         private EntityManager entityManager;
         private FateRecipeAsset loadedRecipe;
@@ -18,6 +19,11 @@ namespace FateDemo.DOTS
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureBootstrap()
         {
+            if (!autoBootstrapEnabled)
+            {
+                return;
+            }
+
             if (FindFirstObjectByType<CharacterFoundationDemoBootstrap>() != null)
             {
                 return;
@@ -26,6 +32,11 @@ namespace FateDemo.DOTS
             var go = new GameObject("CharacterFoundationDemoBootstrap");
             DontDestroyOnLoad(go);
             go.AddComponent<CharacterFoundationDemoBootstrap>();
+        }
+
+        public static void EnableAutoBootstrap()
+        {
+            autoBootstrapEnabled = true;
         }
 
         private void Start()

@@ -1,7 +1,12 @@
+mod runtime_avatar;
 mod runtime_narrative;
 
 use std::{path::PathBuf, sync::Mutex};
 
+use runtime_avatar::{
+    AvatarTemplateRecord, RuntimeAvatarCreateRequest, RuntimeAvatarPresentationRequest,
+    RuntimeAvatarServiceConfig, RuntimeAvatarServices,
+};
 use runtime_narrative::{
     ConversationSessionRecord, NarrativeHistoryTurnRecord, RuntimeAiHealthResponse,
     RuntimeDialogueBeginResponse, RuntimeDialogueChoiceRequest, RuntimeDialogueChoiceResponse,
@@ -16,8 +21,16 @@ pub use runtime_narrative::{
     RuntimeNarrativeServiceConfig as NarrativeConfig, RuntimeNarrativeServices as NarrativeServices,
     SnapshotAnchorRecord as NarrativeSnapshotAnchorRecord,
 };
+pub use runtime_avatar::{
+    AvatarTemplateRecord as RuntimeAvatarTemplateRecordExport,
+    RuntimeAvatarCreateRequest as RuntimeAvatarCreateRequestExport,
+    RuntimeAvatarPresentationRequest as RuntimeAvatarPresentationRequestExport,
+    RuntimeAvatarServiceConfig as RuntimeAvatarConfigExport,
+    RuntimeAvatarServices as RuntimeAvatarServicesExport,
+};
 pub struct AppState {
     services: Mutex<RuntimeNarrativeServices>,
+    avatar_services: Mutex<RuntimeAvatarServices>,
 }
 
 fn default_runtime_config(app_data_dir: PathBuf) -> RuntimeNarrativeServiceConfig {
@@ -29,6 +42,13 @@ fn default_runtime_config(app_data_dir: PathBuf) -> RuntimeNarrativeServiceConfi
         request_timeout_ms: 8_000,
         max_context_chars: 8_192,
         runtime_ai_enabled: true,
+    }
+}
+
+fn default_avatar_config(app_data_dir: PathBuf) -> RuntimeAvatarServiceConfig {
+    RuntimeAvatarServiceConfig {
+        db_path: app_data_dir.join("runtime").join("narrative.sqlite3"),
+        audit_log_path: app_data_dir.join("runtime").join("narrative-audit.jsonl"),
     }
 }
 
@@ -134,6 +154,52 @@ fn runtime_snapshot_import(
         .runtime_snapshot_import(&snapshot_anchor_id, &snapshot_json)
 }
 
+#[tauri::command]
+fn runtime_avatar_templates(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<AvatarTemplateRecord>, String> {
+    Ok(state
+        .avatar_services
+        .lock()
+        .map_err(|err| err.to_string())?
+        .runtime_avatar_templates())
+}
+
+#[tauri::command]
+fn runtime_avatar_create_or_update(
+    state: tauri::State<'_, AppState>,
+    request: RuntimeAvatarCreateRequest,
+) -> Result<door_core::PlayerAvatarRecord, String> {
+    state
+        .avatar_services
+        .lock()
+        .map_err(|err| err.to_string())?
+        .runtime_avatar_create_or_update(request)
+}
+
+#[tauri::command]
+fn runtime_avatar_list_profiles(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<door_core::PlayerAvatarRecord>, String> {
+    state
+        .avatar_services
+        .lock()
+        .map_err(|err| err.to_string())?
+        .runtime_avatar_list_profiles()
+}
+
+#[tauri::command]
+fn runtime_avatar_switch_presentation(
+    state: tauri::State<'_, AppState>,
+    request: RuntimeAvatarPresentationRequest,
+) -> Result<door_core::PlayerAvatarRecord, String> {
+    state
+        .avatar_services
+        .lock()
+        .map_err(|err| err.to_string())?
+        .runtime_avatar_switch_presentation(request)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -143,8 +209,12 @@ pub fn run() {
                 .map_err(|err| std::io::Error::other(err.to_string()))?;
             let services = RuntimeNarrativeServices::new(default_runtime_config(app_data_dir))
                 .map_err(std::io::Error::other)?;
+            let avatar_services =
+                RuntimeAvatarServices::new(default_avatar_config(app.path().app_data_dir().map_err(|err| std::io::Error::other(err.to_string()))?))
+                    .map_err(std::io::Error::other)?;
             app.manage(AppState {
                 services: Mutex::new(services),
+                avatar_services: Mutex::new(avatar_services),
             });
             Ok(())
         })
@@ -157,7 +227,11 @@ pub fn run() {
             runtime_conversation_sessions,
             runtime_audit_tail,
             runtime_snapshot_export,
-            runtime_snapshot_import
+            runtime_snapshot_import,
+            runtime_avatar_templates,
+            runtime_avatar_create_or_update,
+            runtime_avatar_list_profiles,
+            runtime_avatar_switch_presentation
         ])
         .run(tauri::generate_context!())
         .expect("error while running fate editor tauri application");

@@ -1,6 +1,7 @@
 use door_core::{
     ActorClass, AgentMemoryRecord, DisabledRuntimeAiProvider, FateRuntimeCore,
-    FateStateRecord, HostSignal, IntentEnvelope, IntentKind, LocalRuntimeAiProvider,
+    FateStateRecord, HallFeatureModuleRecord, HallStateRecord, HostSignal, IntentEnvelope,
+    IntentKind, IntuitionDirective, IntuitionDirectiveKind, LocalRuntimeAiProvider,
     NpcPersonaProfile, RuntimeAiMode, RuntimeAiProvider, RuntimeFeatureFlags, RuntimeHostBridge,
     TaskInstance, TaskSeed, WorldBibleRecord, WorldCommand, WorldEntity, WorldEntityId,
     WorldEntityKind, WorldEventKind, WorldSnapshot,
@@ -258,6 +259,82 @@ fn dialogue_turns_are_deterministic_and_update_fate_and_tasks() {
     assert_eq!(snapshot.fate_records.len(), 1);
     assert_eq!(snapshot.fate_records[0].world_phase, "revelation");
     assert!(!snapshot.active_tasks.is_empty());
+}
+
+#[test]
+fn intuition_directive_becomes_npc_move_intent() {
+    let provider = LocalRuntimeAiProvider;
+    let mut runtime = FateRuntimeCore::new(91, RuntimeFeatureFlags::default());
+    runtime
+        .apply_command(WorldCommand::SpawnEntity(WorldEntity {
+            id: WorldEntityId::new("npc-looter"),
+            kind: WorldEntityKind::Npc,
+            actor_class: Some(ActorClass::Humanoid),
+            position_meters: [0.0, 0.0, 0.0],
+            state_tags: vec!["idle".to_string()],
+        }))
+        .expect("spawn npc");
+    RuntimeHostBridge::deliver_intuition(
+        &mut runtime,
+        IntuitionDirective {
+            directive_id: "sense-treasure-1".to_string(),
+            source: "system".to_string(),
+            recipient_entity_id: "npc-looter".to_string(),
+            kind: IntuitionDirectiveKind::TreasureHint,
+            summary: "Treasure pulse detected.".to_string(),
+            target_position_meters: Some([8.0, 0.0, 4.0]),
+            confidence: 0.95,
+            expires_at_tick: 50,
+        },
+    )
+    .expect("deliver intuition");
+
+    let snapshot = runtime.export_snapshot();
+    let npc_mind = snapshot
+        .agent_minds
+        .iter()
+        .find(|mind| mind.entity_id == "npc-looter")
+        .expect("npc mind");
+    let intent = provider
+        .plan_intent(&snapshot, npc_mind)
+        .expect("plan")
+        .expect("intent");
+    assert_eq!(intent.kind, IntentKind::MoveTo);
+    assert_eq!(intent.target_position_meters, Some([8.0, 0.0, 4.0]));
+}
+
+#[test]
+fn hall_modules_are_persisted_in_snapshot() {
+    let mut runtime = FateRuntimeCore::new(12, RuntimeFeatureFlags::default());
+    RuntimeHostBridge::update_hall_state(
+        &mut runtime,
+        HallStateRecord {
+            hall_id: "xr-base-hall".to_string(),
+            hall_name: "Master Hall".to_string(),
+            theme_mode: "realistic_base".to_string(),
+            active_spawn_anchor_id: "spawn-point".to_string(),
+            modules: vec![],
+            unlocked_anchor_ids: vec!["spawn-point".to_string()],
+        },
+    );
+    RuntimeHostBridge::upsert_hall_module(
+        &mut runtime,
+        HallFeatureModuleRecord {
+            module_id: "avatar-bay-module".to_string(),
+            module_kind: "avatar".to_string(),
+            label: "化身舱".to_string(),
+            state: "standby".to_string(),
+            anchor_id: "avatar-bay".to_string(),
+            capabilities: vec!["avatar_create".to_string(), "persona_switch".to_string()],
+        },
+    )
+    .expect("upsert hall module");
+
+    let snapshot = runtime.export_snapshot();
+    let hall = snapshot.hall_state.expect("hall state");
+    assert_eq!(hall.hall_id, "xr-base-hall");
+    assert_eq!(hall.modules.len(), 1);
+    assert_eq!(hall.modules[0].module_id, "avatar-bay-module");
 }
 
 #[test]
