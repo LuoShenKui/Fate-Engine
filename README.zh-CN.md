@@ -9,7 +9,7 @@ Fate Engine 当前仍处于原型阶段，但项目定位已经从“积木装�
 - 因果系统：行为改变世界状态，并继续影响未来。
 - 命运系统：人物、事件和关键节点之间存在可读取、改写、斩断的命运关系。
 - 世界意志：对关键剧情节点进行有限修正，但不能推翻已经成立的充分因果。
-- 人物系统：统一 Character 模型，通过 Main / Supporting / Background 三档 Simulation Level 控制模拟深度，并允许角色随事件动态升级、降级和成长。
+- 人物系统：统一 Character 模型，明确区分 Personality、Preferences、Skills、Knowledge，并通过 Main / Supporting / Background 三档 Simulation Level 控制模拟深度；角色可随事件持续成长和改变。
 - 社会制度系统：校园、警察、司法、医院、公司、家庭、经济等作为可复用世界模板。
 - 长期模拟：NPC 日程、需求、行为、关系、记忆、身份和人口级 Simulation LOD。
 - 叙事系统：原作剧情只是默认命运线，不是强制任务树。
