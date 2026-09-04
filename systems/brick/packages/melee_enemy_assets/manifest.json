@@ -1,0 +1,29 @@
+{
+  "id": "fate.assets.melee.enemy",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["enemy", "melee", "mesh", "anim"],
+  "notes": "Grounded melee enemy placeholder assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "enemy-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "guard_mesh", "path": "assets/guard_mesh.placeholder.txt", "resource_type": "mesh", "unity_target_type": "Mesh", "license_source": "https://example.local/licenses/melee-enemy/mesh", "slot_hints": ["mesh.enemy"] },
+    { "id": "melee_attack_anim", "path": "assets/melee_attack_anim.placeholder.txt", "resource_type": "anim", "unity_target_type": "AnimationClip", "license_source": "https://example.local/licenses/melee-enemy/anim", "slot_hints": ["anim.attack"] },
+    { "id": "guard_prefab", "path": "assets/guard_prefab.placeholder.txt", "resource_type": "prefab", "unity_target_type": "GameObject", "license_source": "https://example.local/licenses/melee-enemy/prefab", "slot_hints": ["prefab.enemy"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/melee_enemy_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

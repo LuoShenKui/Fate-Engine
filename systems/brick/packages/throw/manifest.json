@@ -1,0 +1,103 @@
+{
+  "id": "fate.throw.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["throw", "impulse", "unity", "metric"],
+  "notes": "Character foundation throw profile exported from Fate Engine into Unity-generated assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "throw",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": ["fate.assets.interaction.props"],
+  "intent_aliases": ["throw", "toss", "投掷", "扔"],
+  "required_capabilities": ["interaction.throw"],
+  "required_slots": ["fx.throw", "audio.throw"],
+  "space_hints": {
+    "footprint_meters": [0.5, 0.5, 0.5],
+    "interaction_distance_meters": 1.25,
+    "facing": "forward"
+  },
+  "state_hints": ["held", "windup", "released"],
+  "constraint_hints": {
+    "required_actor_class": "humanoid",
+    "conflicts_with": []
+  },
+  "capabilities": [
+    {
+      "capability_id": "interaction.throw",
+      "level": 1,
+      "exposed_params": [
+        "throw_speed_mps",
+        "throw_mass_kg",
+        "cooldown_s"
+      ]
+    }
+  ],
+  "params": {
+    "throw_speed_mps": {
+      "key": "throw_speed_mps",
+      "type": "float",
+      "default": 11.5,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "throw_mass_kg": {
+      "key": "throw_mass_kg",
+      "type": "float",
+      "default": 2.2,
+      "mutability": "runtime",
+      "visibility": "advanced",
+      "impact": ["gameplay"]
+    },
+    "cooldown_s": {
+      "key": "cooldown_s",
+      "type": "float",
+      "default": 0.4,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "fx.throw",
+      "slot_type": "vfx",
+      "fallback": "builtin:throw.fx.default",
+      "optional": true,
+      "requires": "true"
+    },
+    {
+      "slot_id": "audio.throw",
+      "slot_type": "audio",
+      "fallback": "builtin:throw.audio.default",
+      "optional": true,
+      "requires": "true"
+    }
+  ],
+  "default_asset_bindings": [
+    {
+      "slot_id": "fx.throw",
+      "resource_type": "vfx",
+      "asset_package_id": "fate.assets.interaction.props",
+      "resource_id": "throw_release_vfx"
+    },
+    {
+      "slot_id": "audio.throw",
+      "resource_type": "audio",
+      "asset_package_id": "fate.assets.interaction.props",
+      "resource_id": "throw_release_audio"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/throw/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

@@ -1,3 +1,5 @@
+> **2026-09-04 架构调整**：Fate Engine 的根架构已切换为 World Kernel（因果 / 命运 / 世界意志 / 社会制度 / 长期模拟）。积木系统不再代表 Fate Engine 本身，而是 `systems/brick/` 下的一个可复用子系统。本文后续“积木为核心”的内容保留为历史原型和 Brick 子系统内部设计参考；新的总架构以 [Architecture.md](Architecture.md) 为准。
+
 Fate Engine 硬性架构要求 v0.1
 0. 设计边界（不可违反）
 

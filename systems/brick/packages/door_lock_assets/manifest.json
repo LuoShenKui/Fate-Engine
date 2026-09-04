@@ -1,0 +1,28 @@
+{
+  "id": "fate.assets.doors.locks",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["door", "lock", "mesh", "material"],
+  "notes": "Grounded door and lock placeholder assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "door-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "locked_door_mesh", "path": "assets/locked_door_mesh.placeholder.txt", "resource_type": "mesh", "unity_target_type": "Mesh", "license_source": "https://example.local/licenses/door-lock/mesh", "slot_hints": ["mesh.primary"] },
+    { "id": "locked_door_material", "path": "assets/locked_door_material.placeholder.txt", "resource_type": "material", "unity_target_type": "Material", "license_source": "https://example.local/licenses/door-lock/material", "slot_hints": ["material.primary"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/door_lock_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

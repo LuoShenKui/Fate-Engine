@@ -1,0 +1,74 @@
+{
+  "id": "fate.container.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["container", "interaction", "unity", "metric"],
+  "notes": "Reference container brick kept as a protocol sample while pickup and throw become the active character foundation slice.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "container-open",
+  "unit_system": "metric",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.container",
+      "level": 1,
+      "exposed_params": [
+        "enabled",
+        "opened",
+        "capacity"
+      ]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "opened": {
+      "key": "opened",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "capacity": {
+      "key": "capacity",
+      "type": "int",
+      "default": 16,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:container.mesh.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/container/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}
