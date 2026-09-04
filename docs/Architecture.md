@@ -107,6 +107,7 @@ fate-engine/
 ├─ style/{character,rendering,animation,camera,profiles}
 ├─ ai/{character_agent,dialogue,planning,world_builder,asset_generator,lore_parser}
 ├─ asset/{character,environment,animation,audio,manifest}
+├─ pipeline/{ingest,analysis,generation,validation,assembly,export}
 ├─ runtime/{world_runtime,event_bus,scheduler,save,snapshot}
 ├─ adapters/{unity,unreal,custom_renderer}
 ├─ editor/
@@ -172,7 +173,41 @@ Style 可以控制：
 
 但不能改变角色身份、记忆、关系和 Fate。
 
-## 7. Engine Adapter 边界
+## 7. World Build Pipeline
+
+`pipeline/` 是世界生产流水线，负责把原作资料转成 Fate Engine 可以消费的世界、资产和 3D 场景。
+
+典型流程：
+
+```text
+原片 / 设定集 / 设计稿 / 剧本
+        ↓
+      ingest
+        ↓
+     analysis
+        ↓
+    generation
+        ↓
+    validation
+        ↓
+     assembly
+        ↓
+      export
+        ↓
+Unity / 其他宿主
+```
+
+其中：
+
+- `ai/` 提供解析、规划和生成能力；
+- `pipeline/` 负责编排这些能力；
+- `asset/` 保存标准化资产；
+- `systems/brick/` 负责快速装配 3D 场景；
+- `adapters/` 负责交给具体宿主。
+
+Pipeline 的原则是：**每一步都有明确输入、明确输出、可独立重跑、可独立验证。** 不允许把“动画 → 世界”做成一个不可调试的大黑盒。
+
+## 8. Engine Adapter 边界
 
 第一阶段使用 Unity：
 
@@ -188,7 +223,7 @@ World Kernel / Systems / Simulation
 
 以后更换 Unreal 或自研 Renderer，不应该要求重写 Core。
 
-## 8. 第一阶段建议验证
+## 9. 第一阶段建议验证
 
 先做一个无画面的校园世界：
 
