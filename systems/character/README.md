@@ -14,6 +14,9 @@ Character System 是 Fate Engine 的统一人物系统。
 
 - Identity：身份与社会位置
 - Personality：人格、气质、行为倾向
+- Preferences：喜好、厌恶、兴趣、审美与倾向
+- Skills：可执行能力与熟练度
+- Knowledge：已掌握的事实、专业知识与认知范围
 - Needs：当前需求
 - Goals：短期与长期目标
 - Memory：经历过什么
@@ -25,6 +28,27 @@ Character System 是 Fate Engine 的统一人物系统。
 - SimulationLevel：Main / Supporting / Background
 
 其中 Identity / Memory / Relationship / Fate 等底层能力继续由 `core/` 提供，Needs / Schedule / Behavior 等运行逻辑继续由 `simulation/` 提供；Character System 负责把它们组合成一个完整的人物。
+
+## Personality / Preferences / Skills / Knowledge
+
+这四项必须分开：
+
+- Personality：这个人通常会怎么做人、怎么反应。
+- Preferences：这个人喜欢什么、讨厌什么、对什么感兴趣。
+- Skills：这个人能做什么，以及做得多熟练。
+- Knowledge：这个人知道什么、理解到什么深度。
+
+例如：
+
+```text
+喜欢甜食
++ 甜点知识很高
++ 料理技能很低
+```
+
+意味着角色可以非常懂甜点，也非常爱吃，但自己并不会做。
+
+Knowledge 还必须和职业、资格、教育经历、机构权限联动。药剂师、普通药店兼职店员、药学学生可以拥有完全不同的药学知识深度和可访问范围。
 
 ## Simulation Levels
 
@@ -41,7 +65,9 @@ Character System 是 Fate Engine 的统一人物系统。
 - 关系网络
 - 秘密
 - 资产
+- 喜好 / 厌恶
 - 技能
+- 知识
 - 情绪
 - 日程
 - Fate Link
@@ -52,6 +78,9 @@ Character System 是 Fate Engine 的统一人物系统。
 配角保留影响行为的核心信息：
 
 - 人格标签
+- 核心喜好 / 厌恶
+- 核心技能
+- 核心知识
 - 职业 / 身份
 - 主要关系
 - 当前目标
@@ -70,6 +99,8 @@ Character System 是 Fate Engine 的统一人物系统。
 - 日程
 - 基础需求
 - 基础人格
+- 少量关键喜好
+- 与当前职业/生活有关的技能与知识摘要
 - 家庭 / 组织归属
 - 经济状态
 - 当前行为
@@ -117,7 +148,9 @@ Main
 - 身份
 - 创伤
 - 习惯
+- 喜好 / 厌恶
 - 技能
+- 知识
 - 对世界的认知
 - 关系
 
