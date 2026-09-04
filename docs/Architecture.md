@@ -82,6 +82,7 @@ fate-engine/
 │  └─ state/
 │
 ├─ systems/
+│  ├─ character/{model,templates/main,templates/supporting,templates/background,lod,evolution}
 │  ├─ brick/
 │  ├─ school/
 │  ├─ police/
@@ -133,7 +134,83 @@ fate-engine/
 
 Police、Justice、Hospital、Company 等遵循同样原则。
 
-## 5. Brick 的新位置
+## 5. Character System
+
+`systems/character/` 是统一人物系统，用于把 Core 与 Simulation 中的人物相关能力组合成一个完整 Character。
+
+原则：
+
+> **只有一种 Character 数据模型，通过 Simulation Level 控制模拟深度。**
+
+Character 可以组合：
+
+- Identity；
+- Personality；
+- Needs；
+- Goals；
+- Memory；
+- Relationships；
+- Resources；
+- Schedule；
+- Beliefs；
+- Fate；
+- SimulationLevel。
+
+其中 Identity / Memory / Relationship / Fate 等基础能力由 `core/` 提供，Needs / Schedule / Behavior 等运行能力由 `simulation/` 提供。
+
+### Simulation Level
+
+三档模板：
+
+- `Main`：主要角色，保留完整人格、价值观、长期目标、重要记忆、关系网、秘密、资产、技能、情绪、日程和 Fate Link。
+- `Supporting`：配角，保留人格标签、身份、主要关系、当前目标、重要记忆、资产、日程和少量长期目标。
+- `Background`：背景角色，只维持身份、职业、位置、日程、基础需求、基础人格、家庭/组织归属、经济状态和当前行为。
+
+Simulation Level 可以动态变化：
+
+```text
+Background
+   ↓ 玩家长期互动 / 产生重大关系
+Supporting
+   ↓ 卷入关键命运和主线
+Main
+```
+
+也允许反向降级以控制模拟成本。
+
+升级人物时只能基于已存在的事实、记忆、关系、社会身份和世界模板补全信息，不能覆盖已经成立的设定。
+
+### Character Evolution
+
+人物设定分为：
+
+相对稳定：
+
+- 出生背景；
+- 早期经历；
+- 基础人格；
+- 核心价值观。
+
+可被事件持续改变：
+
+- 信任；
+- 恐惧；
+- 目标；
+- 立场；
+- 财富；
+- 职业；
+- 身份；
+- 创伤；
+- 习惯；
+- 技能；
+- 对世界的认知；
+- 关系。
+
+核心原则：
+
+> **事件改变人物，人物再基于改变后的自己做新的决定。**
+
+## 6. Brick 的新位置
 
 Brick 只是 `systems/` 下的一个子系统。
 
@@ -154,7 +231,7 @@ Brick 只是 `systems/` 下的一个子系统。
 - NPC 长期记忆；
 - 社会制度本身。
 
-## 6. Style 独立
+## 7. Style 独立
 
 同一个世界状态可以采用不同 Style Profile：
 
@@ -173,7 +250,7 @@ Style 可以控制：
 
 但不能改变角色身份、记忆、关系和 Fate。
 
-## 7. World Build Pipeline
+## 8. World Build Pipeline
 
 `pipeline/` 是世界生产流水线，负责把原作资料转成 Fate Engine 可以消费的世界、资产和 3D 场景。
 
@@ -207,7 +284,7 @@ Unity / 其他宿主
 
 Pipeline 的原则是：**每一步都有明确输入、明确输出、可独立重跑、可独立验证。** 不允许把“动画 → 世界”做成一个不可调试的大黑盒。
 
-## 8. Engine Adapter 边界
+## 9. Engine Adapter 边界
 
 第一阶段使用 Unity：
 
@@ -223,18 +300,19 @@ World Kernel / Systems / Simulation
 
 以后更换 Unreal 或自研 Renderer，不应该要求重写 Core。
 
-## 9. 第一阶段建议验证
+## 10. 第一阶段建议验证
 
 先做一个无画面的校园世界：
 
 1. World Time；
-2. Identity + Permission；
-3. Relationship + Memory；
-4. School System；
-5. Causality；
-6. Fate；
-7. World Will；
-8. 100 个 NPC Schedule + Simulation LOD；
-9. Scenario Tests：打架、处分、开除、住院、错过关键事件、世界意志修正、Fate Sever。
+2. Character Model + Simulation Level；
+3. Identity + Permission；
+4. Relationship + Memory；
+5. School System；
+6. Causality；
+7. Fate；
+8. World Will；
+9. 100 个 NPC Schedule + Simulation LOD；
+10. Scenario Tests：打架、处分、开除、住院、错过关键事件、世界意志修正、Fate Sever。
 
 只有这套逻辑能稳定独立运行后，再让 Unity 把它表现出来。
