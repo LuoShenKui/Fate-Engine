@@ -9,7 +9,7 @@ The root architecture covers:
 - causality;
 - fate links, rewrite, and severing;
 - world-will narrative attractors with strict causal limits;
-- a unified Character model with Main / Supporting / Background simulation levels and dynamic promotion/demotion;
+- a unified Character model with distinct Personality, Preferences, Skills, and Knowledge, plus Main / Supporting / Background simulation levels and dynamic promotion/demotion;
 - reusable social systems such as school, police, justice, hospital, company, family, and economy;
 - NPC schedules, needs, behavior, memory, identity, population, and simulation LOD;
 - narrative timelines as default fate lines rather than forced scripts;
