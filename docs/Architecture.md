@@ -135,6 +135,32 @@ fate-engine/
 
 Police、Justice、Hospital、Company 等遵循同样原则。
 
+### Japan World Rules Library
+
+第一批日本现代社会模板已经建立骨架：
+
+- systems/school/japan/：日本高中与校园制度
+- systems/family/japan/：日本家庭
+- systems/police/japan/：日本警察
+- systems/commerce/japan/convenience_store/：便利店
+- systems/hospital/japan/：医院
+- systems/company/japan/：公司
+- systems/transport/japan/rail/：铁路 / 电车
+- systems/housing/japan/rental/：租房
+- systems/economy/japan/banking/：银行
+- systems/justice/japan/court/：法院
+- systems/commerce/japan/restaurant/：餐厅
+- systems/organization/japan/club/：校外社团 / 协会
+
+这些系统都遵循同一原则：
+
+角色 + 身份 + 权限 + 资源 + 时间 + 规则 + 事件
+→ 状态变化
+→ 跨系统后果
+→ Causality / Fate
+
+第一阶段只建立制度边界和目录，不急着把全部规则结构化。后续逐个系统补充权限、流程、事件、异常路径和跨系统联动。
+
 ### Japanese School System
 
 第一套正式 School Template 放在 systems/school/japan/，先以日本高中为基准。
