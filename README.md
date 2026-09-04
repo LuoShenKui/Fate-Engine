@@ -41,7 +41,7 @@ Existing Brick editor UI, shared schemas, reference runtime integrations, and Un
 ## Repository layout
 
 - `core/`: causality, fate, world will, time, identity, relationships, memory, permissions, state.
-- `systems/`: reusable character, social, and gameplay systems; `character/` composes character state while `brick/` handles fast 3D scene assembly.
+- `systems/`: social systems are country/region-first. `systems/japan/` contains concrete Japanese institutions; `systems/common/` is reserved for abstractions extracted only after multiple country implementations; `character/` composes character state and `brick/` handles fast 3D scene assembly.
 - `simulation/`: NPC, schedules, needs, behavior, population, simulation LOD.
 - `narrative/`: events, default timeline, conditions, consequences, generators.
 - `world/`: templates, locations, characters, factions, rules, bootstrap.
@@ -62,7 +62,9 @@ See [docs/Architecture.md](docs/Architecture.md) for the canonical architecture.
 3. Systems use explicit contracts instead of a monolithic World class.
 4. Important actions must close the loop from input to state change to causality to future consequences.
 5. World Will may repair accidents but cannot override sufficient causality.
-6. Brick is specifically for fast/one-click 3D scene and interaction assembly; it does not own causality, fate, or social rules.
+6. Social institutions are modeled country/region-first; Common abstractions are extracted later from multiple implementations.
+7. Role knowledge, qualifications, institution rules, and live world state constrain AI dialogue and actions.
+8. Brick is specifically for fast/one-click 3D scene and interaction assembly; it does not own causality, fate, or social rules.
 
 ## Quick start
 
