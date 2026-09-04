@@ -15,9 +15,19 @@ The root architecture covers:
 - independent anime / semi-realistic / realistic style profiles;
 - replaceable Unity / Unreal / custom-renderer adapters.
 
-## Brick is now a subsystem
+## Brick: fast 3D scene assembly subsystem
 
 The original Brick system is preserved, but it no longer defines Fate Engine itself.
+
+Brick has one focused job: **assemble reusable interactions, 3D assets, ability sets, and composite templates into playable 3D scenes with as little repeated work as possible — ideally through one-click or parameterized construction.**
+
+Doors, ladders, switches, pickups, building parts, classrooms, streets, cabins, and other reusable scene structures can be composed from Brick/Template packages. Brick answers “how do we build the world faster?”, while Core and the social systems answer “how does this world actually behave?”
+
+Therefore:
+
+- `core/` and social systems own world rules, causality, and fate.
+- `systems/brick/` owns fast 3D scene and interaction assembly.
+- Unity currently owns final rendering, physics, animation, and VR presentation.
 
 Canonical locations:
 
@@ -50,7 +60,7 @@ See [docs/Architecture.md](docs/Architecture.md) for the canonical architecture.
 3. Systems use explicit contracts instead of a monolithic World class.
 4. Important actions must close the loop from input to state change to causality to future consequences.
 5. World Will may repair accidents but cannot override sufficient causality.
-6. Brick is a content-assembly capability, not the architectural center.
+6. Brick is specifically for fast/one-click 3D scene and interaction assembly; it does not own causality, fate, or social rules.
 
 ## Quick start
 
