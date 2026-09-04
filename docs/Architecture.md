@@ -84,18 +84,19 @@ fate-engine/
 ├─ systems/
 │  ├─ character/{model,templates/main,templates/supporting,templates/background,lod,evolution}
 │  ├─ brick/
-│  ├─ school/
-│  │  └─ japan/{calendar,academics,homeroom,lifecycle,events,clubs,governance,discipline,templates/high_school}
-│  ├─ police/
-│  ├─ justice/
-│  ├─ hospital/
-│  ├─ company/
-│  ├─ family/
-│  ├─ economy/
-│  ├─ commerce/
-│  ├─ housing/
-│  ├─ transport/
-│  └─ organization/
+│  ├─ common/
+│  └─ japan/
+│     ├─ school/{calendar,academics,homeroom,lifecycle,events,clubs,governance,discipline,templates/high_school}
+│     ├─ family/
+│     ├─ police/
+│     ├─ hospital/
+│     ├─ company/
+│     ├─ commerce/{convenience_store,pharmacy,restaurant}
+│     ├─ transport/rail/
+│     ├─ housing/rental/
+│     ├─ economy/banking/
+│     ├─ justice/court/
+│     └─ organization/club/
 │
 ├─ simulation/{npc,schedule,needs,behavior,population,lod}
 ├─ narrative/{event,timeline,condition,consequence,generator}
@@ -135,35 +136,103 @@ fate-engine/
 
 Police、Justice、Hospital、Company 等遵循同样原则。
 
+### Country-First Social Systems
+
+社会制度首先按国家 / 地区实现，因为学校、警察、医疗、劳动、住房、银行、法院和商业规则都高度依赖当地制度环境。
+
+规范目录：
+
+- `systems/japan/`
+- 未来可以增加 `systems/us/`、`systems/china/` 等。
+- `systems/common/` 不是父模板，而是在多个国家实现后提炼出的稳定共性。
+
+抽象方向是：
+
+```text
+Japan School ─┐
+US School    ─┼→ 反复验证共同概念 → systems/common/
+China School ─┘
+```
+
+而不是：
+
+```text
+Common School
+→ 强行覆盖 Japan / US / China
+```
+
+### Social-System Runtime Model
+
+每个制度系统最终都由“人物 + 角色设定 + 专业知识 + 机构事实 + AI”共同运行。
+
+```text
+Character
++ Identity
++ Role
++ Qualification
++ Personality
++ Domain Knowledge
++ Institution Rules
++ Permissions
++ Schedule
++ Local World State
++ Memory
+        ↓
+AI Decision / Dialogue
+        ↓
+Action
+        ↓
+System Validation
+        ↓
+World State / Causality
+```
+
+AI 不应该只靠 Prompt 假装自己是某个职业。
+
+例如日本药店：
+
+- 普通兼职店员、注册销售人员、药剂师、店长拥有不同资格与知识范围；
+- 角色能访问的药品知识由 Role / Qualification / Experience 决定；
+- 当前库存、商品状态和店内规则来自真实 World State；
+- 玩家如果本身是药学学生或专业人士，其 Character Knowledge 也参与对话上下文，因此双方可以进行更深入的专业交流。
+
+Engine / System 负责硬事实、身份、资格、权限、库存、资金、时间和因果；AI 负责在这些边界内理解、判断、交流、协商和选择行动。
+
+第一阶段允许大量制度细节继续以 Markdown 作为人类可读设定，由 AI 辅助理解；只有必须保证一致性的硬约束、交易和状态变化再逐步结构化。
+
 ### Japan World Rules Library
 
 第一批日本现代社会模板已经建立骨架：
 
-- systems/school/japan/：日本高中与校园制度
-- systems/family/japan/：日本家庭
-- systems/police/japan/：日本警察
-- systems/commerce/japan/convenience_store/：便利店
-- systems/hospital/japan/：医院
-- systems/company/japan/：公司
-- systems/transport/japan/rail/：铁路 / 电车
-- systems/housing/japan/rental/：租房
-- systems/economy/japan/banking/：银行
-- systems/justice/japan/court/：法院
-- systems/commerce/japan/restaurant/：餐厅
-- systems/organization/japan/club/：校外社团 / 协会
+- `systems/japan/school/`：日本高中与校园制度
+- `systems/japan/family/`：日本家庭
+- `systems/japan/police/`：日本警察
+- `systems/japan/commerce/convenience_store/`：便利店
+- `systems/japan/commerce/pharmacy/`：药店 / 药妆店
+- `systems/japan/commerce/restaurant/`：餐厅
+- `systems/japan/hospital/`：医院
+- `systems/japan/company/`：公司
+- `systems/japan/transport/rail/`：铁路 / 电车
+- `systems/japan/housing/rental/`：租房
+- `systems/japan/economy/banking/`：银行
+- `systems/japan/justice/court/`：法院
+- `systems/japan/organization/club/`：校外社团 / 协会
 
-这些系统都遵循同一原则：
+这些系统共同遵循：
 
-角色 + 身份 + 权限 + 资源 + 时间 + 规则 + 事件
+```text
+人物 + 身份 + 角色 + 专业知识 + 权限 + 资源 + 时间 + 制度 + 事件
+→ 行动 / 对话
 → 状态变化
 → 跨系统后果
 → Causality / Fate
+```
 
-第一阶段只建立制度边界和目录，不急着把全部规则结构化。后续逐个系统补充权限、流程、事件、异常路径和跨系统联动。
+第一阶段只建立制度边界和目录，不急着把全部规则结构化。后续逐个系统补权限、知识、流程、异常路径和跨系统联动。
 
 ### Japanese School System
 
-第一套正式 School Template 放在 systems/school/japan/，先以日本高中为基准。
+第一套正式 School Template 放在 systems/japan/school/，先以日本高中为基准。
 
 它不是若干剧情事件合集，而是由 Calendar 驱动的长期制度系统：
 
