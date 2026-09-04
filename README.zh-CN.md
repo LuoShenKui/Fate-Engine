@@ -47,6 +47,7 @@ Brick 的核心用途是：**把可复用的交互组件、3D 资产、能力包
 - `style/`：角色形体、渲染、动画、镜头和 Style Profile。
 - `ai/`：角色 Agent、对话、规划、世界构建、资产生成接口和原作资料解析。
 - `asset/`：引擎无关资产描述。
+- `pipeline/`：世界生产流水线；负责 ingest → analysis → generation → validation → assembly → export。
 - `runtime/`：世界运行时、事件总线、调度、存档和快照；现有参考运行时继续保留。
 - `adapters/`：Unity / Unreal / 自研 Renderer 的适配边界。
 - `editor/`：当前桌面编辑器原型。
