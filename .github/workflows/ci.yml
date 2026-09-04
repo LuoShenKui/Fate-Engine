@@ -1,8 +1,9 @@
 name: ci
 
+# CI is temporarily disabled for automatic events while the repository
+# is being reorganized around the World Kernel architecture.
+# Keep workflow_dispatch so checks can still be run manually when needed.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
