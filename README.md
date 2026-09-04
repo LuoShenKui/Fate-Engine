@@ -9,6 +9,7 @@ The root architecture covers:
 - causality;
 - fate links, rewrite, and severing;
 - world-will narrative attractors with strict causal limits;
+- a unified Character model with Main / Supporting / Background simulation levels and dynamic promotion/demotion;
 - reusable social systems such as school, police, justice, hospital, company, family, and economy;
 - NPC schedules, needs, behavior, memory, identity, population, and simulation LOD;
 - narrative timelines as default fate lines rather than forced scripts;
@@ -40,7 +41,7 @@ Existing Brick editor UI, shared schemas, reference runtime integrations, and Un
 ## Repository layout
 
 - `core/`: causality, fate, world will, time, identity, relationships, memory, permissions, state.
-- `systems/`: reusable social/gameplay systems; Brick is one subsystem.
+- `systems/`: reusable character, social, and gameplay systems; `character/` composes character state while `brick/` handles fast 3D scene assembly.
 - `simulation/`: NPC, schedules, needs, behavior, population, simulation LOD.
 - `narrative/`: events, default timeline, conditions, consequences, generators.
 - `world/`: templates, locations, characters, factions, rules, bootstrap.
