@@ -47,6 +47,7 @@ Existing Brick editor UI, shared schemas, reference runtime integrations, and Un
 - `style/`: character morphology, rendering, animation, camera, style profiles.
 - `ai/`: character agents, dialogue, planning, world building, asset-generation interface, lore parsing.
 - `asset/`: engine-independent asset descriptions.
+- `pipeline/`: world-build pipeline for ingest → analysis → generation → validation → assembly → export.
 - `runtime/`: world runtime, event bus, scheduler, save, snapshots; legacy reference runtime remains.
 - `adapters/`: Unity, Unreal, and future custom-renderer boundaries.
 - `editor/`, `protocol/`, `unity/`, `tools/`, `tests/`: current host/tooling layers.
