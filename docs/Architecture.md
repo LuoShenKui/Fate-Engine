@@ -82,7 +82,7 @@ fate-engine/
 │  └─ state/
 │
 ├─ systems/
-│  ├─ character/{model,templates/main,templates/supporting,templates/background,lod,evolution}
+│  ├─ character/{model,preferences,skills,knowledge,templates/main,templates/supporting,templates/background,lod,evolution}
 │  ├─ brick/
 │  ├─ common/
 │  └─ japan/
@@ -271,6 +271,9 @@ Character 可以组合：
 
 - Identity；
 - Personality；
+- Preferences；
+- Skills；
+- Knowledge；
 - Needs；
 - Goals；
 - Memory；
@@ -283,13 +286,22 @@ Character 可以组合：
 
 其中 Identity / Memory / Relationship / Fate 等基础能力由 `core/` 提供，Needs / Schedule / Behavior 等运行能力由 `simulation/` 提供。
 
+Character 的四个核心行为输入必须区分：
+
+- Personality：行为风格与人格倾向；
+- Preferences：喜好、厌恶、兴趣与审美；
+- Skills：能够执行什么以及熟练程度；
+- Knowledge：知道什么，以及理解深度。
+
+AI NPC 的对话与行动必须同时受到这四项约束。Knowledge 还需要与职业、资格、教育经历和机构权限联动，不能因为模型本身“知道答案”就让角色无条件拥有该知识。
+
 ### Simulation Level
 
 三档模板：
 
-- `Main`：主要角色，保留完整人格、价值观、长期目标、重要记忆、关系网、秘密、资产、技能、情绪、日程和 Fate Link。
-- `Supporting`：配角，保留人格标签、身份、主要关系、当前目标、重要记忆、资产、日程和少量长期目标。
-- `Background`：背景角色，只维持身份、职业、位置、日程、基础需求、基础人格、家庭/组织归属、经济状态和当前行为。
+- `Main`：主要角色，保留完整人格、喜好、技能、知识、价值观、长期目标、重要记忆、关系网、秘密、资产、情绪、日程和 Fate Link。
+- `Supporting`：配角，保留人格标签、核心喜好、核心技能、核心知识、身份、主要关系、当前目标、重要记忆、资产、日程和少量长期目标。
+- `Background`：背景角色，只维持身份、职业、位置、日程、基础需求、基础人格、少量关键喜好、与当前职业/生活相关的技能知识摘要、家庭/组织归属、经济状态和当前行为。
 
 Simulation Level 可以动态变化：
 
