@@ -1,0 +1,63 @@
+{
+  "id": "fate.teleport.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["teleport", "interaction", "unity", "metric"],
+  "notes": "Reference teleport brick kept as a contract sample; it is not part of the current MVP slice.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "teleport",
+  "unit_system": "metric",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.teleport",
+      "level": 1,
+      "exposed_params": [
+        "enabled",
+        "cooldown"
+      ]
+    }
+  ],
+  "params": {
+    "enabled": {
+      "key": "enabled",
+      "type": "bool",
+      "default": true,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "cooldown": {
+      "key": "cooldown",
+      "type": "float",
+      "default": 3,
+      "mutability": "runtime",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "vfx.portal",
+      "slot_type": "vfx",
+      "fallback": "builtin:teleport.vfx.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/teleport/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

@@ -1,0 +1,145 @@
+{
+  "id": "fate.door.basic",
+  "version": "0.1.1",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["door", "interaction", "unity", "metric"],
+  "notes": "Reference interaction brick retained as a protocol implementation sample while Unity becomes the main host.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "door-control",
+  "unit_system": "metric",
+  "dependencies": [],
+  "capabilities": [
+    {
+      "capability_id": "interaction.open_close",
+      "level": 1,
+      "exposed_params": [
+        "locked",
+        "open",
+        "has_collision",
+        "has_trigger"
+      ]
+    }
+  ],
+  "params": {
+    "locked": {
+      "key": "locked",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ]
+    },
+    "open": {
+      "key": "open",
+      "type": "bool",
+      "default": false,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": [
+        "gameplay"
+      ],
+      "requires": "cap(interaction.open_close)>=1"
+    },
+    "has_collision": {
+      "key": "has_collision",
+      "type": "bool",
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay",
+        "performance"
+      ]
+    },
+    "has_trigger": {
+      "key": "has_trigger",
+      "type": "bool",
+      "default": true,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": [
+        "gameplay"
+      ]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "mesh.primary",
+      "slot_type": "mesh",
+      "fallback": "builtin:door.mesh.default",
+      "optional": false,
+      "requires": "true"
+    },
+    {
+      "slot_id": "audio.open_close",
+      "slot_type": "audio",
+      "fallback": "builtin:door.sfx.default",
+      "optional": false,
+      "requires": "cap(interaction.open_close)>=1"
+    },
+    {
+      "slot_id": "script.logic",
+      "slot_type": "script_ref",
+      "fallback": "builtin:door.logic.default",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "defaults": {
+    "enabled": true
+  },
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/door/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0: 新增 state_version 并使用默认值补齐 runtime_state 字段。"
+  },
+  "events": {
+    "required": [
+      {
+        "name": "OnSpawn",
+        "payload_schema": "status=<noop|ready>"
+      },
+      {
+        "name": "OnEnable",
+        "payload_schema": "status=<noop|ready>"
+      },
+      {
+        "name": "OnDisable",
+        "payload_schema": "status=<noop|disabled>"
+      },
+      {
+        "name": "OnDestroy",
+        "payload_schema": "status=<noop|destroyed>"
+      },
+      {
+        "name": "OnUsed",
+        "payload_schema": "actor_id=<string>,open=<bool>"
+      },
+      {
+        "name": "OnDenied",
+        "payload_schema": "reason=<disabled|locked|unknown_state:*>"
+      },
+      {
+        "name": "OnStateChanged",
+        "payload_schema": "key=<string>,value=<bool>"
+      },
+      {
+        "name": "OnValidate",
+        "payload_schema": "json(ValidateOutput)"
+      },
+      {
+        "name": "OnTickLowFreq",
+        "payload_schema": "tick=<u64>,check=<skipped|state_snapshot>,..."
+      }
+    ],
+    "notes": "事件声明与 runtime/door_core/src/lib.rs::events 保持一致。OnValidate payload 为 ValidateOutput JSON 字符串。"
+  },
+  "package_kind": "logic"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "fate.assets.ladder.foundation",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["ladder", "mesh", "anim", "audio", "vfx", "unity", "metric"],
+  "notes": "Asset package for ladder enter, climb, and exit validation.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "ladder-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [
+    {
+      "slot_id": "resource.catalog",
+      "slot_type": "script_ref",
+      "fallback": "builtin:fate.asset.catalog",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "resources": [
+    {
+      "id": "ladder_mesh_primary",
+      "path": "assets/ladder_mesh_placeholder.txt",
+      "resource_type": "mesh",
+      "unity_target_type": "Mesh",
+      "license_source": "https://example.local/licenses/ladder-mesh",
+      "slot_hints": ["mesh.primary"]
+    },
+    {
+      "id": "ladder_climb_anim",
+      "path": "assets/ladder_climb_anim_placeholder.txt",
+      "resource_type": "anim",
+      "unity_target_type": "AnimationClip",
+      "license_source": "https://example.local/licenses/ladder-anim",
+      "slot_hints": ["anim.ladder"]
+    },
+    {
+      "id": "ladder_rattle_audio",
+      "path": "assets/ladder_audio_placeholder.txt",
+      "resource_type": "audio",
+      "unity_target_type": "AudioClip",
+      "license_source": "https://example.local/licenses/ladder-audio",
+      "slot_hints": ["audio.ladder"]
+    },
+    {
+      "id": "ladder_dust_vfx",
+      "path": "assets/ladder_vfx_placeholder.txt",
+      "resource_type": "vfx",
+      "unity_target_type": "VisualEffectAsset",
+      "license_source": "https://example.local/licenses/ladder-vfx",
+      "slot_hints": ["fx.ladder"]
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/ladder_foundation_assets/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "asset",
+  "category": "asset-package"
+}

@@ -1,0 +1,106 @@
+{
+  "id": "fate.locomotion.basic",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "MIT",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["locomotion", "walk", "run", "jump", "unity", "metric"],
+  "notes": "Character foundation locomotion profile exported from Fate Engine into Unity-generated ScriptableObjects.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "humanoid",
+  "interaction_intent": "movement",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": ["fate.assets.humanoid.foundation"],
+  "intent_aliases": ["walk", "run", "jump", "move", "移动", "走", "跑", "跳"],
+  "required_capabilities": ["ability.locomotion"],
+  "required_slots": ["anim.locomotion", "input.map"],
+  "space_hints": {
+    "footprint_meters": [0.8, 0.8, 1.8],
+    "interaction_distance_meters": 1.6,
+    "facing": "forward"
+  },
+  "state_hints": ["idle", "walk", "run", "jump_start", "airborne", "land"],
+  "constraint_hints": {
+    "required_actor_class": "humanoid",
+    "conflicts_with": []
+  },
+  "capabilities": [
+    {
+      "capability_id": "ability.locomotion",
+      "level": 1,
+      "exposed_params": [
+        "walk_speed_mps",
+        "run_speed_mps",
+        "jump_height_m",
+        "stride_m"
+      ]
+    }
+  ],
+  "params": {
+    "walk_speed_mps": {
+      "key": "walk_speed_mps",
+      "type": "float",
+      "default": 1.42,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "run_speed_mps": {
+      "key": "run_speed_mps",
+      "type": "float",
+      "default": 3.8,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "jump_height_m": {
+      "key": "jump_height_m",
+      "type": "float",
+      "default": 0.45,
+      "mutability": "runtime",
+      "visibility": "basic",
+      "impact": ["gameplay"]
+    },
+    "stride_m": {
+      "key": "stride_m",
+      "type": "float",
+      "default": 0.74,
+      "mutability": "static",
+      "visibility": "advanced",
+      "impact": ["gameplay"]
+    }
+  },
+  "slots": [
+    {
+      "slot_id": "anim.locomotion",
+      "slot_type": "anim",
+      "fallback": "builtin:humanoid.anim.locomotion",
+      "optional": false,
+      "requires": "true"
+    },
+    {
+      "slot_id": "input.map",
+      "slot_type": "script_ref",
+      "fallback": "builtin:unity.input.third_person",
+      "optional": false,
+      "requires": "true"
+    }
+  ],
+  "default_asset_bindings": [
+    {
+      "slot_id": "anim.locomotion",
+      "resource_type": "anim",
+      "asset_package_id": "fate.assets.humanoid.foundation",
+      "resource_id": "humanoid_locomotion_animset"
+    }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": {
+    "entry": "packages/locomotion/manifest/README.md#migration",
+    "from_previous": "0.0.x -> 1.0.0"
+  },
+  "package_kind": "product"
+}

@@ -1,3 +1,5 @@
+> **2026-09-04 架构优先级更新**：本文主要记录早期“积木装配引擎”原型目标。当前第一优先级已经变为 World Kernel：因果、命运、世界意志、社会制度与长期模拟。Brick 已降级为 `systems/brick/` 子系统。本文继续保留用于追踪已有 Unity 白盒、发布链路和历史门禁；新模块以 [Architecture.md](Architecture.md) 为总纲。
+
 # Fate Engine 总体定位
 
 ## 近期里程碑（阶段 + 验收口径）

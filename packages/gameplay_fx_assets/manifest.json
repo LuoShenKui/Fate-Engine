@@ -1,0 +1,30 @@
+{
+  "id": "fate.assets.fx.gameplay",
+  "version": "0.1.0",
+  "contract_version": "0.1",
+  "engine_compat": ">=0.1.0",
+  "license": "CC-BY-4.0",
+  "style": "grounded",
+  "art_style": "realistic-placeholder",
+  "semantic_tags": ["vfx", "gameplay", "hazard", "heal"],
+  "notes": "Grounded gameplay VFX placeholder assets.",
+  "real_world_scale": "1 unit = 1 meter",
+  "actor_class": "generic",
+  "interaction_intent": "effect-support",
+  "unit_system": "metric",
+  "dependencies": [],
+  "asset_dependencies": [],
+  "capabilities": [],
+  "params": {},
+  "slots": [{ "slot_id": "resource.catalog", "slot_type": "script_ref", "fallback": "builtin:fate.asset.catalog", "optional": false, "requires": "true" }],
+  "resources": [
+    { "id": "hazard_vfx", "path": "assets/hazard_vfx.placeholder.txt", "resource_type": "vfx", "unity_target_type": "VisualEffectAsset", "license_source": "https://example.local/licenses/gameplay-fx/hazard", "slot_hints": ["fx.hazard"] },
+    { "id": "heal_vfx", "path": "assets/heal_vfx.placeholder.txt", "resource_type": "vfx", "unity_target_type": "VisualEffectAsset", "license_source": "https://example.local/licenses/gameplay-fx/heal", "slot_hints": ["fx.heal"] },
+    { "id": "spawn_vfx", "path": "assets/spawn_vfx.placeholder.txt", "resource_type": "vfx", "unity_target_type": "VisualEffectAsset", "license_source": "https://example.local/licenses/gameplay-fx/spawn", "slot_hints": ["fx.spawn"] },
+    { "id": "sensor_vfx", "path": "assets/sensor_vfx.placeholder.txt", "resource_type": "vfx", "unity_target_type": "VisualEffectAsset", "license_source": "https://example.local/licenses/gameplay-fx/sensor", "slot_hints": ["fx.sensor"] }
+  ],
+  "state_version": "1.0.0",
+  "state_migration": { "entry": "packages/gameplay_fx_assets/README.md#migration", "from_previous": "0.0.x -> 1.0.0" },
+  "package_kind": "asset",
+  "category": "asset-package"
+}
