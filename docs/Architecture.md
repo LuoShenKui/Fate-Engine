@@ -85,6 +85,7 @@ fate-engine/
 │  ├─ character/{model,templates/main,templates/supporting,templates/background,lod,evolution}
 │  ├─ brick/
 │  ├─ school/
+│  │  └─ japan/{calendar,academics,homeroom,lifecycle,events,clubs,governance,discipline,templates/high_school}
 │  ├─ police/
 │  ├─ justice/
 │  ├─ hospital/
@@ -133,6 +134,35 @@ fate-engine/
 - 对日程、声誉、关系和 Fate 的后续影响。
 
 Police、Justice、Hospital、Company 等遵循同样原则。
+
+### Japanese School System
+
+第一套正式 School Template 放在 systems/school/japan/，先以日本高中为基准。
+
+它不是若干剧情事件合集，而是由 Calendar 驱动的长期制度系统：
+
+World Date / Time
+→ National Holiday
+→ School Calendar
+→ Term / Vacation
+→ Daily Timetable
+→ Class / Homeroom / Club / Event
+→ Attendance / Learning / Records
+→ Character / Relationship / Causality Changes
+
+第一阶段覆盖：
+
+- 4 月到次年 3 月的学年循环；
+- 三学期 / 两学期可配置；
+- 节假日、周末、长假、临时停课与补课；
+- 新生入学、新生欢迎、转学生介绍、升年级与毕业；
+- 真正课堂、作业、考试、成绩和学习进度；
+- Homeroom、座位、值日、班级委员；
+- 学园祭、体育祭、修学旅行、健康诊断、避难训练；
+- 学生社团、生徒会、教师与行政权限；
+- 迟到、旷课、作弊、打架等纪律闭环。
+
+所有具体活动日期由 School Profile 配置，不能把学园祭、体育祭等写成全国统一固定日期。
 
 ## 5. Character System
 
