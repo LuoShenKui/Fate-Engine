@@ -9,7 +9,7 @@ Fate Engine 是一个仍处于原型阶段的下一代游戏引擎项目。
 ## 六大长期支柱
 
 1. **World Asset System**：统一规则下的世界资产模型积木库。
-2. **Game Assembly System**：选择游戏类型、组件、插件和世界模板，快速得到可玩的 Demo，再继续完善。
+2. **Game Assembly System**：长期把真实游戏开发中已经验证为重复的工作抽象成模板和自动化；当前阶段不做一键组合。
 3. **Fate Game System**：把动画、小说、漫画等原作转成默认命运世界，玩家可以通过真实因果改变甚至摧毁原剧情。
 4. **Anime-first Visual System**：二次元角色是一等公民，3D 游戏尽量保持 2D 动画的角色、色彩、动作、表情和镜头观感。
 5. **Native AI Agent**：Agent 原生负责理解、检索、组合、配置和验证标准资产，而不是把“现场生成一切”当作唯一方案。
@@ -50,7 +50,7 @@ Fate Engine 是一个仍处于原型阶段的下一代游戏引擎项目。
 - Brick 很重要，但 Brick 不等于 Fate Engine。
 - World Kernel 很重要，但 World Kernel 也不等于 Fate Engine。
 - Anime 是第一视觉公民，但 Fate Engine 不只是渲染器。
-- AI 优先组合标准资产，并受 Validator、世界规则、许可和版本约束。
+- 当前优先完成一个完整可玩的游戏 Demo；AI 与自动装配不能成为第一个 Demo 的前置条件。
 - 原作剧情是默认命运线，不是不可改变的脚本铁轨。
 
 ## 许可证
