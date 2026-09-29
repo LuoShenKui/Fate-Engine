@@ -249,6 +249,13 @@ World Asset 不等于普通资源文件。它是在底层 Asset Runtime 之上�
 - 有什么许可证与来源。
 
 `systems/brick/` 是当前这一方向的早期实现之一，但长期 World Asset System 的范围大于 Brick。
+World Asset System 的正式协议拆分为：
+
+- `FateAssetProtocol.md`：所有标准资产共同规则，以及 Registry / Provider / Storage 分离；
+- `Fate3DAssetStandard.md`：3D Runtime 资产标准，v0.1 以 GLB/glTF 2.x 为 Canonical Runtime Format；
+- `FateHumanoidStandard.md`：人物骨架、Socket、Retarget 和 Animation Compatibility。
+
+架构原则：**Registry 持有资产身份与解析信息，但不要求 Fate 官方持有资产本体。** 官方资产、Marketplace、Community、Private Registry 和第三方 Provider 都可以通过同一协议接入。
 
 ## 6. Game Assembly System
 
