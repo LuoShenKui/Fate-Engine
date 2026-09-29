@@ -23,6 +23,7 @@
 - FateHumanoidStandard.md — Humanoid 骨架、语义 Bone ID、Socket、Retarget 与 Animation Compatibility 标准。
 - GameCategories.md — 游戏类型可选集合，并作为 New Project / Starter Project 的分类入口。
 - StarterProjects.md — 第一阶段核心产品规则：选择类型后直接创建完整可玩的官方基础项目。
+- EditorLayoutV01.md — Fate Engine 0.1 默认编辑器布局、面板职责、基础交互与验收标准。
 
 ## 3. 原型、测试与运维文档
 
