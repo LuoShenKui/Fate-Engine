@@ -3,24 +3,23 @@
 > 状态：Draft / Classification Only
 >
 > 本文只定义 Fate Engine 当前使用的游戏类型分类集合。
-> **它不是 Game Template、不是自动装配协议、也不代表当前要为每一种游戏类型实现模板。**
+> **它不是动态 Game Assembly 协议；第一阶段它会用于 New Project 的类型选择，并逐步绑定官方 Starter Project。**
 
 ## 1. 当前原则
 
-当前阶段 Game Category 只有三个用途：
+当前阶段 Game Category 有四个用途：
 
-1. 给项目 / Demo 标记主要游戏类型；
-2. 帮助整理未来 Engine Capability、Asset 与测试覆盖；
-3. 为后续真正成熟后的 Game Type / Template 系统留下稳定分类入口。
+1. New Project 时让用户选择主要游戏类型；
+2. 绑定该类型的官方 Starter Project；
+3. 给项目标记主要游戏类型；
+4. 整理 Engine Capability、Asset 与测试覆盖。
 
 当前阶段明确不做：
 
-- 根据分类自动生成游戏；
-- 根据分类自动选择组件；
-- 一键 Game Type Demo；
-- Game Type 继承树；
-- 自动组合规则；
-- 为所有分类同时开发 Demo。
+- 根据分类动态组合一个全新游戏；
+- 复杂 Game Type 继承树；
+- AI 自动选择大量组件生成完整游戏；
+- 为所有分类同时开发半成品 Starter。
 
 ## 2. Game Category Tuple
 
@@ -137,29 +136,25 @@ project:
 
 后续如果 Fate Game 形成稳定、独立的产品形态，再决定是否升级为正式 Game Type。
 
-## 6. 当前 Demo 原则
+## 6. Starter Project 支持状态
 
-> **先做一个完整可用 Demo，再从真实 Demo 中抽象 Game Type。**
+每个 Game Category 可以有：
 
-当前阶段不会同时覆盖整个 `GAME_CATEGORIES` 集合。
+```text
+unsupported
+experimental
+starter_available
+```
 
-只会从集合中选择一个主攻类型，并要求：
+`starter_available` 表示：用户可以在 New Project 中选择该类型，并直接创建一个完整可运行、可试玩、可继续开发的官方 Starter Project。
 
-- 能从项目创建到运行完整走通；
-- 有真实角色控制；
-- 有完整 Gameplay Loop；
-- 有场景；
-- 有 UI；
-- 有输入；
-- 有动画；
-- 有物理；
-- 有音频；
-- 有存档或必要状态持久化；
-- 能调试；
-- 能构建可执行版本；
-- 可以被真实试玩，而不是仅作为技术验证场景。
+第一阶段策略：
 
-只有第一个完整 Demo 成立以后，才开始讨论如何把成功经验抽象成 Template / Game Type / Assembly。
+> **类型集合可以先完整定义，但 Starter Project 必须一个一个做实。**
+
+不会为了数量同时维护大量半成品。
+
+Starter Project 的详细要求见 `StarterProjects.md`。
 
 ## 7. v0.1 非目标
 
@@ -167,4 +162,5 @@ project:
 - 不处理所有混合类型；
 - 不定义各类型完整组件集合；
 - 不要求 Engine 当前支持所有分类；
-- 不根据分类自动改变 Engine 行为。
+- 不在 v0.1 设计动态 Game Assembly；
+- New Project 可以根据分类选择对应 Starter Project。
