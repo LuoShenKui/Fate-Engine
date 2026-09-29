@@ -6,7 +6,7 @@
 
 - 世界逻辑与视觉表现解耦；
 - 资产优先声明“是什么”，而不是绑定具体 Shader；
-- Anime / Realistic / Stylized 等风格通过统一契约接入；
+- Anime 是第一视觉公民；Realistic / Comic / Lego / Painting 等风格通过统一契约平级扩展；
 - Unity 是第一阶段宿主，但本目录保持引擎无关。
 
 ## 目录
