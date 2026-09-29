@@ -1,3 +1,8 @@
+> **Historical / 非当前总纲**
+>
+> 本文记录 Fate Engine 早期原型阶段的设计与工程决策，仅保留作历史参考。
+> 当前项目定位以 [Vision.md](Vision.md) 为准，技术架构以 [Architecture.md](Architecture.md) 为准，未完成事项以 [TODO.md](TODO.md) 为准。
+> 若本文与上述 Canonical 文档冲突，以上述文档为准。
 > **2026-09-04 架构优先级更新**：本文主要记录早期“积木装配引擎”原型目标。当前第一优先级已经变为 World Kernel：因果、命运、世界意志、社会制度与长期模拟。Brick 已降级为 `systems/brick/` 子系统。本文继续保留用于追踪已有 Unity 白盒、发布链路和历史门禁；新模块以 [Architecture.md](Architecture.md) 为总纲。
 
 # Fate Engine 总体定位
