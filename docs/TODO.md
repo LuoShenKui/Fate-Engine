@@ -2,52 +2,55 @@
 
 > 状态：Current Work Queue / SSOT
 >
-> 当前最高优先级：**先做出一个完整、真正可玩的游戏 Demo。**
->
-> 规则：
-> - 当前不做 Game Assembly 自动化；
-> - 当前不做一键 Game Type Demo；
-> - 当前不同时支持所有游戏分类；
-> - 先用一个真实 Demo 暴露引擎缺失能力，再补 Engine Foundation；
-> - 只有 Demo 完整成立后，才把经验抽象成 Template / Game Type / Assembly。
+> 第一阶段核心目标：**让用户 New Project → 选择 Game Category → 直接得到一个完整可玩、可继续开发的 Starter Project。**
 
-## P0：确定并完成第一个完整游戏 Demo
+## P0：完成第一个官方 Starter Project
 
-目标：证明 Fate Engine 至少能完整支撑一种真实游戏，而不是只能做白盒、协议或技术验证。
+先只主攻一个 Game Category，不同时铺开多个半成品。
 
-- [ ] 从 `GameCategories.md` 的集合中确定一个主攻 Game Category。
-- [ ] 写清楚该 Demo 的完整玩法循环、开始条件和结束条件。
-- [ ] 明确 Demo 的最小内容规模，但必须是完整游戏体验，不是单个技术房间。
-- [ ] 角色控制完整可用。
-- [ ] Camera 完整可用。
-- [ ] Gameplay Loop 完整可用。
-- [ ] Scene / Level 流程完整可用。
-- [ ] UI / HUD / Menu 完整可用。
-- [ ] Input 完整可用。
-- [ ] Animation 完整可用。
-- [ ] Physics / Collision 完整可用。
-- [ ] Audio 完整可用。
-- [ ] Save / State Persistence 达到 Demo 所需水平。
-- [ ] Debug / Error / Validation 能支撑实际开发。
-- [ ] Build / Packaging 能生成真正可运行版本。
-- [ ] 实际试玩并记录所有阻塞开发的问题。
+- [ ] 从 `GameCategories.md` 选择第一个主攻类型。
+- [ ] 定义该类型 Starter Project 的最小完整 Gameplay Loop。
+- [ ] 完成真实角色 / 控制器。
+- [ ] 完成 Camera。
+- [ ] 完成 Input。
+- [ ] 完成至少一个完整示例 Scene / Level。
+- [ ] 完成该类型必要 Gameplay Systems。
+- [ ] 完成 UI / HUD / Menu。
+- [ ] 完成 Animation。
+- [ ] 完成 Physics / Collision。
+- [ ] 完成 Audio。
+- [ ] 完成必要 Save / State Persistence。
+- [ ] 完成 Debug / Validation 基础。
+- [ ] 完成 Build / Packaging。
+- [ ] 实际试玩并修复阻塞继续开发的问题。
 
 ### P0 验收
 
-只有同时满足以下条件才算通过：
+Starter Project 只有同时满足以下条件才可标记为 `starter_available`：
 
-1. 不依赖手工临时修改才能启动；
-2. 从启动到结束存在完整 Gameplay Loop；
-3. 可以重复试玩；
-4. 可以构建成独立可运行产物；
-5. Demo 暴露出的引擎缺陷已经形成明确问题清单；
-6. 它看起来是一个小型游戏，而不是 Engine Tech Demo。
+1. New Project 可以直接创建；
+2. 不需要额外手工补文件才能运行；
+3. 启动后立刻可以试玩；
+4. 有完整 Gameplay Loop；
+5. 可以修改资产、规则和内容继续开发；
+6. 可以构建为独立可运行版本；
+7. 它看起来是一个小型基础游戏，而不是 Engine Tech Demo。
 
-## P1：根据 Demo 补完整 Game Engine Foundation
+详细规则见 `StarterProjects.md`。
 
-不提前假设所有引擎模块怎么做，以 P0 Demo 的真实问题驱动。
+## P1：New Project → Starter Project 产品流程
 
-重点补齐：
+- [ ] New Project 页面显示 Game Category。
+- [ ] Game Category 显示支持状态：`unsupported / experimental / starter_available`。
+- [ ] 选择已支持类型后显示官方 Starter Project。
+- [ ] Create Project 能复制 / 实例化 Starter Project。
+- [ ] 新项目拥有独立 Project ID、配置和资源引用。
+- [ ] 创建完成后可以直接 Run / Play。
+- [ ] Starter Project 更新不能破坏用户已经创建的项目。
+
+## P2：用 Starter Project 补完整 Engine Foundation
+
+Starter Project 是引擎验收工具。缺什么就补什么：
 
 - Project / Scene / World；
 - Resource / Asset Runtime；
@@ -63,76 +66,72 @@
 - Debugger / Profiler / Validator；
 - Build / Platform。
 
-## P2：标准资产规则
+## P3：标准资产
 
-当前已有协议：
+当前已有：
 
 - `FateAssetProtocol.md`；
 - `Fate3DAssetStandard.md`；
 - `FateHumanoidStandard.md`。
 
-下一步只做 Demo 真正需要的资产类型和校验，不为了未来 Marketplace 一次定义所有资产。
+只优先实现 Starter Project 真正需要的资产类型与校验：
 
-- [ ] 用真实 Demo 资产验证 Asset Protocol。
-- [ ] 修订不合理字段。
-- [ ] 建立最小 Import → Validate → Runtime 流程。
-- [ ] 验证 GLB/glTF Runtime 路线。
+- [ ] 用真实 Starter 资产验证 Asset Protocol。
+- [ ] 建立 Import → Validate → Runtime 流程。
+- [ ] 验证 GLB / glTF Runtime 路线。
 - [ ] 用真实角色验证 FateHumanoid。
+- [ ] 修订不合理字段。
 
-## P3：Anime-first Visual
+## P4：扩展第二个 Game Category
 
-如果第一个 Demo 选择 Anime 视觉路线，则进入当前开发；否则只保持协议与实验状态。
+第一个 Starter 稳定后再进入：
 
-- [ ] 用 Demo 中真实角色做视觉基准。
-- [ ] 验证 Anime Lighting / Projection / Geometry Correction。
-- [ ] 验证 Animation Timing / Pose / Camera Language。
-- [ ] 与普通 3D / Toon 方案进行实际游戏画面对照。
+- [ ] 选择第二个差异明显的 Game Category。
+- [ ] 做第二个完整 Starter Project。
+- [ ] 比较两个类型真正共享的 Engine 能力。
+- [ ] 只把被真实验证重复的部分抽成公共 Template / Component。
 
-## P4：Native AI Agent
+## P5：Anime-first
 
-当前只允许 AI 作为开发辅助工具，不让 AI Agent 成为 P0 Demo 的必要依赖。
+如果某个 Starter 使用 Anime 风格，则直接用真实游戏画面验证 Anime Rendering；否则保持独立实验。
 
-- [ ] 等完整手工开发流程稳定后，再确定 Agent 可以替代哪些重复步骤。
-- [ ] Agent 的能力必须建立在真实 Editor / Asset / Build Tool 之上。
-- [ ] 不先做“自然语言 → 自动完整游戏”的大闭环。
+## P6：Native AI Agent
 
-## P5：Game Type / Template / Assembly
+AI 可以辅助开发，但不能成为 Starter Project 能否成立的必要条件。
 
-> **明确后置。**
+- [ ] 先保证所有关键流程可以由普通 Editor / Tool 完成。
+- [ ] 再让 Agent 调用这些稳定工具。
+- [ ] 不先做自然语言自动生成完整游戏。
 
-Game Category 当前只是分类集合，见 `GameCategories.md`。
+## P7：Game Assembly
 
-只有至少一个完整 Demo 成立后，再做：
+> **后期能力。Starter Project 不等于 Game Assembly。**
 
-- [ ] 从第一个 Demo 中提炼可复用组件。
-- [ ] 判断哪些能力属于 Engine，哪些属于该游戏类型。
-- [ ] 定义该类型的 Template。
-- [ ] 再验证第二个同类游戏能否复用 Template。
-- [ ] 两个以上真实案例稳定后，再设计 Game Assembly。
-- [ ] 最后才考虑“一键生成 Demo”。
+只有多个完整 Starter / 真实项目证明哪些结构稳定重复后，再设计：
 
-## P6：Fate Game / Advanced World Simulation
+- Template 组合；
+- Component Library；
+- Assembly Plan / Recipe；
+- AI-assisted Assembly；
+- 动态一键组合。
 
-Fate Game 是长期第一方高级能力，但当前不阻塞第一个普通完整 Demo。
+## P8：Fate Game / Advanced World Simulation
 
-- [ ] 等 Generic Game Runtime 稳定后，再验证 Fate Graph / Causality / World Will。
-- [ ] Fate 世界必须建立在已经可工作的普通 Gameplay Runtime 上。
+Fate Game 建立在已经稳定的传统游戏开发能力之上，不阻塞第一阶段。
 
-## P7：Metaverse Foundation
+## P9：Metaverse Foundation
 
 > 暂不进入实现。
 
-只有多个真实游戏已经验证 Asset、Identity、Networking、Persistence、Permissions 等协议之后，才讨论跨世界互操作。
-
 ## 当前明确不做
 
-- 同时开发多个 Game Category Demo；
-- 一键 Game Assembly；
-- 自动 Game Type 组合；
+- 同时制作大量半成品 Starter；
+- 把 Starter Project 做成不可修改的固定框架；
+- 当前阶段动态 Game Assembly；
+- 当前阶段自然语言生成完整游戏；
 - 大规模 Marketplace；
-- 元宇宙 Runtime；
-- 为尚未出现的使用场景提前做大量抽象。
+- 元宇宙 Runtime。
 
-## 已完成且保留的基础工作
+## 已完成且保留
 
-现有 Brick、Package、发布、安装、回滚、协议、World Kernel、Anime 设计等原型不会删除；它们作为已有实验成果保留，但不再决定当前开发优先级。
+现有 Brick、Package、发布、安装、回滚、World Kernel、Anime 设计、Asset Protocol 等实验成果保留，但当前优先级统一服从 Starter Project 第一阶段目标。
