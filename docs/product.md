@@ -1,3 +1,8 @@
+> **Historical / 非当前总纲**
+>
+> 本文记录 Fate Engine 早期原型阶段的设计与工程决策，仅保留作历史参考。
+> 当前项目定位以 [Vision.md](Vision.md) 为准，技术架构以 [Architecture.md](Architecture.md) 为准，未完成事项以 [TODO.md](TODO.md) 为准。
+> 若本文与上述 Canonical 文档冲突，以上述文档为准。
 # 1) Fate Engine 的产品原则（写在墙上那种）
 
 ## P1. 默认可玩
