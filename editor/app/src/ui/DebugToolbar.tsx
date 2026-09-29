@@ -60,9 +60,26 @@ export default function DebugToolbar(props: DebugToolbarProps): JSX.Element {
     <div style={{ display: "grid", gridTemplateRows: "30px 58px", background: "#171c22", borderBottom: `1px solid ${ueShellColors.borderStrong}` }}>
       <div style={{ display: "flex", alignItems: "center", padding: "0 12px", gap: "14px", borderBottom: `1px solid ${ueShellColors.border}`, color: ueShellColors.text }}>
         <strong data-testid="editor-page-ready" style={{ fontSize: "12px", marginRight: "4px", color: "#f5f7fa" }}>Fate Engine 0.1</strong>
-        {props.menus.map((menu) => <ToolbarMenu key={menu.label} label={menu.label} items={menu.items} />)}
+        {(() => {
+          const findMenu = (english: string, chinese: string) => props.menus.find((menu) => menu.label === english || menu.label === chinese);
+          const fileMenu = findMenu("File", "文件");
+          const assetsMenu = findMenu("Assets", "资源");
+          const windowMenu = findMenu("Window", "窗口");
+          const plainMenuStyle = { border: 0, background: "transparent", color: ueShellColors.text, fontSize: "11px", cursor: "pointer", padding: "4px 7px" } as const;
+          return (
+            <>
+              {fileMenu ? <ToolbarMenu label="File" items={fileMenu.items} /> : null}
+              <button type="button" style={plainMenuStyle}>Edit</button>
+              {assetsMenu ? <ToolbarMenu label="Assets" items={assetsMenu.items} /> : null}
+              <button type="button" style={plainMenuStyle}>GameObject</button>
+              <button type="button" style={plainMenuStyle}>Component</button>
+              {windowMenu ? <ToolbarMenu label="Window" items={windowMenu.items} /> : null}
+              <button type="button" style={plainMenuStyle}>Help</button>
+            </>
+          );
+        })()}
         <button type="button" onClick={props.onOpenCommandPalette} style={{ marginLeft: "auto", border: 0, background: "transparent", color: ueShellColors.textMuted, fontSize: "10px", cursor: "pointer" }}>
-          {props.appTitle}
+          {props.appTitle} · Advanced
         </button>
       </div>
 
