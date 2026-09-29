@@ -2,69 +2,56 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-Fate Engine is still a prototype, but the architecture is no longer centered on a brick-assembly engine. The project is now organized around an **engine-independent World Kernel for causality, fate, social systems, and long-running simulation**.
+Fate Engine is an experimental next-generation game engine project.
 
-The root architecture covers:
+Its long-term goal is not a single renderer, story system, or AI generator. Fate Engine combines **standardized world assets, automatic game assembly, dynamic fate-driven worlds, an Anime-first visual system, and native AI agents** into one game-production architecture, with an eventual path toward an interoperable virtual-world runtime.
 
-- causality;
-- fate links, rewrite, and severing;
-- world-will narrative attractors with strict causal limits;
-- a unified Character model with distinct Personality, Preferences, Skills, and Knowledge, plus Main / Supporting / Background simulation levels and dynamic promotion/demotion;
-- reusable social systems such as school, police, justice, hospital, company, family, and economy;
-- NPC schedules, needs, behavior, memory, identity, population, and simulation LOD;
-- narrative timelines as default fate lines rather than forced scripts;
-- independent anime / semi-realistic / realistic style profiles;
-- replaceable Unity / Unreal / custom-renderer adapters.
+## Six long-term pillars
 
-## Brick: fast 3D scene assembly subsystem
+1. **World Asset System** — a standardized, reusable library of world building blocks.
+2. **Game Assembly System** — select a game type, components, plugins, and world templates to produce a playable demo that developers can continue refining.
+3. **Fate Game System** — convert source material such as animation, novels, and comics into a default fate-driven world whose original timeline can be changed through real causality.
+4. **Anime-first Visual System** — anime characters are first-class citizens; 3D presentation should preserve the identity, colors, motion, expression, and camera language of 2D animation as closely as possible.
+5. **Native AI Agent** — agents natively understand, retrieve, assemble, configure, and validate standardized assets instead of treating on-demand asset generation as the only workflow.
+6. **Metaverse Foundation** — over the long term, enable independently built game worlds to interoperate through shared asset, identity, state, and runtime protocols.
 
-The original Brick system is preserved, but it no longer defines Fate Engine itself.
+See [docs/Vision.md](docs/Vision.md) for the canonical vision.
 
-Brick has one focused job: **assemble reusable interactions, 3D assets, ability sets, and composite templates into playable 3D scenes with as little repeated work as possible — ideally through one-click or parameterized construction.**
+## Current architecture
 
-Doors, ladders, switches, pickups, building parts, classrooms, streets, cabins, and other reusable scene structures can be composed from Brick/Template packages. Brick answers “how do we build the world faster?”, while Core and the social systems answer “how does this world actually behave?”
+- `core/`: World Kernel — causality, fate, world will, time, identity, relationships, memory, permissions, and state.
+- `systems/`: Character, Brick, and country/region-specific social systems.
+- `asset/`: engine-independent standardized world asset descriptions.
+- `simulation/`: NPC schedules, needs, behavior, population, and simulation LOD.
+- `narrative/`: events, default timelines, conditions, and consequences.
+- `world/`: concrete world templates, locations, characters, factions, and rules.
+- `pipeline/`: source material / assets to playable-world production pipeline.
+- `ai/`: builder agents, character agents, and supporting AI capabilities.
+- `style/` / `render/`: Anime-first and other visual style rules.
+- `runtime/`: event bus, scheduling, save, snapshot, and replay.
+- `adapters/` / `unity/`: host boundaries; Unity is the first-stage host.
+- `editor/`: primary human/agent authoring surface.
+- `protocol/`: cross-module schemas, contracts, and version boundaries.
 
-Therefore:
+See [docs/Architecture.md](docs/Architecture.md) for the canonical technical architecture.
 
-- `core/` and social systems own world rules, causality, and fate.
-- `systems/brick/` owns fast 3D scene and interaction assembly.
-- Unity currently owns final rendering, physics, animation, and VR presentation.
+## Documentation
 
-Canonical locations:
+- [docs/README.md](docs/README.md) — documentation map and ownership rules.
+- [docs/Vision.md](docs/Vision.md) — canonical project vision.
+- [docs/Architecture.md](docs/Architecture.md) — canonical architecture.
+- [docs/AnimeRenderStylePRD.md](docs/AnimeRenderStylePRD.md) — Anime-first rendering and presentation.
+- [systems/brick/docs/BrickContract.md](systems/brick/docs/BrickContract.md) — Brick / asset assembly contract.
+- [docs/TODO.md](docs/TODO.md) — current unfinished work.
 
-- `systems/brick/packages/`: brick packages, publish metadata, and lockfile.
-- `systems/brick/docs/BrickContract.md`: Brick contract.
-- `packages`: temporary compatibility entry for existing tooling and scripts.
+## Key principles
 
-Existing Brick editor UI, shared schemas, reference runtime integrations, and Unity import code remain in place for now and are treated as callers/adapters of the Brick subsystem.
-
-## Repository layout
-
-- `core/`: causality, fate, world will, time, identity, relationships, memory, permissions, state.
-- `systems/`: social systems are country/region-first. `systems/japan/` contains concrete Japanese institutions; `systems/common/` is reserved for abstractions extracted only after multiple country implementations; `character/` composes character state and `brick/` handles fast 3D scene assembly.
-- `simulation/`: NPC, schedules, needs, behavior, population, simulation LOD.
-- `narrative/`: events, default timeline, conditions, consequences, generators.
-- `world/`: templates, locations, characters, factions, rules, bootstrap.
-- `style/`: character morphology, rendering, animation, camera, style profiles.
-- `ai/`: character agents, dialogue, planning, world building, asset-generation interface, lore parsing.
-- `asset/`: engine-independent asset descriptions.
-- `pipeline/`: world-build pipeline for ingest → analysis → generation → validation → assembly → export.
-- `runtime/`: world runtime, event bus, scheduler, save, snapshots; legacy reference runtime remains.
-- `adapters/`: Unity, Unreal, and future custom-renderer boundaries.
-- `editor/`, `protocol/`, `unity/`, `tools/`, `tests/`: current host/tooling layers.
-
-See [docs/Architecture.md](docs/Architecture.md) for the canonical architecture.
-
-## Engineering rules
-
-1. World Kernel comes before a custom renderer.
-2. Core world logic must not depend on Unity APIs.
-3. Systems use explicit contracts instead of a monolithic World class.
-4. Important actions must close the loop from input to state change to causality to future consequences.
-5. World Will may repair accidents but cannot override sufficient causality.
-6. Social institutions are modeled country/region-first; Common abstractions are extracted later from multiple implementations.
-7. Role knowledge, qualifications, institution rules, and live world state constrain AI dialogue and actions.
-8. Brick is specifically for fast/one-click 3D scene and interaction assembly; it does not own causality, fate, or social rules.
+- Unity is a host, not the definition of Fate Engine.
+- Brick is important, but Brick is not Fate Engine.
+- The World Kernel is important, but it is not the whole engine.
+- Anime is the first visual citizen, but Fate Engine is not merely a renderer.
+- AI should primarily compose standardized assets under validators, world rules, licensing, and version constraints.
+- Original storylines are default fate lines, not unbreakable rails.
 
 ## Quick start
 
