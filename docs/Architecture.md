@@ -257,40 +257,77 @@ World Asset System 的正式协议拆分为：
 
 架构原则：**Registry 持有资产身份与解析信息，但不要求 Fate 官方持有资产本体。** 官方资产、Marketplace、Community、Private Registry 和第三方 Provider 都可以通过同一协议接入。
 
-## 6. Game Category 与后期 Game Assembly
+## 6. Game Category、Starter Project 与后期 Game Assembly
 
-当前 Game Category 只是一个轻量分类集合，见 `GameCategories.md`。
+`GameCategories.md` 定义可选游戏分类；`StarterProjects.md` 定义第一阶段产品行为。
 
-它当前只用于：
-
-- 标记项目主要游戏类型；
-- 整理 Engine Capability 与测试覆盖；
-- 为未来可能的 Template / Game Type 系统提供稳定分类入口。
-
-**当前不根据 Game Category 自动选择组件，也不自动生成游戏。**
-
-当前开发顺序是：
+第一阶段正式流程：
 
 ```text
-Choose one Game Category
-        ↓
-Build one complete playable game Demo manually
-        ↓
-Discover missing engine capabilities
-        ↓
-Complete Engine Foundation
-        ↓
-Extract reusable patterns
-        ↓
-Template
-        ↓
-Only after repeated real-world validation:
-Game Assembly / One-click Demo
+Open Fate Engine
+      ↓
+New Project
+      ↓
+Select Game Category
+      ↓
+Select Official Starter Project
+      ↓
+Create / Instantiate
+      ↓
+Playable Base Game
+      ↓
+Developer continues development
 ```
 
-Game Assembly 是长期生产力层，不是当前 Engine Foundation 的前置条件。
+### 6.1 Game Category
 
-只有已经存在至少一个完整 Demo，并且最好有第二个真实项目证明某些模式确实重复以后，才值得把这些模式升级成自动装配规则。
+Game Category 是稳定分类键，例如 `3d_rpg`、`arpg`、`soulslike`、`fps`、`racing`。
+
+它当前主要用于：
+
+- New Project 类型选择；
+- Starter Project 绑定；
+- Capability / Test 覆盖整理。
+
+### 6.2 Starter Project
+
+Starter Project 是官方提前开发并维护好的真实基础游戏工程。
+
+它必须包含对应类型的基础控制、Gameplay Loop、Scene、UI、Input、Animation、Physics、Audio、必要 Persistence 和 Build 配置，并能够被开发者直接修改。
+
+Starter Project 不是动态 Assembly，也不是只展示功能的 Tech Demo。
+
+一个 Category 的支持状态可以是：
+
+```text
+unsupported
+experimental
+starter_available
+```
+
+只有通过完整验收的类型才可标记为 `starter_available`。
+
+### 6.3 Game Assembly
+
+Game Assembly 是后续生产力层。
+
+它会在多个 Starter Project 和真实游戏验证后，把稳定重复的 Template / Component / Asset / Plugin 关系进一步自动化。
+
+因此依赖关系是：
+
+```text
+Complete Engine Foundation
+      ↓
+Official Starter Projects
+      ↓
+Multiple real game categories
+      ↓
+Verified reusable patterns
+      ↓
+Game Assembly
+```
+
+不能反过来先设计自动组合系统，再假设它能生成尚未被真实开发验证的游戏结构。
 
 
 ## 7. Native AI Agent
@@ -474,11 +511,12 @@ Anime Style 横向接入 Rendering / Animation / Asset / Camera，不应该被�
 1. 先把 Engine Contract / Project / Asset / Package / Assembly / Editor 边界建立正确；
 2. 继续利用 Unity 作为可替换 Host 验证游戏开发闭环；
 3. 建立 Anime-first Presentation；
-4. 从 `GameCategories.md` 中选择一个类型，手工做出第一个完整可玩 Demo；
-5. 用 Demo 暴露的问题补齐 Engine Foundation；
-6. Demo 成立后再提炼 Template；
-7. Game Assembly / 一键 Demo 明确放到后期；
-8. Fate Game 在 Generic Game Runtime 稳定后再作为第一方高级能力接入；
-9. 只有当某个 Host 能力真正限制 Fate Engine 时，再决定是否逐步自研或替换。
+4. 选择第一个 Game Category，完成对应官方 Starter Project；
+5. 打通 New Project → Category → Starter Project → Run / Build；
+6. 用真实 Starter Project 补齐 Engine Foundation；
+7. 逐步增加第二、第三个 Game Category；
+8. 多个类型验证后再抽象 Game Assembly；
+9. Fate Game 在 Generic Game Runtime 稳定后再作为第一方高级能力接入；
+10. 只有当某个 Host 能力真正限制 Fate Engine 时，再决定是否逐步自研或替换。
 
 > **先拥有完整的“游戏引擎架构”，再按价值逐步拥有底层实现；不能因为当前借用 Unity，就把 Fate Engine 永久定义成 Unity 上层插件。**
