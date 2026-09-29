@@ -61,7 +61,7 @@ Fate Engine 是一个仍处于原型阶段的下一代游戏引擎项目。
 - **第三方资产：** 遵循各自许可证
 - **Marketplace 资产：** 按资产单独声明许可证与商业条款
 
-允许商业使用。使用 Fate Engine 制作的游戏和应用不需要因此整体开源；如果修改并分发受 MPL-2.0 覆盖的 Fate Engine 源代码文件，这些受覆盖的修改源代码仍需按照 MPL-2.0 提供。
+允许商业使用。**你使用 Fate Engine 开发并发行的游戏或应用本身可以保持闭源，也不需要公开自己的游戏源码。** 只有当你修改了 Fate Engine 自身受 MPL-2.0 覆盖的源代码文件，并把这些修改后的 Fate Engine 代码对外分发时，受 MPL 覆盖的这些修改源代码需要继续按照 MPL-2.0 提供。
 
 详见 [LICENSE](LICENSE) 与 [docs/Licensing.md](docs/Licensing.md)。
 
