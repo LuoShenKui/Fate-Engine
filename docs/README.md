@@ -18,6 +18,9 @@
 - ../systems/character/README.md — Character System。
 - ../systems/japan/README.md — 国家/地区社会制度模板。
 - Licensing.md — 代码、文档、示例资产、第三方资产与 Marketplace 资产许可证边界。
+- FateAssetProtocol.md — 所有 Fate Standard Asset 的共同身份、语义、来源、依赖、许可与 Registry 规则。
+- Fate3DAssetStandard.md — 3D Runtime 资产标准：GLB/glTF、坐标、单位、Pivot、LOD、Collision、Socket、Material Semantic。
+- FateHumanoidStandard.md — Humanoid 骨架、语义 Bone ID、Socket、Retarget 与 Animation Compatibility 标准。
 
 ## 3. 原型、测试与运维文档
 
