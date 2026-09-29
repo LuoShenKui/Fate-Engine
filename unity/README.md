@@ -2,7 +2,7 @@
 
 This directory is now a minimal Unity host prototype for Fate Runtime Core.
 
-The current product boundary is:
+For this Unity host prototype, the current integration boundary is:
 
 - Fate Engine Editor: JSON recipe authoring, validation, white-box assembly, export
 - Fate Runtime Core: world truth, runtime NPC AI, fate state, intent/action, snapshot/replay
