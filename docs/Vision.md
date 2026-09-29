@@ -19,13 +19,13 @@ Fate Engine 的第一块地基是统一规则下的可复用世界资产。资�
 
 > **世界逐渐成为一个巨大、标准化、可组合、可验证、可版本化的资产模型库。**
 
-### 2.2 Game Assembly System — 长期生产力能力
+### 2.2 Starter Project → Game Assembly — 从现成基础游戏开始
 
-长期目标是：在 Fate Engine 已经能够手工完成完整游戏开发之后，把真实项目中反复出现的模式逐步抽象成可复用 Template / Component / Assembly 能力。
+第一阶段产品目标是：用户打开 Fate Engine，新建项目并选择游戏类型后，直接得到一个官方维护、已经可运行和试玩的 Starter Project，再在这个基础上替换资产、修改规则、增加系统和内容。
 
-Game Assembly 不是当前阶段的前置条件，也不能替代一个完整、成熟的游戏开发流程。只有真实 Demo 已经被完整做出来，才从这些 Demo 中提炼可复用组合规则。
+Starter Project 是预先开发好的完整基础工程，不是动态拼装。真正的 Game Assembly 属于后续阶段：只有多个 Starter Project 和真实项目证明哪些结构稳定重复后，才把它们抽象成动态 Template / Component / Assembly。
 
-> **先证明 Fate Engine 能完整做出游戏，再自动化其中已经被真实项目证明为重复的部分。**
+> **第一阶段先让开发者“选择类型就有一个能玩的起点”；后续再把这些被验证过的起点逐步自动化。**
 
 ### 2.3 Fate Game System — Fate Engine 独有游戏类型
 
@@ -91,7 +91,7 @@ World Asset System 与 Game Assembly System 提供生产基础；Native AI Agent
 
 ## 4. 核心产品原则
 
-1. **先做出完整游戏**：当前首先证明 Fate Engine 能手工完成一个完整可玩的 Demo，再讨论 Template / Assembly 自动化。
+1. **从 Starter Project 开始**：第一阶段让 New Project 直接产生一个完整可玩、可继续开发的类型基础项目；动态 Assembly 后置。
 2. **标准资产优先于一次性生成**：能复用、能版本化、能验证的资产优先于不可重复的即时生成结果。
 3. **AI 组合优先于 AI 凭空创造**：Agent 优先成为世界工程师。
 4. **世界状态必须真实存在**：重要人物、关系、资源、机构、事件和命运必须进入结构化 World State，而不是只存在于 Prompt。
