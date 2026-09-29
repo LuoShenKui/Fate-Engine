@@ -61,7 +61,7 @@ See [docs/Architecture.md](docs/Architecture.md) for the canonical technical arc
 - **Third-party assets:** their respective licenses
 - **Marketplace assets:** per-asset licenses and commercial terms
 
-Commercial use is allowed. Games and applications built with Fate Engine do not need to be open sourced. Modifications to MPL-covered Fate Engine source files that are distributed must remain available under MPL-2.0.
+Commercial use is allowed. Games and applications built with Fate Engine may remain closed source; using Fate Engine does not require you to publish your game or application source code. If you modify Fate Engine source files covered by MPL-2.0 and distribute those modified engine files, the covered modifications must remain available under MPL-2.0.
 
 See [LICENSE](LICENSE) and [docs/Licensing.md](docs/Licensing.md).
 
