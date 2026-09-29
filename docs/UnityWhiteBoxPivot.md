@@ -1,3 +1,7 @@
+> **Historical / Phase-specific Boundary**
+>
+> 本文只记录早期 Unity 白盒阶段的宿主边界，不再定义 Fate Engine 整体产品定位。
+> 当前项目愿景见 [Vision.md](Vision.md)，总架构见 [Architecture.md](Architecture.md)。
 # Unity White-Box Pivot
 
 ## What Fate Engine Is Now
