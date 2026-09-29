@@ -6,9 +6,9 @@
 
 Fate Engine 自有源代码默认采用 **Mozilla Public License 2.0 (MPL-2.0)**。
 
-商业使用允许。使用 Fate Engine 制作的游戏、应用或其他 Larger Work **不需要因为使用 Fate Engine 而整体开源**。
+商业使用允许。**使用 Fate Engine 开发和发行的游戏、应用或其他 Larger Work 可以保持闭源；开发者不需要仅因为使用 Fate Engine 就公开自己的游戏或应用源码。**
 
-如果你修改了受 MPL-2.0 覆盖的 Fate Engine 源代码文件，并对外分发这些修改后的 Covered Software，则这些受 MPL 覆盖的源代码仍需按照 MPL-2.0 提供。
+如果你修改了 **Fate Engine 自身**受 MPL-2.0 覆盖的源代码文件，并对外分发这些修改后的 Covered Software，则这些受 MPL 覆盖的修改源代码仍需按照 MPL-2.0 提供。独立的游戏代码、游戏逻辑或其他未成为 MPL Covered Software 的独立文件，并不会因为与 Fate Engine 一起组成 Larger Work 就自动变成 MPL-2.0。
 
 > Commercial use is allowed. Games and applications built with Fate Engine do not need to be open sourced. Modifications to MPL-covered Fate Engine source files that are distributed must remain available under MPL-2.0.
 
