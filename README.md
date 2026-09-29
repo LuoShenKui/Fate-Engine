@@ -9,7 +9,7 @@ Its long-term goal is not a single renderer, story system, or AI generator. Fate
 ## Six long-term pillars
 
 1. **World Asset System** — a standardized, reusable library of world building blocks.
-2. **Game Assembly System** — select a game type, components, plugins, and world templates to produce a playable demo that developers can continue refining.
+2. **Game Assembly System** — a long-term productivity layer that extracts reusable automation only after complete games have proven which work is genuinely repetitive.
 3. **Fate Game System** — convert source material such as animation, novels, and comics into a default fate-driven world whose original timeline can be changed through real causality.
 4. **Anime-first Visual System** — anime characters are first-class citizens; 3D presentation should preserve the identity, colors, motion, expression, and camera language of 2D animation as closely as possible.
 5. **Native AI Agent** — agents natively understand, retrieve, assemble, configure, and validate standardized assets instead of treating on-demand asset generation as the only workflow.
@@ -50,7 +50,7 @@ See [docs/Architecture.md](docs/Architecture.md) for the canonical technical arc
 - Brick is important, but Brick is not Fate Engine.
 - The World Kernel is important, but it is not the whole engine.
 - Anime is the first visual citizen, but Fate Engine is not merely a renderer.
-- AI should primarily compose standardized assets under validators, world rules, licensing, and version constraints.
+- The current priority is to finish one complete playable game demo; AI and automatic assembly must not be prerequisites for that first demo.
 - Original storylines are default fate lines, not unbreakable rails.
 
 ## Licensing
