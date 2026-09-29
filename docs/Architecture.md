@@ -42,10 +42,10 @@ Fate Engine 在完整引擎之上，再提供三个核心差异化能力：
 └──────────────────────────────────────────────────────────────┘
                               │
 ┌──────────────────────────────────────────────────────────────┐
-│  3. World Asset & Game Assembly                             │
+│  3. World Asset System                                     │
 │                                                              │
-│  Standard Assets / Brick / Templates / Game Types / Recipe   │
-│  One-click Demo / Composition / Validation / Marketplace     │
+│  Standard Assets / Import / Validation / Registry / Cache    │
+│  Game Assembly belongs to a later productivity layer         │
 └──────────────────────────────────────────────────────────────┘
                               │
 ┌──────────────────────────────────────────────────────────────┐
@@ -257,40 +257,41 @@ World Asset System 的正式协议拆分为：
 
 架构原则：**Registry 持有资产身份与解析信息，但不要求 Fate 官方持有资产本体。** 官方资产、Marketplace、Community、Private Registry 和第三方 Provider 都可以通过同一协议接入。
 
-## 6. Game Assembly System
+## 6. Game Category 与后期 Game Assembly
 
-Game Assembly 位于完整 Engine Foundation 之上。
+当前 Game Category 只是一个轻量分类集合，见 `GameCategories.md`。
+
+它当前只用于：
+
+- 标记项目主要游戏类型；
+- 整理 Engine Capability 与测试覆盖；
+- 为未来可能的 Template / Game Type 系统提供稳定分类入口。
+
+**当前不根据 Game Category 自动选择组件，也不自动生成游戏。**
+
+当前开发顺序是：
 
 ```text
-New Project
-    ↓
-Select Game Type
-    ↓
-Select World / Style / Components / Plugins
-    ↓
-Resolve Standard Assets
-    ↓
-Assembly Plan / Recipe
-    ↓
-Validate
-    ↓
-Playable Demo
-    ↓
-Human + Agent continue development
+Choose one Game Category
+        ↓
+Build one complete playable game Demo manually
+        ↓
+Discover missing engine capabilities
+        ↓
+Complete Engine Foundation
+        ↓
+Extract reusable patterns
+        ↓
+Template
+        ↓
+Only after repeated real-world validation:
+Game Assembly / One-click Demo
 ```
 
-它的目标不是替代引擎，而是让开发者不必每次从空工程开始。
+Game Assembly 是长期生产力层，不是当前 Engine Foundation 的前置条件。
 
-Game Type 应成为正式扩展点，例如：
+只有已经存在至少一个完整 Demo，并且最好有第二个真实项目证明某些模式确实重复以后，才值得把这些模式升级成自动装配规则。
 
-- ARPG；
-- RPG；
-- Adventure；
-- Survival；
-- Simulation；
-- Visual Novel Hybrid；
-- Fate Game；
-- Community Game Types。
 
 ## 7. Native AI Agent
 
@@ -458,7 +459,7 @@ Anime Style 横向接入 Rendering / Animation / Asset / Camera，不应该被�
 1. Fate Engine 必须能开发普通游戏，不启用 Fate 系统也能完整运行。
 2. Fate Game 是 Game Type，不是 Engine Core。
 3. Anime-first 是视觉优先级，不是整个引擎唯一功能。
-4. World Asset / Assembly 是生产力层，建立在完整 Engine Foundation 上。
+4. World Asset 是基础能力；Game Assembly 是后期生产力层，必须建立在完整 Engine Foundation 和真实 Demo 之上。
 5. AI Agent 是原生开发接口，但不能成为运行引擎的强制依赖。
 6. Unity 当前可以承担底层能力，但目标架构不得把 Unity 永久写成不可替换的核心。
 7. 任何高级世界模拟都不得反向污染最小 Game Runtime。
@@ -473,8 +474,11 @@ Anime Style 横向接入 Rendering / Animation / Asset / Camera，不应该被�
 1. 先把 Engine Contract / Project / Asset / Package / Assembly / Editor 边界建立正确；
 2. 继续利用 Unity 作为可替换 Host 验证游戏开发闭环；
 3. 建立 Anime-first Presentation；
-4. 建立一键 Game Type Demo；
-5. 把 Fate Game 作为第一方高级 Game Type 接入；
-6. 只有当某个 Host 能力真正限制 Fate Engine 时，再决定是否逐步自研或替换。
+4. 从 `GameCategories.md` 中选择一个类型，手工做出第一个完整可玩 Demo；
+5. 用 Demo 暴露的问题补齐 Engine Foundation；
+6. Demo 成立后再提炼 Template；
+7. Game Assembly / 一键 Demo 明确放到后期；
+8. Fate Game 在 Generic Game Runtime 稳定后再作为第一方高级能力接入；
+9. 只有当某个 Host 能力真正限制 Fate Engine 时，再决定是否逐步自研或替换。
 
 > **先拥有完整的“游戏引擎架构”，再按价值逐步拥有底层实现；不能因为当前借用 Unity，就把 Fate Engine 永久定义成 Unity 上层插件。**
