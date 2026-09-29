@@ -1,6 +1,7 @@
-import AppValidationDock from "./AppValidationDock";
 import type { ValidationItem } from "./ValidationPanel";
 import type { BatchValidationStats } from "../workflow/validation";
+import type { AssetLibraryItem } from "./AssetLibraryPanel";
+import ProjectConsoleDock from "./ProjectConsoleDock";
 
 type AppBottomDockProps = {
   playtestFullscreen: boolean;
@@ -14,21 +15,10 @@ type AppBottomDockProps = {
   onClose: () => void;
   maximized: boolean;
   onToggleMaximize: () => void;
+  assetLibraryItems: AssetLibraryItem[];
 };
 
 export default function AppBottomDock(props: AppBottomDockProps): JSX.Element {
-  return (
-    <AppValidationDock
-      hidden={props.playtestFullscreen || (props.validationHidden && !props.validationExpanded)}
-      expanded={props.validationExpanded}
-      items={props.items}
-      protocolItems={props.protocolItems}
-      batchEntries={props.batchEntries}
-      batchStatsDiff={props.batchStatsDiff}
-      onToggleExpanded={props.onToggleExpanded}
-      onClose={props.onClose}
-      maximized={props.maximized}
-      onToggleMaximize={props.onToggleMaximize}
-    />
-  );
+  if (props.playtestFullscreen) return <></>;
+  return <ProjectConsoleDock assets={props.assetLibraryItems} validationItems={props.items} protocolItems={props.protocolItems} />;
 }
