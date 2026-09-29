@@ -24,11 +24,7 @@ const rowStyle = (active: boolean) =>
     fontSize: "12px",
   }) as const;
 
-const displayName = (node: CanvasNode): string => {
-  const name = node.meta?.displayName;
-  if (typeof name === "string" && name.trim().length > 0) return name;
-  return node.id;
-};
+const displayName = (node: CanvasNode): string => node.id;
 
 export default function HierarchyPanel(props: HierarchyPanelProps): JSX.Element {
   return (
