@@ -1,4 +1,4 @@
-import { uePanelSurface, ueShellColors } from "./ue-shell-theme";
+import { ueShellColors } from "./ue-shell-theme";
 
 type EditorLayoutProps = {
   left?: JSX.Element;
@@ -10,69 +10,63 @@ type EditorLayoutProps = {
   maximizedPanel?: "left" | "center" | "right" | "bottom";
 };
 
-const frameStyle = {
-  display: "grid",
-  gridTemplateRows: "auto 1fr auto",
-  gap: "10px",
-  height: "100vh",
-  padding: "10px",
-  boxSizing: "border-box",
-  background: ueShellColors.frame,
-} as const;
-
 const panelStyle = {
-  ...uePanelSurface,
-  borderRadius: "10px",
-  padding: "10px",
   overflow: "hidden",
-} as const;
-
-const bottomPanelStyle = {
-  ...panelStyle,
-  padding: "8px 10px",
-  background: ueShellColors.frameRaised,
+  minHeight: 0,
+  minWidth: 0,
+  background: ueShellColors.panel,
+  borderRight: `1px solid ${ueShellColors.border}`,
 } as const;
 
 export default function EditorLayout(props: EditorLayoutProps): JSX.Element {
-  const activeMaximizedPanel = props.maximizedPanel;
-
-  if ((activeMaximizedPanel === "left" && props.left !== undefined) || activeMaximizedPanel === "center" || (activeMaximizedPanel === "right" && props.right !== undefined)) {
-    const panel = activeMaximizedPanel === "left" ? props.left : activeMaximizedPanel === "right" ? props.right : props.center;
+  if (props.fullscreenCenter) {
     return (
-      <div style={{ ...frameStyle, gridTemplateRows: "1fr", padding: "0", gap: "0" }}>
-        <section style={{ ...panelStyle, borderRadius: "0", padding: "10px", display: "grid", minHeight: 0 }}>
-          {panel}
-        </section>
-      </div>
-    );
-  }
-
-  if (activeMaximizedPanel === "bottom" && props.bottom !== undefined) {
-    return (
-      <div style={frameStyle}>
+      <div style={{ height: "100vh", display: "grid", gridTemplateRows: "auto minmax(0,1fr)", background: ueShellColors.frame }}>
         {props.top ?? null}
-        <section style={{ ...bottomPanelStyle, minHeight: 0, display: "grid" }}>{props.bottom}</section>
+        <div style={{ minHeight: 0 }}>{props.center}</div>
       </div>
     );
   }
 
-  const resolvedLeft = activeMaximizedPanel === undefined || activeMaximizedPanel === "left" ? props.left : undefined;
-  const resolvedCenter = activeMaximizedPanel === undefined ? props.center : undefined;
-  const resolvedRight = activeMaximizedPanel === undefined || activeMaximizedPanel === "right" ? props.right : undefined;
-  const panels = [resolvedLeft, resolvedCenter, resolvedRight].filter((panel): panel is JSX.Element => panel !== undefined);
-  const columns = props.fullscreenCenter ? "minmax(0, 1fr)" : panels.length === 3 ? "280px minmax(0, 1fr) 340px" : panels.length === 2 ? "280px minmax(0, 1fr)" : "minmax(0, 1fr)";
+  if (props.maximizedPanel !== undefined) {
+    const selected =
+      props.maximizedPanel === "left" ? props.left :
+      props.maximizedPanel === "right" ? props.right :
+      props.maximizedPanel === "bottom" ? props.bottom :
+      props.center;
+    return (
+      <div style={{ height: "100vh", display: "grid", gridTemplateRows: "auto minmax(0,1fr)", background: ueShellColors.frame }}>
+        {props.top ?? null}
+        <div style={{ minHeight: 0 }}>{selected ?? props.center}</div>
+      </div>
+    );
+  }
 
   return (
-    <div style={frameStyle}>
+    <div
+      style={{
+        height: "100vh",
+        display: "grid",
+        gridTemplateRows: "auto minmax(0,1fr) minmax(190px, 31vh)",
+        background: ueShellColors.frame,
+        color: ueShellColors.text,
+        overflow: "hidden",
+      }}
+    >
       {props.top ?? null}
-      <div style={{ display: "grid", gridTemplateColumns: columns, gap: "12px", minHeight: 0 }}>
-        {panels.map((panel, index) => (
-          <section key={index} style={{ ...panelStyle, display: "grid", minHeight: 0 }}>
-            {panel}
-          </section>
-        ))}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: props.right === undefined ? "260px minmax(0,1fr)" : "260px minmax(0,1fr) 360px",
+          minHeight: 0,
+          borderBottom: `1px solid ${ueShellColors.borderStrong}`,
+        }}
+      >
+        {props.left !== undefined ? <section style={panelStyle}>{props.left}</section> : null}
+        <section style={{ ...panelStyle, borderRight: props.right === undefined ? "0" : panelStyle.borderRight }}>{props.center}</section>
+        {props.right !== undefined ? <section style={{ ...panelStyle, borderRight: "0" }}>{props.right}</section> : null}
       </div>
-      {props.bottom !== undefined && activeMaximizedPanel === undefined ? <section style={bottomPanelStyle}>{props.bottom}</section> : null}
+      <section style={{ minHeight: 0, overflow: "hidden", background: ueShellColors.panel }}>{props.bottom ?? null}</section>
     </div>
   );
 }
