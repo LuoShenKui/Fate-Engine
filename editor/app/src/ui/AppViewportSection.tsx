@@ -29,16 +29,17 @@ type AppViewportSectionProps = {
 export default function AppViewportSection(props: AppViewportSectionProps): JSX.Element {
   const viewportActions = (
     <>
+      <span style={{ fontSize: "10px", color: "#91a0b2", padding: "0 4px" }}>Shaded</span>
       <button type="button" onClick={props.onTogglePlaytestFullscreen} style={dockHeaderButtonStyle}>
-        {props.playtestFullscreen ? "exit test" : "test"}
+        {props.playtestFullscreen ? "Game" : "Scene / Game"}
       </button>
       {props.maximizeAction}
     </>
   );
 
   return renderDockSection(
-    "Viewport",
-    props.selectedSceneNodeId,
+    "Scene",
+    `Selected: ${props.selectedSceneNodeId}`,
     <GraphCanvasPanel
       nodes={props.nodes}
       edges={props.edges}
