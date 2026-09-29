@@ -927,6 +927,65 @@ Fate Anime Style
 
 ## 22. 长期愿景
 
+### 22.1 Anime 是 Fate Engine 的一等公民
+
+Fate Engine 的第一服务对象不是写实角色，而是二次元角色。
+
+> **Anime Character is a first-class citizen of Fate Engine.**
+
+这不是单纯的美术偏好，而是引擎架构层面的优先级定义。
+
+当 Anime 与 Realistic 的需求发生冲突时，第一阶段及核心路线优先保证 Anime：
+
+- 二次元角色身份保持优先；
+- 二次元动画观感优先；
+- 原作色彩与材质表达优先；
+- 原作动作节奏与夸张度优先；
+- 动画镜头语言优先；
+- 二次元表情系统优先；
+- 二次元光照、阴影、透视与轮廓规则优先。
+
+真实系角色与 Realistic Renderer 属于后续兼容方向，而不是 Fate Engine 的基础假设。
+
+Fate Engine 不要求所有视觉系统服从写实世界，也不要求 Anime 只是 Realistic Pipeline 上的一层特殊效果。
+
+对于 Anime，目标是：
+
+> **把二维动画中的角色身份、色彩、动作、表情与镜头表现尽可能一比一地迁移到可自由交互的三维世界。**
+
+这意味着角色资产不仅包含 Mesh、Texture 和 Animation，还应该逐步拥有自己的动画身份规范，例如：
+
+- Character Color Palette；
+- Skin / Hair / Eye Palette；
+- Face Proportion；
+- View-dependent Correction；
+- Shadow / Highlight Rules；
+- Expression Range；
+- Motion Exaggeration；
+- Animation Timing；
+- Pose Language；
+- Camera Presentation Rules。
+
+动画是 Fate Engine 的核心参考源之一。
+
+如果原动画中的肤色、动作幅度、停顿节奏、攻击姿态、表情和镜头表现与普通 3D 规则冲突，允许引擎主动偏离真实，以保持原作观感。
+
+目标不是：
+
+> “做一个看起来像动画角色的 3D 模型。”
+
+而是：
+
+> **“让动画里的角色进入 3D 世界以后，仍然尽可能像动画里的那个角色。”**
+
+这很难实现，因此它是长期目标，而不是对第一版实现范围的承诺。
+
+但即使早期技术只能实现其中一部分，架构也不应因为实现困难而退回“PBR + Toon Shader”这一默认前提。
+
+---
+
+### 22.2 多视觉物理
+
 Fate Engine 的视觉层最终不是一套固定 Shader，而是一套：
 
 > **Style-Aware Rendering / 多视觉物理系统。**
