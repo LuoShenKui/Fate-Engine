@@ -53,6 +53,18 @@ See [docs/Architecture.md](docs/Architecture.md) for the canonical technical arc
 - AI should primarily compose standardized assets under validators, world rules, licensing, and version constraints.
 - Original storylines are default fate lines, not unbreakable rails.
 
+## Licensing
+
+- **Code:** MPL-2.0
+- **Documentation:** CC BY 4.0
+- **Sample assets:** CC0 or CC BY 4.0, as explicitly marked
+- **Third-party assets:** their respective licenses
+- **Marketplace assets:** per-asset licenses and commercial terms
+
+Commercial use is allowed. Games and applications built with Fate Engine do not need to be open sourced. Modifications to MPL-covered Fate Engine source files that are distributed must remain available under MPL-2.0.
+
+See [LICENSE](LICENSE) and [docs/Licensing.md](docs/Licensing.md).
+
 ## Quick start
 
 ```bash
