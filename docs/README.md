@@ -17,6 +17,7 @@
 - ../pipeline/README.md — 世界构建 Pipeline。
 - ../systems/character/README.md — Character System。
 - ../systems/japan/README.md — 国家/地区社会制度模板。
+- Licensing.md — 代码、文档、示例资产、第三方资产与 Marketplace 资产许可证边界。
 
 ## 3. 原型、测试与运维文档
 
