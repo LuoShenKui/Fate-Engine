@@ -19,13 +19,13 @@ Fate Engine 的第一块地基是统一规则下的可复用世界资产。资�
 
 > **世界逐渐成为一个巨大、标准化、可组合、可验证、可版本化的资产模型库。**
 
-### 2.2 Game Assembly System — 从空项目转向可玩 Demo
+### 2.2 Game Assembly System — 长期生产力能力
 
-目标是：选择游戏类型 + 世界模板 + 组件 + 插件 + 参数，即可生成一个可运行的游戏 Demo，然后在 Demo 上继续开发。
+长期目标是：在 Fate Engine 已经能够手工完成完整游戏开发之后，把真实项目中反复出现的模式逐步抽象成可复用 Template / Component / Assembly 能力。
 
-装配系统组合世界资产、Gameplay Components、Ability Sets、UI、Camera、Input、AI、Save/Load、Networking、Style、Rules 与 Plugins。生成结果必须可运行、可编辑、可 diff、可复现、可回滚，并允许继续人工开发。
+Game Assembly 不是当前阶段的前置条件，也不能替代一个完整、成熟的游戏开发流程。只有真实 Demo 已经被完整做出来，才从这些 Demo 中提炼可复用组合规则。
 
-> **把游戏开发从大量重复搭建，转变为先得到一个正确的基础游戏，再集中完成独特的部分。**
+> **先证明 Fate Engine 能完整做出游戏，再自动化其中已经被真实项目证明为重复的部分。**
 
 ### 2.3 Fate Game System — Fate Engine 独有游戏类型
 
@@ -61,7 +61,7 @@ Fate Engine 天生拥有 AI Agent，但核心原则是：
 
 > **Agent 的首要职责不是现场凭空创造资产，而是理解需求、检索标准资产、选择组件、组合世界、配置规则并完成验证。**
 
-典型链路：User Intent → Fate Agent → Game Type / World Rules → Asset Search → Assembly Plan → World Asset Library → Validation → Playable Demo。
+长期链路可以发展为：User Intent → Fate Agent → Tool / Asset Search → Plan → Validation → Implementation；但当前阶段 Agent 不作为完成第一个游戏 Demo 的必要依赖。
 
 AI 可以理解自然语言需求、解析世界资料、查找资产、组合已有资产、生成 Recipe / Assembly Plan、配置参数、分析冲突、调用 Validator 并根据验证结果修正装配。
 
@@ -91,7 +91,7 @@ World Asset System 与 Game Assembly System 提供生产基础；Native AI Agent
 
 ## 4. 核心产品原则
 
-1. **从可玩结果开始**：开发者应尽量从已经可运行的 Demo 开始，而不是空项目。
+1. **先做出完整游戏**：当前首先证明 Fate Engine 能手工完成一个完整可玩的 Demo，再讨论 Template / Assembly 自动化。
 2. **标准资产优先于一次性生成**：能复用、能版本化、能验证的资产优先于不可重复的即时生成结果。
 3. **AI 组合优先于 AI 凭空创造**：Agent 优先成为世界工程师。
 4. **世界状态必须真实存在**：重要人物、关系、资源、机构、事件和命运必须进入结构化 World State，而不是只存在于 Prompt。
