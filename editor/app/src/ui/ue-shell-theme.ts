@@ -7,8 +7,8 @@ export const ueShellColors = {
   borderStrong: "#3a4859",
   text: "#dbe5ef",
   textMuted: "#91a0b2",
-  accent: "#f3b33e",
-  accentMuted: "#5a4a24",
+  accent: "#3d7fbe",
+  accentMuted: "#274e73",
 } as const;
 
 export const uePanelSurface = {
