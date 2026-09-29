@@ -132,7 +132,7 @@ export default function App(): JSX.Element {
   const [hiddenPanels, setHiddenPanels] = useState(defaultHiddenPanels());
   const [validationExpanded, setValidationExpanded] = useState(false);
   const [maximizedPanel, setMaximizedPanel] = useState<WorkspacePanelKey | undefined>(undefined);
-  const [activeRightPanelTab, setActiveRightPanelTab] = useState<"install" | "details" | "inspector" | "compose" | "export" | "narrative">("install");
+  const [activeRightPanelTab, setActiveRightPanelTab] = useState<"install" | "details" | "inspector" | "compose" | "export" | "narrative">("inspector");
   const [activeEntityId, setActiveEntityId] = useState("door-1");
   const [selectedSceneNodeId, setSelectedSceneNodeId] = useState(defaultNodes.find((node) => node.type !== "door")?.id ?? defaultNodes[0]?.id ?? "door-1");
   const [actorPosition, setActorPosition] = useState<[number, number, number]>([0, 0, 2]);
@@ -551,6 +551,9 @@ export default function App(): JSX.Element {
           assetLibraryItems={assetLibraryItems}
           selectedSlotId={selectedSlotId}
           onBindAssetToSelectedSlot={onBindAssetToSelectedSlot}
+          nodes={nodes}
+          selectedSceneNodeId={selectedSceneNodeId}
+          onSelectSceneNode={onSelectSceneNode}
         />}
         center={<AppViewportSection
           selectedSceneNodeId={selectedSceneNodeId}
@@ -595,6 +598,7 @@ export default function App(): JSX.Element {
           }}
           maximized={maximizedPanel === "bottom"}
           onToggleMaximize={() => setMaximizedPanel((prev) => toggleMaximizedPanel(prev, "bottom"))}
+          assetLibraryItems={assetLibraryItems}
         />}
         fullscreenCenter={playtestFullscreen}
         maximizedPanel={playtestFullscreen ? "center" : maximizedPanel}
