@@ -1,3 +1,8 @@
+> **Historical / 非当前总纲**
+>
+> 本文记录 Fate Engine 早期原型阶段的设计与工程决策，仅保留作历史参考。
+> 当前项目定位以 [Vision.md](Vision.md) 为准，技术架构以 [Architecture.md](Architecture.md) 为准，未完成事项以 [TODO.md](TODO.md) 为准。
+> 若本文与上述 Canonical 文档冲突，以上述文档为准。
 > **2026-09-04 架构调整**：Fate Engine 的根架构已切换为 World Kernel（因果 / 命运 / 世界意志 / 社会制度 / 长期模拟）。积木系统不再代表 Fate Engine 本身，而是 `systems/brick/` 下的一个可复用子系统。本文后续“积木为核心”的内容保留为历史原型和 Brick 子系统内部设计参考；新的总架构以 [Architecture.md](Architecture.md) 为准。
 
 Fate Engine 硬性架构要求 v0.1
