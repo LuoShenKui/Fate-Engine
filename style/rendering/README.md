@@ -6,7 +6,9 @@
 
 - 世界逻辑与视觉表现解耦；
 - 资产优先声明“是什么”，而不是绑定具体 Shader；
-- Anime 是第一视觉公民；Realistic / Comic / Lego / Painting 等风格通过统一契约平级扩展；
+- Render Style 在进入具体实现前必须先声明 Render Track；
+- `NPR_ARTISTIC` 与 `PBR_PHYSICAL` 是两条独立根轨，NPR 不得建立在完整 PBR shading result 之上；
+- Anime 是第一视觉公民并属于 `NPR_ARTISTIC`；Realistic 默认属于 `PBR_PHYSICAL`；Comic / Painting 等根据自身视觉规律显式选择 Track；
 - Unity 是第一阶段宿主，但本目录保持引擎无关。
 
 ## 目录
@@ -41,6 +43,11 @@ World / Character / Environment
               ↓
       Semantic Asset Layer
               ↓
+       Render Track Contract
+       ┌────────┴────────┐
+       ↓                 ↓
+  NPR_ARTISTIC      PBR_PHYSICAL
+       ↓                 ↓
        Render Style Contract
               ↓
        Selected Renderer
@@ -53,5 +60,7 @@ World / Character / Environment
 ## 第一实现
 
 第一款正式 Render Style 为 `Anime`。
+
+Render Track 根边界见：`docs/RenderTracks.md`。
 
 产品需求见：`docs/AnimeRenderStylePRD.md`。
