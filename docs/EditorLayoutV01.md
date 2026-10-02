@@ -416,6 +416,115 @@ Animator
 
 内部可以使用 ECS、DOTS 或其他 Runtime 模型，但 Editor UX 不应要求普通开发者直接理解底层 ECS。
 
+
+## 8.3 Rendering UI：先选 Render Track，再选 Render Style
+
+Fate Engine 的编辑器 UI 必须直接体现 `docs/RenderTracks.md` 的双轨架构，禁止把 Anime / Toon 放在 PBR 下面作为普通材质模式。
+
+推荐 Inspector / Project Settings 结构：
+
+```text
+Rendering
+
+Render Track
+  ○ NPR Artistic
+  ○ PBR Physical
+
+Render Style
+  NPR Artistic
+    └─ Anime
+    └─ Comic
+    └─ Painting
+
+  PBR Physical
+    └─ Realistic
+    └─ Cinematic
+```
+
+交互规则：
+
+1. 用户先选择 **Render Track**；
+2. Editor 只展示该 Track 下兼容的 Render Style；
+3. 选择 `NPR Artistic` 时，不显示 Metallic / Roughness / BRDF 等 PBR 专属参数作为默认主面板；
+4. 选择 `PBR Physical` 时，不显示 Smear、Hit Stop、Shadow Shape、Line Rhythm 等 NPR 专属参数作为默认主面板；
+5. Hybrid 场景不能通过隐式混用完成，必须进入显式的 Composition / Bridge 设置；
+6. Render Style 必须在 Inspector 中明确显示其所属 Track，禁止只显示 Style 名称导致边界丢失。
+
+示例：
+
+```text
+Character Rendering
+
+Track
+  NPR Artistic
+
+Style
+  Anime
+
+Presentation
+  Line System
+  Shadow Shape
+  Palette
+  Timing / Sampling
+  Smear / Impact
+  Camera-aware Geometry
+```
+
+以及：
+
+```text
+Environment Rendering
+
+Track
+  PBR Physical
+
+Style
+  Realistic
+
+Material
+  Metallic
+  Roughness
+  Normal
+  Reflection
+  GI
+```
+
+### UI 文案原则
+
+Editor 中应优先使用：
+
+- `NPR Artistic`：面向二维动画、漫画、插画等艺术规则；
+- `PBR Physical`：面向现实材质、真实光照与物理成像规则。
+
+不要使用以下容易造成误导的结构：
+
+```text
+Renderer
+├─ PBR
+├─ Toon
+└─ Anime
+```
+
+也不要使用：
+
+```text
+PBR
+└─ Stylized
+   └─ Anime
+```
+
+因为这会把 Anime 错误表达成 PBR 的子模式。
+
+正确 UI 心智模型始终是：
+
+```text
+Rendering
+├─ NPR Artistic
+│  └─ Anime / Comic / Painting / ...
+└─ PBR Physical
+   └─ Realistic / Cinematic / ...
+```
+
 ## 9. Project / Assets
 
 Project 面板负责当前游戏工程的文件和资产。
@@ -521,6 +630,16 @@ Game Category
   ○ FPS
   ○ ...
 
+Rendering
+  Render Track
+    ○ NPR Artistic
+    ○ PBR Physical
+
+  Render Style
+    ○ Anime
+    ○ Realistic
+    ○ ...
+
 Starter Project
   ○ Empty
   ○ Official Starter
@@ -529,6 +648,8 @@ Starter Project
 ```
 
 Game Category 来自 `GameCategories.md`。
+
+Rendering 选择必须遵守 `RenderTracks.md`：先确定 Render Track，再从该 Track 下选择 Render Style。Starter Project 可以预设 Track / Style，但用户必须能在 Project Settings 中看到其明确归属。
 
 只有状态为 `starter_available` 的类型显示可用 Official Starter。
 
