@@ -121,7 +121,31 @@ Fate Engine 的特色是 Style-Aware Rendering，其中 Anime 是第一视觉公
 - GPU resource；
 - VR / multi-view。
 
-第一阶段可以由 Unity 承担大量底层实现，但架构不能把“Unity 永久存在”作为 Fate Engine 的定义。
+Rendering Foundation 在 Style 之前必须先区分两条根轨：
+
+```text
+World / Asset / Physics / Animation Truth
+                 ↓
+          Render Track
+          ┌──────┴──────┐
+          ↓             ↓
+   NPR_ARTISTIC   PBR_PHYSICAL
+          ↓             ↓
+       Anime         Realistic
+```
+
+其中：
+
+- **PBR Physical Track** 以物理材质、固定三维几何、连续光照与连续时间表现为主要真相；
+- **NPR Artistic Track** 以最终画面、线条、色块、影形、构图、拍数与视角相关修正为主要真相；
+- 两条 Track 共享 Scene / Transform / Asset Semantic / Physics / Depth 等世界事实，但不得共享同一套强制最终 shading result；
+- Anime 明确属于 `NPR_ARTISTIC`，不得退化为 `PBR -> Toon/PostProcess`；
+- Realistic 默认属于 `PBR_PHYSICAL`；
+- Hybrid 只能通过显式 Composition / Bridge 跨 Track 交换 Depth、Shadow、Reflection 等信息。
+
+完整边界见 `RenderTracks.md`。
+
+第一阶段可以由 Unity 承担大量底层实现，但架构不能把“Unity 永久存在”作为 Fate Engine 的定义，也不能因为 Unity URP 默认提供 PBR，就让 PBR 成为 NPR 的架构父级。
 
 ### 3.4 Animation
 

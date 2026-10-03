@@ -56,6 +56,17 @@ Fate Engine 的核心原则是：
 
 ## 3. 核心架构原则
 
+Anime Renderer 的上位边界由 `RenderTracks.md` 定义。
+
+Fate Anime Renderer 固定归属：
+
+```text
+Render Track: NPR_ARTISTIC
+Render Style: ANIME
+```
+
+这意味着 Line、Shadow Shape、Palette、Timing、Smear、Impact Frame、Camera-aware Geometry 与 Symbolic VFX 都属于正式能力，不是绕开 PBR 的特殊补丁。
+
 ### 3.1 PBR 不是默认世界规律，而是一种 Render Style
 
 传统游戏引擎通常默认：
@@ -359,6 +370,13 @@ Painting
 
 Anime Style 必须拥有独立于普通相机投影的 `ProjectionProfile`。
 
+其目标不是模拟更“正确”的镜头，而是允许视觉构成高于统一物理透视，包括：
+
+- 局部超透视：拳头、武器等局部可以被极端放大，而不强制整张脸和背景同步畸变；
+- 局部透视压平 / 弱透视；
+- 3/4 View 与侧脸下对眼睛、鼻子、嘴巴做“视觉拼贴式”修正；
+- 允许背景使用 2D PAN / Multiplane 等空间假象，而不要求所有背景都存在真实纵深。
+
 候选类型：
 
 ```text
@@ -619,9 +637,21 @@ Scene Geometry
 
 ---
 
-## 13. Outline System
+## 13. Line System
 
-描边必须支持：
+Anime 的线条不是“几何边缘检测”的同义词，而是结构、张力、重量和光影区域的一部分。
+
+必须支持：
+
+- 外轮廓与内部结构线分离；
+- 主线与影指示边界的不同语义；
+- Line Weight / Rhythm：粗细、虚实、闭合度可随镜头、光照、部位与动作变化；
+- 受光侧线条可以变细、变淡甚至断开；
+- 暗部、背光侧或受力部位线条可以加粗；
+- 线条能够辅助划分 Light / Shadow / Accent 区域；
+- 线条不是简单“所有边都描黑”。
+
+基础轮廓能力仍必须支持：
 
 - 距离稳定；
 - 角色部位差异；
@@ -642,13 +672,19 @@ Scene Geometry
 未来 Anime Style 应允许控制：
 
 - Animation Sampling Style；
+- 一拍一 / 一拍二 / 一拍三 / 一拍四；
 - Held Frames；
+- Hit Stop；
 - Smear / Stretch；
 - Impact Frame；
 - Speed Line；
 - Pose Exaggeration；
 - Camera Timing；
 - Facial Expression Override。
+
+Runtime 世界更新可以保持 60/90/120Hz，但 Presentation Sampling 可以离散化。命中瞬间允许停 2～4 个表现帧，也允许插入单帧黑/白或专门设计的 Impact Frame。
+
+高速动作默认不依赖物理 Motion Blur。Anime Style 应优先允许 Smear Frame：对手臂、武器、五官、轮廓进行单帧夸张拉伸、重影或流线化，以动画节奏表达速度与打击感。
 
 因此：
 
@@ -670,11 +706,30 @@ Scene Geometry
 - Speed Line
 - Impact Frame
 
+Anime VFX 使用“特效原画”思路，而不是以流体解算结果作为最终权威：
+
+- 水花可以被设计成尖刺与离散水珠；
+- 爆炸可以使用高密度块面、碎块和节奏化膨胀；
+- 烟雾与火焰内部阴影可以使用硬边色块，并随关键帧发生裂变、融合；
+- 物理粒子 / 流体可以提供 motion source，但最终形状必须允许被艺术规则重写。
+
 不允许写实粒子特效直接破坏动画画风。
 
 ---
 
-## 16. Style Profile
+## 16. Palette / Shadow Shape / Style Profile
+
+Anime 画面默认不追求连续光滑渐变，而应正式支持受控色阶：
+
+```text
+Base
+1st Shadow
+2nd Shadow
+Highlight
+Accent
+```
+
+阴影在 NPR 中是独立构成元素。最终 Shadow Shape 可以由 Light Semantic、Face/Hair/Body Mask、Camera Direction、Character Identity 与 Art Direction Rule 共同决定，光源本身不能拥有最终像素形状的唯一决定权。
 
 Anime 不应只有一个固定风格。
 

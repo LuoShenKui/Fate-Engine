@@ -11,7 +11,8 @@
 
 ## 2. 核心子系统文档
 
-- AnimeRenderStylePRD.md — Anime-first / Style-Aware Rendering 技术规范。
+- RenderTracks.md — Rendering 根边界：严格区分 NPR Artistic Track 与 PBR Physical Track，并定义共享层、禁止耦合与跨轨合成规则。
+- AnimeRenderStylePRD.md — Anime-first / Style-Aware Rendering 技术规范；Anime 明确属于 NPR Artistic Track。
 - ../systems/brick/docs/BrickContract.md — Brick / 世界资产装配契约。
 - PackageConsumeFlow.md — 包发布、安装、版本、lockfile、回滚和消费流程。
 - ../pipeline/README.md — 世界构建 Pipeline。
