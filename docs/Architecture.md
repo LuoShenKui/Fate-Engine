@@ -143,7 +143,13 @@ World / Asset / Physics / Animation Truth
 - Realistic 默认属于 `PBR_PHYSICAL`；
 - Hybrid 只能通过显式 Composition / Bridge 跨 Track 交换 Depth、Shadow、Reflection 等信息。
 
-完整边界见 `RenderTracks.md`。
+完整边界见 `RenderTracks.md`，Render Graph 的资源、Pass、合成与实施规范见 [RenderGraph.md](RenderGraph.md)。
+
+**Custom Rendering 扩展**：Fate Engine 支持角色/材质级自定义 Shader 与 Style，以及通过声明式 Render Pass 增加特殊渲染能力。Custom 是横向插件机制，不是与 PBR/NPR 并列的第三条固定美术轨；扩展必须声明 Track 归属、资源依赖、合成规则和适配能力。
+
+**Render Graph（目标架构）**：由 Render Graph Builder/Compiler 负责组织 PBR、NPR、Custom Pass，显式管理颜色/深度等 GPU 资源与读写依赖，再由 Composition Bridge 处理跨风格合成，由 Host Adapter 实际执行。设计不等于当前已经实现。
+
+**双表现模式**：标准游戏场景优先角色身份和风格神韵（允许局部细节偏差）；IP 专属展示环境可以叠加专用光照、后处理、镜头和 Pass 来追求更高保真。场景/房间不是强制渲染隔离边界；保真需资产和参考图逐项验收。
 
 第一阶段可以由 Unity 承担大量底层实现，但架构不能把“Unity 永久存在”作为 Fate Engine 的定义，也不能因为 Unity URP 默认提供 PBR，就让 PBR 成为 NPR 的架构父级。
 
