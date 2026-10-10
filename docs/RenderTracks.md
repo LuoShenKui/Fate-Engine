@@ -15,6 +15,8 @@ Fate Engine 不把所有视觉风格塞进同一条“先做真实物理，再�
 
 两者可以共享世界状态，但不能共享同一套最终视觉物理。
 
+**Custom Rendering 是横向扩展机制，而非第三种固定画风或自动新增的根轨。** 自定义 Style/Pass 必须声明自己的语义归属（PBR、NPR 或显式声明的独立范式）、资源读写与合成方式；不能绕过统一调度。
+
 因此：
 
 ```text
@@ -275,7 +277,7 @@ Hybrid 的原则是：
 RenderStyle
 ├─ id
 ├─ version
-├─ track                  # NPR_ARTISTIC / PBR_PHYSICAL
+├─ track                  # NPR_ARTISTIC / PBR_PHYSICAL（或未来经评审的新 Track）
 ├─ capabilities
 ├─ material_mapping
 ├─ profile_schema
@@ -354,3 +356,33 @@ PBR_PHYSICAL
 Unity URP 可以作为宿主提供底层 Camera、Depth、Culling、Render Pass、GPU Resource 等能力，但宿主的 PBR 管线不能因此成为 Anime Renderer 的架构父级。
 
 这条边界从文档、Contract、Profile、Adapter 到未来运行时代码都必须保持一致。
+
+---
+
+## 12. Custom Rendering：独立的扩展机制
+
+Custom 不是与 PBR/NPR 相互排斥的第三条固定渲染轨，也不意味着每个 IP 单独开发引擎。
+
+- 可以在现有 Track 中注册自定义 Shader、Material、Geometry Correction、Pass、Post-process 与 Style Profile。
+- 如视觉范式无法归入 PBR/NPR，应先定义并评审新的 Track Contract，而不是借用 `CUSTOM` 逃避语义约束。
+- 角色/材质可选择 Render Style，场景可提供统一的灯光、相机和合成策略；角色的特殊表现不得修改物理世界事实。
+- IP 高保真需要合法取得的模型、纹理、动画及参考资料，Custom 插件不等于自动还原任何 IP。
+
+### 12.1 双层视觉表现目标
+
+| 级别 | 适用环境 | 验收目标 |
+| --- | --- | --- |
+| Standard / 通用模式 | 一般游戏场景，可同场景混用 PBR/NPR/Custom | 保持角色身份、轮廓、色彩与风格神韵；允许有限阴影、反射、后处理偏差 |
+| Fidelity / 高保真模式 | IP 专属场景或展示环境 | 使用专用照明、渲染通道、后处理、镜头及对照画面，尽量还原原作；不承诺百分百一致 |
+
+两种模式共享原始角色资产与世界系统；高保真模式通过叠加 Style Profile、Pass 与环境配置实现，**房间不是强制的渲染隔离边界**。
+
+### 12.2 Custom Pass 最小声明
+
+- 稳定标识、版本、适配后端与能力要求；
+- 执行阶段/依赖项，输入与输出资源、读写访问方式；
+- 颜色空间、深度/模板语义、透明合成策略；
+- 是否支持 VR 双眼、动态分辨率、时间历史资源；
+- 不支持时的降级路径和诊断信息。
+
+完整的 Render Graph、资源生命周期、组合边界与分阶段验收见 [RenderGraph.md](RenderGraph.md)。
